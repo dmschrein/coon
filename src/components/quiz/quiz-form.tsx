@@ -88,7 +88,7 @@ export function QuizForm() {
   const onSubmit = async (data: FullQuizResponse) => {
     try {
       await submitQuiz.mutateAsync(data);
-      router.push("/audience");
+      router.push("/dashboard/audience");
     } catch {
       toast.error("Failed to submit quiz. Please try again.");
     }

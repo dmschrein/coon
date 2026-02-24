@@ -66,7 +66,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <Button asChild variant={hasProfile ? "outline" : "default"} className="w-full">
-              <Link href="/audience">
+              <Link href="/dashboard/audience">
                 {hasProfile ? "View Profile" : "Generate Profile"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
@@ -100,7 +100,7 @@ export default function DashboardPage() {
               className="w-full"
               disabled={!hasProfile}
             >
-              <Link href="/content">
+              <Link href="/dashboard/content">
                 {hasContent ? "View Content" : "Generate Content"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>

@@ -23,12 +23,12 @@ const navigation = [
   },
   {
     name: "Audience",
-    href: "/audience",
+    href: "/dashboard/audience",
     icon: Users,
   },
   {
     name: "Content",
-    href: "/content",
+    href: "/dashboard/content",
     icon: Sparkles,
   },
 ];

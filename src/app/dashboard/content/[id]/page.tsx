@@ -97,7 +97,7 @@ export default function ContentDetailPage() {
         <div className="text-center">
           <p className="text-sm text-destructive">Content not found</p>
           <Button asChild className="mt-4" variant="outline">
-            <Link href="/content">
+            <Link href="/dashboard/content">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Content
             </Link>
@@ -111,7 +111,7 @@ export default function ContentDetailPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <Button variant="ghost" asChild>
-          <Link href="/content">
+          <Link href="/dashboard/content">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Content
           </Link>
