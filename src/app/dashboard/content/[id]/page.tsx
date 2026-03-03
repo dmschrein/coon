@@ -1,16 +1,16 @@
 "use client";
 
-import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useContentItem, useUpdateContent } from "@/hooks/use-content";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ArrowLeft, Copy, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
-import Link from "next/link";
+import { useState, useEffect } from "react";
 
 export default function ContentDetailPage() {
   const params = useParams();
@@ -20,64 +20,42 @@ export default function ContentDetailPage() {
   const { data: content, isLoading, error } = useContentItem(id);
   const updateContent = useUpdateContent();
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedTitle, setEditedTitle] = useState("");
-  const [editedBody, setEditedBody] = useState("");
-  const [editedCta, setEditedCta] = useState("");
-  const [editedHashtags, setEditedHashtags] = useState("");
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [hashtags, setHashtags] = useState("");
+  const [cta, setCta] = useState("");
 
-  // Initialize edit state when content loads
-  useState(() => {
+  useEffect(() => {
     if (content) {
-      setEditedTitle(content.title || "");
-      setEditedBody(content.body || "");
-      setEditedCta(content.cta || "");
-      setEditedHashtags(content.hashtags?.join(", ") || "");
+      setTitle(content.title || "");
+      setBody(content.body || "");
+      setHashtags(content.hashtags?.join(", ") || "");
+      setCta(content.cta || "");
     }
-  });
-
-  const handleCopy = () => {
-    if (!content) return;
-
-    const fullContent = [
-      content.title,
-      content.body,
-      content.hashtags?.map((tag) => `#${tag}`).join(" "),
-      content.cta,
-    ]
-      .filter(Boolean)
-      .join("\n\n");
-
-    navigator.clipboard.writeText(fullContent);
-    toast.success("Content copied to clipboard");
-  };
+  }, [content]);
 
   const handleSave = async () => {
     try {
       await updateContent.mutateAsync({
         id,
-        title: editedTitle || undefined,
-        body: editedBody,
-        cta: editedCta || undefined,
-        hashtags: editedHashtags
-          ? editedHashtags.split(",").map((tag) => tag.trim())
-          : undefined,
+        title: title || undefined,
+        body,
+        hashtags: hashtags ? hashtags.split(",").map((tag) => tag.trim()) : undefined,
+        cta: cta || undefined,
       });
       toast.success("Content updated successfully");
-      setIsEditing(false);
     } catch (err) {
-      toast.error("Failed to update content. Please try again.");
+      toast.error("Failed to update content");
     }
   };
 
-  const handleCancel = () => {
-    if (content) {
-      setEditedTitle(content.title || "");
-      setEditedBody(content.body || "");
-      setEditedCta(content.cta || "");
-      setEditedHashtags(content.hashtags?.join(", ") || "");
-    }
-    setIsEditing(false);
+  const handleCopy = () => {
+    const fullContent = [title, body, hashtags?.split(",").map((tag) => `#${tag.trim()}`).join(" "), cta]
+      .filter(Boolean)
+      .join("\n\n");
+
+    navigator.clipboard.writeText(fullContent);
+    toast.success("Content copied to clipboard");
   };
 
   if (isLoading) {
@@ -95,12 +73,9 @@ export default function ContentDetailPage() {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
-          <p className="text-sm text-destructive">Content not found</p>
-          <Button asChild className="mt-4" variant="outline">
-            <Link href="/dashboard/content">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Content
-            </Link>
+          <p className="text-sm text-destructive">Failed to load content</p>
+          <Button onClick={() => router.back()} className="mt-4" variant="outline">
+            Go Back
           </Button>
         </div>
       </div>
@@ -110,133 +85,92 @@ export default function ContentDetailPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <Button variant="ghost" asChild>
-          <Link href="/dashboard/content">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Content
-          </Link>
-        </Button>
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => router.back()}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Content Details</h1>
+            <p className="text-muted-foreground">
+              Created {new Date(content.createdAt).toLocaleDateString()}
+            </p>
+          </div>
+        </div>
         <div className="flex gap-2">
-          {isEditing ? (
-            <>
-              <Button variant="outline" onClick={handleCancel}>
-                Cancel
-              </Button>
-              <Button onClick={handleSave} disabled={updateContent.isPending}>
-                {updateContent.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Changes
-                  </>
-                )}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button variant="outline" onClick={handleCopy}>
-                <Copy className="mr-2 h-4 w-4" />
-                Copy
-              </Button>
-              <Button onClick={() => setIsEditing(true)}>Edit</Button>
-            </>
-          )}
+          <Button variant="outline" onClick={handleCopy}>
+            <Copy className="mr-2 h-4 w-4" />
+            Copy
+          </Button>
+          <Button onClick={handleSave} disabled={updateContent.isPending}>
+            {updateContent.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Save Changes
+              </>
+            )}
+          </Button>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="mb-2 flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2">
             <Badge variant="secondary">{content.platform}</Badge>
             <Badge variant="outline">{content.contentType}</Badge>
             {content.pillar && <Badge>{content.pillar}</Badge>}
+            {content.status && <Badge variant="default">{content.status}</Badge>}
           </div>
-          <CardDescription>
-            Created {new Date(content.createdAt).toLocaleDateString()}
-          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {isEditing ? (
-            <>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Title (optional)</label>
-                <Input
-                  value={editedTitle}
-                  onChange={(e) => setEditedTitle(e.target.value)}
-                  placeholder="Enter title..."
-                />
-              </div>
+          <div className="space-y-2">
+            <Label htmlFor="title">Title / Headline</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Optional title or headline"
+            />
+          </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Body</label>
-                <Textarea
-                  value={editedBody}
-                  onChange={(e) => setEditedBody(e.target.value)}
-                  placeholder="Enter content body..."
-                  rows={10}
-                  className="resize-none"
-                />
-              </div>
+          <div className="space-y-2">
+            <Label htmlFor="body">Content Body</Label>
+            <Textarea
+              id="body"
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder="Content body"
+              rows={15}
+              className="font-mono text-sm"
+            />
+          </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Hashtags (comma-separated)</label>
-                <Input
-                  value={editedHashtags}
-                  onChange={(e) => setEditedHashtags(e.target.value)}
-                  placeholder="tag1, tag2, tag3"
-                />
-              </div>
+          <div className="space-y-2">
+            <Label htmlFor="hashtags">Hashtags</Label>
+            <Input
+              id="hashtags"
+              value={hashtags}
+              onChange={(e) => setHashtags(e.target.value)}
+              placeholder="Comma-separated hashtags (without #)"
+            />
+            <p className="text-xs text-muted-foreground">
+              Example: tech, ai, startup
+            </p>
+          </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Call to Action (optional)</label>
-                <Input
-                  value={editedCta}
-                  onChange={(e) => setEditedCta(e.target.value)}
-                  placeholder="Enter CTA..."
-                />
-              </div>
-            </>
-          ) : (
-            <>
-              {content.title && (
-                <div>
-                  <h3 className="mb-2 text-sm font-medium text-muted-foreground">Title</h3>
-                  <p className="text-lg font-semibold">{content.title}</p>
-                </div>
-              )}
-
-              <div>
-                <h3 className="mb-2 text-sm font-medium text-muted-foreground">Body</h3>
-                <p className="whitespace-pre-wrap">{content.body}</p>
-              </div>
-
-              {content.hashtags && content.hashtags.length > 0 && (
-                <div>
-                  <h3 className="mb-2 text-sm font-medium text-muted-foreground">Hashtags</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {content.hashtags.map((tag, idx) => (
-                      <Badge key={idx} variant="secondary">
-                        #{tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {content.cta && (
-                <div>
-                  <h3 className="mb-2 text-sm font-medium text-muted-foreground">
-                    Call to Action
-                  </h3>
-                  <p className="font-medium text-primary">{content.cta}</p>
-                </div>
-              )}
-            </>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="cta">Call to Action</Label>
+            <Input
+              id="cta"
+              value={cta}
+              onChange={(e) => setCta(e.target.value)}
+              placeholder="Optional call to action"
+            />
+          </div>
         </CardContent>
       </Card>
     </div>

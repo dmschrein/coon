@@ -8,6 +8,7 @@ import {
   FileText,
   Users,
   Sparkles,
+  Megaphone,
 } from "lucide-react";
 
 const navigation = [
@@ -30,6 +31,11 @@ const navigation = [
     name: "Content",
     href: "/dashboard/content",
     icon: Sparkles,
+  },
+  {
+    name: "Campaigns",
+    href: "/dashboard/campaign",
+    icon: Megaphone,
   },
 ];
 

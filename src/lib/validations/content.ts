@@ -39,10 +39,10 @@ const contentTypeValues = [
 // ----------------------------------------------------------------------------
 
 export const contentDraftSchema = z.object({
-  headline: z.string().optional(),
+  headline: z.string().nullable().optional(),
   body: z.string().min(1, "Content body must not be empty"),
-  hashtags: z.array(z.string()).optional(),
-  cta: z.string().optional(),
+  hashtags: z.array(z.string()).nullable().optional(),
+  cta: z.string().nullable().optional(),
 });
 
 export type ContentDraftSchema = z.infer<typeof contentDraftSchema>;

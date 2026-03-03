@@ -63,6 +63,68 @@ export const contentItems = pgTable("content_items", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// ─── Campaigns ──────────────────────────────────────────────────────────────
+export const campaigns = pgTable("campaigns", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  audienceProfileId: uuid("audience_profile_id").references(
+    () => audienceProfiles.id
+  ),
+  quizResponseId: uuid("quiz_response_id").references(() => quizResponses.id),
+  name: text("name"),
+  status: text("status").notNull().default("strategy_pending"),
+  strategyData: jsonb("strategy_data"),
+  calendarData: jsonb("calendar_data"),
+  selectedPlatforms: text("selected_platforms").array(),
+  completedPlatforms: text("completed_platforms").array().default([]),
+  totalTokensUsed: integer("total_tokens_used").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// ─── Campaign Content ───────────────────────────────────────────────────────
+export const campaignContent = pgTable("campaign_content", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  campaignId: uuid("campaign_id")
+    .notNull()
+    .references(() => campaigns.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  platform: text("platform").notNull(),
+  status: text("status").notNull().default("pending"),
+  contentData: jsonb("content_data"),
+  tokensUsed: integer("tokens_used"),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// ─── Campaign Calendar Entries ──────────────────────────────────────────────
+export const campaignCalendarEntries = pgTable("campaign_calendar_entries", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  campaignId: uuid("campaign_id")
+    .notNull()
+    .references(() => campaigns.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  dayNumber: integer("day_number").notNull(),
+  scheduledDate: timestamp("scheduled_date"),
+  platform: text("platform").notNull(),
+  contentType: text("content_type").notNull(),
+  title: text("title").notNull(),
+  postingTime: text("posting_time"),
+  pillar: text("pillar"),
+  notes: text("notes"),
+  campaignContentId: uuid("campaign_content_id").references(
+    () => campaignContent.id
+  ),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // ─── Agent Runs ──────────────────────────────────────────────────────────────
 export const agentRuns = pgTable("agent_runs", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -84,6 +146,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   audienceProfiles: many(audienceProfiles),
   contentItems: many(contentItems),
   agentRuns: many(agentRuns),
+  campaigns: many(campaigns),
 }));
 
 export const quizResponsesRelations = relations(
@@ -129,3 +192,48 @@ export const agentRunsRelations = relations(agentRuns, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
+  user: one(users, {
+    fields: [campaigns.userId],
+    references: [users.id],
+  }),
+  audienceProfile: one(audienceProfiles, {
+    fields: [campaigns.audienceProfileId],
+    references: [audienceProfiles.id],
+  }),
+  quizResponse: one(quizResponses, {
+    fields: [campaigns.quizResponseId],
+    references: [quizResponses.id],
+  }),
+  content: many(campaignContent),
+  calendarEntries: many(campaignCalendarEntries),
+}));
+
+export const campaignContentRelations = relations(
+  campaignContent,
+  ({ one }) => ({
+    campaign: one(campaigns, {
+      fields: [campaignContent.campaignId],
+      references: [campaigns.id],
+    }),
+    user: one(users, {
+      fields: [campaignContent.userId],
+      references: [users.id],
+    }),
+  })
+);
+
+export const campaignCalendarEntriesRelations = relations(
+  campaignCalendarEntries,
+  ({ one }) => ({
+    campaign: one(campaigns, {
+      fields: [campaignCalendarEntries.campaignId],
+      references: [campaigns.id],
+    }),
+    content: one(campaignContent, {
+      fields: [campaignCalendarEntries.campaignContentId],
+      references: [campaignContent.id],
+    }),
+  })
+);
