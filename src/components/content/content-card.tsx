@@ -54,7 +54,7 @@ export function ContentCard(props: ContentCardProps) {
               <Copy className="h-4 w-4" />
             </Button>
             <Button size="sm" variant="ghost" asChild>
-              <Link href={`/content/${props.id}`}>
+              <Link href={`/dashboard/content/${props.id}`}>
                 <ExternalLink className="h-4 w-4" />
               </Link>
             </Button>

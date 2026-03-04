@@ -49,7 +49,7 @@ export function useGenerateContent() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const res = await fetch("/api/content/generate", { method: "POST" });
+      const res = await fetch("/api/content", { method: "POST" });
       const json: ApiResponse<ContentItem[]> = await res.json();
       if (json.error) throw new Error(json.error.message);
       return json.data;

@@ -110,9 +110,11 @@ async function generateStrategy(
   profile: AudienceProfile,
   quiz: QuizResponse
 ): Promise<{ strategy: ContentStrategy; tokensUsed: number }> {
+  console.log("🎯 Starting strategy generation...");
   const prompt = buildStrategyPrompt(profile, quiz);
 
   return withRetry(async () => {
+    console.log("📡 Calling Anthropic API for strategy...");
     const response = await anthropic.messages.create({
       model: MODEL_STRATEGY,
       max_tokens: 2048,
@@ -120,11 +122,20 @@ async function generateStrategy(
         "You are a content strategist. Respond with valid JSON only. No markdown, no explanation.",
       messages: [{ role: "user", content: prompt }],
     });
+    console.log("✅ Strategy API call completed");
 
+    console.log("📄 Extracting text from response...");
     const text =
       response.content[0].type === "text" ? response.content[0].text : "";
+    console.log("📄 Text extracted, length:", text.length);
+
+    console.log("🔍 Parsing JSON from text...");
     const parsed = extractJSON(text);
+    console.log("✔️ JSON parsed successfully");
+
+    console.log("✅ Validating strategy schema...");
     const validated = contentStrategySchema.parse(parsed);
+    console.log("✅ Strategy validated successfully");
 
     return {
       strategy: validated as ContentStrategy,
@@ -141,9 +152,11 @@ async function generateDrafts(
   platforms: string[],
   count: number
 ): Promise<{ drafts: GeneratedContent[]; tokensUsed: number }> {
+  console.log("📝 Starting drafts generation...");
   const prompt = buildDraftsPrompt(profile, strategy, platforms, count);
 
   return withRetry(async () => {
+    console.log("📡 Calling Anthropic API for drafts...");
     const response = await anthropic.messages.create({
       model: MODEL_DRAFTS,
       max_tokens: 8192,
@@ -151,11 +164,20 @@ async function generateDrafts(
         "You are a content creator. Respond with a valid JSON array only. No markdown, no explanation.",
       messages: [{ role: "user", content: prompt }],
     });
+    console.log("✅ Drafts API call completed");
 
+    console.log("📄 Extracting text from drafts response...");
     const text =
       response.content[0].type === "text" ? response.content[0].text : "";
+    console.log("📄 Text extracted, length:", text.length);
+
+    console.log("🔍 Parsing JSON from drafts text...");
     const parsed = extractJSON(text);
+    console.log("✔️ Drafts JSON parsed successfully");
+
+    console.log("✅ Validating drafts schema...");
     const validated = z.array(generatedContentSchema).parse(parsed);
+    console.log("✅ Drafts validated successfully, count:", validated.length);
 
     return {
       drafts: validated as GeneratedContent[],
@@ -175,19 +197,26 @@ export async function generateContent(
   modelUsed: string;
   tokensUsed: number;
 }> {
+  console.log("🚀 Starting generateContent flow...");
   const count = getContentCount(quiz.preferredPlatforms);
+  console.log(`📊 Will generate ${count} content pieces for platforms:`, quiz.preferredPlatforms);
 
   // Step 1: Generate strategy
+  console.log("📋 Step 1: Generating strategy...");
   const strategyResult = await generateStrategy(profile, quiz);
+  console.log("✅ Step 1 complete - Strategy generated");
 
   // Step 2: Generate drafts using the strategy
+  console.log("📋 Step 2: Generating drafts...");
   const draftsResult = await generateDrafts(
     profile,
     strategyResult.strategy,
     quiz.preferredPlatforms,
     count
   );
+  console.log("✅ Step 2 complete - Drafts generated");
 
+  console.log("🎉 Content generation complete!");
   return {
     strategy: strategyResult.strategy,
     drafts: draftsResult.drafts,

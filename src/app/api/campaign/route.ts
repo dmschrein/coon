@@ -2,16 +2,26 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import {
-  contentItems,
+  campaigns,
+  campaignContent,
   audienceProfiles,
   quizResponses,
 } from "@/lib/db/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { generateContent } from "@/lib/agents/content-generation";
+import { generateCampaignStrategy } from "@/lib/agents/campaign-strategy";
 import { logAgentRun } from "@/lib/agents/utils";
-import type { AudienceProfile, QuizResponse } from "@/types";
+import type {
+  AudienceProfile,
+  QuizResponse,
+  CampaignPlatform,
+} from "@/types";
+import { z } from "zod";
 
 export const maxDuration = 120;
+
+const createCampaignSchema = z.object({
+  selectedPlatforms: z.array(z.string()).min(1),
+});
 
 export async function GET(req: Request) {
   try {
@@ -23,34 +33,19 @@ export async function GET(req: Request) {
       );
     }
 
-    const url = new URL(req.url);
-    const platform = url.searchParams.get("platform");
-    const status = url.searchParams.get("status");
-
-    let query = db
+    const userCampaigns = await db
       .select()
-      .from(contentItems)
-      .where(eq(contentItems.userId, userId))
-      .orderBy(desc(contentItems.createdAt));
+      .from(campaigns)
+      .where(eq(campaigns.userId, userId))
+      .orderBy(desc(campaigns.createdAt));
 
-    const items = await query;
-
-    // Filter in JS since Drizzle dynamic where is verbose
-    let filtered = items;
-    if (platform) {
-      filtered = filtered.filter((item) => item.platform === platform);
-    }
-    if (status) {
-      filtered = filtered.filter((item) => item.status === status);
-    }
-
-    return NextResponse.json({ data: filtered, error: null });
+    return NextResponse.json({ data: userCampaigns, error: null });
   } catch (error) {
-    console.error("Error fetching content:", error);
+    console.error("Error fetching campaigns:", error);
     return NextResponse.json(
       {
         data: null,
-        error: { message: "Failed to fetch content", code: "INTERNAL_ERROR" },
+        error: { message: "Failed to fetch campaigns", code: "INTERNAL_ERROR" },
       },
       { status: 500 }
     );
@@ -66,6 +61,9 @@ export async function POST(req: Request) {
         { status: 401 }
       );
     }
+
+    const body = await req.json();
+    const { selectedPlatforms } = createCampaignSchema.parse(body);
 
     // Fetch active audience profile
     const [profile] = await db
@@ -94,7 +92,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Fetch quiz response for platform preferences
+    // Fetch quiz response
     const [quizResponse] = await db
       .select()
       .from(quizResponses)
@@ -121,56 +119,66 @@ export async function POST(req: Request) {
       const profileData = profile.profileData as AudienceProfile;
       const quizData = quizResponse.responseData as QuizResponse;
 
-      const result = await generateContent(profileData, quizData);
+      // Step 1: Generate campaign strategy
+      const strategyResult = await generateCampaignStrategy(
+        profileData,
+        quizData,
+        selectedPlatforms as CampaignPlatform[]
+      );
+
       const durationMs = Date.now() - startTime;
 
-      // Insert each draft as a separate content item
-      const insertedItems = await db
-        .insert(contentItems)
-        .values(
-          result.drafts.map((draft) => ({
-            userId,
-            audienceProfileId: profile.id,
-            platform: draft.platform,
-            contentType: draft.contentType,
-            pillar: draft.pillar,
-            title: draft.draft.headline || null,
-            body: draft.draft.body,
-            hashtags: draft.draft.hashtags || null,
-            cta: draft.draft.cta || null,
-            status: "draft",
-          }))
-        )
+      // Step 2: Create campaign record
+      const [campaign] = await db
+        .insert(campaigns)
+        .values({
+          userId,
+          audienceProfileId: profile.id,
+          quizResponseId: quizResponse.id,
+          name: strategyResult.strategy.campaignName,
+          status: "strategy_complete",
+          strategyData: strategyResult.strategy,
+          selectedPlatforms,
+          totalTokensUsed: strategyResult.tokensUsed,
+        })
         .returning();
+
+      // Step 3: Create placeholder campaign_content rows for each platform
+      await db.insert(campaignContent).values(
+        selectedPlatforms.map((platform) => ({
+          campaignId: campaign.id,
+          userId,
+          platform,
+          status: "pending" as const,
+        }))
+      );
 
       // Log the agent run
       await logAgentRun({
         userId,
-        agentType: "content_generation",
-        inputData: { profileId: profile.id, quizResponseId: quizResponse.id },
-        outputData: { strategy: result.strategy, draftCount: result.drafts.length },
-        modelUsed: result.modelUsed,
-        tokensUsed: result.tokensUsed,
+        agentType: "campaign_strategy",
+        inputData: {
+          profileId: profile.id,
+          quizResponseId: quizResponse.id,
+          selectedPlatforms,
+        },
+        outputData: { campaignName: strategyResult.strategy.campaignName },
+        modelUsed: strategyResult.modelUsed,
+        tokensUsed: strategyResult.tokensUsed,
         durationMs,
         status: "success",
       });
 
-      return NextResponse.json({ data: insertedItems, error: null });
+      return NextResponse.json({ data: campaign, error: null });
     } catch (error) {
       const durationMs = Date.now() - startTime;
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
 
-      // Log detailed error for debugging
-      console.error("Content generation error:", error);
-      if (error instanceof Error && error.stack) {
-        console.error("Stack trace:", error.stack);
-      }
-
       await logAgentRun({
         userId,
-        agentType: "content_generation",
-        inputData: { profileId: profile.id },
+        agentType: "campaign_strategy",
+        inputData: { profileId: profile.id, selectedPlatforms },
         modelUsed: "claude-sonnet-4-20250514",
         durationMs,
         status: "failed",
@@ -181,7 +189,7 @@ export async function POST(req: Request) {
         {
           data: null,
           error: {
-            message: `Failed to generate content: ${errorMessage}`,
+            message: "Failed to generate campaign strategy. Please try again.",
             code: "AGENT_FAILED",
           },
         },
@@ -189,7 +197,7 @@ export async function POST(req: Request) {
       );
     }
   } catch (error) {
-    console.error("Error generating content:", error);
+    console.error("Error creating campaign:", error);
     return NextResponse.json(
       {
         data: null,
