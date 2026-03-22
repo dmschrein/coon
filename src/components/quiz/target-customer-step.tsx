@@ -1,71 +1,48 @@
 "use client";
 
-import { useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import type { FullQuizResponse } from "@/lib/validations/quiz";
+import type { Platform } from "@/types";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface TargetCustomerStepProps {
   form: UseFormReturn<FullQuizResponse>;
+  industryNicheText: string;
+  onIndustryNicheChange: (v: string) => void;
+  customerPainPointsText: string;
+  onCustomerPainPointsChange: (v: string) => void;
 }
 
-function TagInput({
-  value,
-  onChange,
-  placeholder,
-}: {
-  value: string[];
-  onChange: (v: string[]) => void;
-  placeholder: string;
-}) {
-  const [input, setInput] = useState("");
+const PLATFORM_OPTIONS: { value: Platform; label: string }[] = [
+  { value: "twitter", label: "Twitter / X" },
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "reddit", label: "Reddit" },
+  { value: "discord", label: "Discord" },
+  { value: "youtube", label: "YouTube" },
+  { value: "tiktok", label: "TikTok" },
+  { value: "instagram", label: "Instagram" },
+  { value: "threads", label: "Threads" },
+  { value: "hackernews", label: "Hacker News" },
+  { value: "producthunt", label: "Product Hunt" },
+  { value: "indiehackers", label: "Indie Hackers" },
+];
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && input.trim()) {
-      e.preventDefault();
-      if (!value.includes(input.trim())) {
-        onChange([...value, input.trim()]);
-      }
-      setInput("");
-    }
-  };
-
-  return (
-    <div>
-      <Input
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder={placeholder}
-      />
-      <div className="flex flex-wrap gap-1 mt-2">
-        {value.map((tag, i) => (
-          <Badge
-            key={i}
-            variant="secondary"
-            className="cursor-pointer"
-            onClick={() => onChange(value.filter((_, j) => j !== i))}
-          >
-            {tag} &times;
-          </Badge>
-        ))}
-      </div>
-    </div>
-  );
+function parseTextToArray(text: string): string[] {
+  return text
+    .split(/[,\n]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
-export function TargetCustomerStep({ form }: TargetCustomerStepProps) {
+export function TargetCustomerStep({
+  form,
+  industryNicheText,
+  onIndustryNicheChange,
+  customerPainPointsText,
+  onCustomerPainPointsChange,
+}: TargetCustomerStepProps) {
   const {
     register,
     setValue,
@@ -73,148 +50,115 @@ export function TargetCustomerStep({ form }: TargetCustomerStepProps) {
     formState: { errors },
   } = form;
 
-  const industryNiche = watch("industryNiche") ?? [];
-  const customerPainPoints = watch("customerPainPoints") ?? [];
-  const currentSolutions = watch("currentSolutions") ?? [];
-  const budgetRange = watch("budgetRange");
-  const businessModel = watch("businessModel");
+  const preferredPlatforms = watch("preferredPlatforms") ?? [];
+
+  const handlePlatformToggle = (platform: Platform, checked: boolean) => {
+    const updated = checked
+      ? [...preferredPlatforms, platform]
+      : preferredPlatforms.filter((p) => p !== platform);
+    setValue("preferredPlatforms", updated, { shouldValidate: true });
+  };
+
+  const handleNicheBlur = () => {
+    setValue("industryNiche", parseTextToArray(industryNicheText), {
+      shouldValidate: true,
+    });
+  };
+
+  const handlePainPointsBlur = () => {
+    setValue("customerPainPoints", parseTextToArray(customerPainPointsText), {
+      shouldValidate: true,
+    });
+  };
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-semibold">Target Customer</h2>
+      <h2 className="text-lg font-semibold">Your Audience</h2>
 
       {/* Ideal Customer */}
       <div className="space-y-2">
         <Label htmlFor="idealCustomer">Who is your ideal customer?</Label>
         <Textarea
           id="idealCustomer"
-          placeholder="Describe your ideal customer in detail..."
+          placeholder="e.g. Early-stage founders building B2B SaaS tools who need help with pre-launch marketing"
+          rows={3}
           {...register("idealCustomer")}
         />
         {errors.idealCustomer && (
-          <p className="text-sm text-destructive">
+          <p className="text-destructive text-sm">
             {errors.idealCustomer.message}
           </p>
         )}
       </div>
 
-      {/* Industry Niche */}
+      {/* Industry / Niche */}
       <div className="space-y-2">
-        <Label>Industry / Niche</Label>
-        <TagInput
-          value={industryNiche}
-          onChange={(v) =>
-            setValue("industryNiche", v, { shouldValidate: true })
-          }
-          placeholder="Type a niche and press Enter..."
+        <Label htmlFor="industryNiche">
+          What industry or niche are you in?
+        </Label>
+        <Textarea
+          id="industryNiche"
+          placeholder="e.g. indie developers, B2B SaaS, fitness, e-commerce — separate with commas"
+          rows={2}
+          value={industryNicheText}
+          onChange={(e) => onIndustryNicheChange(e.target.value)}
+          onBlur={handleNicheBlur}
         />
         {errors.industryNiche && (
-          <p className="text-sm text-destructive">
+          <p className="text-destructive text-sm">
             {errors.industryNiche.message}
           </p>
         )}
       </div>
 
-      {/* Customer Pain Points */}
+      {/* Pain Points */}
       <div className="space-y-2">
-        <Label>What are their biggest pain points?</Label>
-        <TagInput
-          value={customerPainPoints}
-          onChange={(v) =>
-            setValue("customerPainPoints", v, { shouldValidate: true })
-          }
-          placeholder="Type a pain point and press Enter..."
+        <Label htmlFor="customerPainPoints">
+          What are their biggest pain points?
+        </Label>
+        <Textarea
+          id="customerPainPoints"
+          placeholder="e.g. too expensive, too complex, no good alternatives — separate with commas"
+          rows={2}
+          value={customerPainPointsText}
+          onChange={(e) => onCustomerPainPointsChange(e.target.value)}
+          onBlur={handlePainPointsBlur}
         />
         {errors.customerPainPoints && (
-          <p className="text-sm text-destructive">
+          <p className="text-destructive text-sm">
             {errors.customerPainPoints.message}
           </p>
         )}
       </div>
 
-      {/* Current Solutions */}
-      <div className="space-y-2">
-        <Label>Where do they currently go for solutions?</Label>
-        <TagInput
-          value={currentSolutions}
-          onChange={(v) =>
-            setValue("currentSolutions", v, { shouldValidate: true })
-          }
-          placeholder="Type a solution and press Enter..."
-        />
-        {errors.currentSolutions && (
-          <p className="text-sm text-destructive">
-            {errors.currentSolutions.message}
-          </p>
-        )}
-      </div>
-
-      {/* Budget Range */}
-      <div className="space-y-2">
-        <Label htmlFor="budgetRange">Budget Range</Label>
-        <Select
-          value={budgetRange}
-          onValueChange={(value) =>
-            setValue(
-              "budgetRange",
-              value as FullQuizResponse["budgetRange"],
-              { shouldValidate: true }
-            )
-          }
-        >
-          <SelectTrigger className="w-full" id="budgetRange">
-            <SelectValue placeholder="Select budget range" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="free">Free</SelectItem>
-            <SelectItem value="low">Low</SelectItem>
-            <SelectItem value="medium">Medium</SelectItem>
-            <SelectItem value="high">High</SelectItem>
-            <SelectItem value="enterprise">Enterprise</SelectItem>
-          </SelectContent>
-        </Select>
-        {errors.budgetRange && (
-          <p className="text-sm text-destructive">
-            {errors.budgetRange.message}
-          </p>
-        )}
-      </div>
-
-      {/* Business Model */}
+      {/* Preferred Platforms */}
       <div className="space-y-3">
-        <Label>Business Model</Label>
-        <RadioGroup
-          value={businessModel}
-          onValueChange={(value) =>
-            setValue(
-              "businessModel",
-              value as FullQuizResponse["businessModel"],
-              { shouldValidate: true }
-            )
-          }
-        >
-          {[
-            { value: "b2b", label: "B2B" },
-            { value: "b2c", label: "B2C" },
-            { value: "both", label: "Both" },
-          ].map((option) => (
-            <div key={option.value} className="flex items-center space-x-2">
-              <RadioGroupItem
-                value={option.value}
-                id={`model-${option.value}`}
-              />
-              <Label
-                htmlFor={`model-${option.value}`}
-                className="font-normal"
-              >
-                {option.label}
-              </Label>
-            </div>
-          ))}
-        </RadioGroup>
-        {errors.businessModel && (
-          <p className="text-sm text-destructive">
-            {errors.businessModel.message}
+        <Label>Where does your audience hang out?</Label>
+        <div className="grid grid-cols-2 gap-3">
+          {PLATFORM_OPTIONS.map((platform) => {
+            const isChecked = preferredPlatforms.includes(platform.value);
+            return (
+              <div key={platform.value} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`platform-${platform.value}`}
+                  checked={isChecked}
+                  onCheckedChange={(checked) =>
+                    handlePlatformToggle(platform.value, checked === true)
+                  }
+                />
+                <Label
+                  htmlFor={`platform-${platform.value}`}
+                  className="font-normal"
+                >
+                  {platform.label}
+                </Label>
+              </div>
+            );
+          })}
+        </div>
+        {errors.preferredPlatforms && (
+          <p className="text-destructive text-sm">
+            {errors.preferredPlatforms.message}
           </p>
         )}
       </div>

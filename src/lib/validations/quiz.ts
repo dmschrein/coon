@@ -4,7 +4,6 @@ import { z } from "zod";
 // Quiz Validation Schemas
 // ============================================================================
 
-// Shared enum values used across schemas
 const productTypeValues = [
   "saas",
   "physical",
@@ -46,7 +45,7 @@ const contentComfortLevelValues = [
 ] as const;
 
 // ----------------------------------------------------------------------------
-// Section 1: Product Definition
+// Section 1: Product Definition (Step 1 of simplified quiz)
 // ----------------------------------------------------------------------------
 
 export const productDefinitionSchema = z.object({
@@ -67,7 +66,7 @@ export const productDefinitionSchema = z.object({
 export type ProductDefinition = z.infer<typeof productDefinitionSchema>;
 
 // ----------------------------------------------------------------------------
-// Section 2: Target Customer
+// Section 2: Target Audience (Step 2 of simplified quiz — required fields)
 // ----------------------------------------------------------------------------
 
 export const targetCustomerSchema = z.object({
@@ -80,15 +79,19 @@ export const targetCustomerSchema = z.object({
   customerPainPoints: z
     .array(z.string())
     .min(1, "At least one customer pain point is required"),
-  currentSolutions: z.array(z.string()),
-  budgetRange: z.enum(budgetRangeValues),
-  businessModel: z.enum(businessModelValues),
+  preferredPlatforms: z
+    .array(z.enum(platformValues))
+    .min(1, "At least one platform is required"),
+  // Optional fields with defaults
+  currentSolutions: z.array(z.string()).default([]),
+  budgetRange: z.enum(budgetRangeValues).default("low"),
+  businessModel: z.enum(businessModelValues).default("b2c"),
 });
 
 export type TargetCustomer = z.infer<typeof targetCustomerSchema>;
 
 // ----------------------------------------------------------------------------
-// Section 3: Competitive Landscape
+// Section 3: Competitive Landscape (advanced — all optional)
 // ----------------------------------------------------------------------------
 
 const competitorSchema = z.object({
@@ -98,38 +101,40 @@ const competitorSchema = z.object({
 });
 
 export const competitiveLandscapeSchema = z.object({
-  competitors: z.array(competitorSchema),
-  competitorStrengths: z.array(z.string()),
-  competitorWeaknesses: z.array(z.string()),
-  differentiators: z
-    .array(z.string())
-    .min(1, "At least one differentiator is required"),
+  competitors: z.array(competitorSchema).default([]),
+  competitorStrengths: z.array(z.string()).default([]),
+  competitorWeaknesses: z.array(z.string()).default([]),
+  differentiators: z.array(z.string()).default([]),
 });
 
 export type CompetitiveLandscape = z.infer<typeof competitiveLandscapeSchema>;
 
 // ----------------------------------------------------------------------------
-// Section 4: Community Goals
+// Section 4: Community Goals (advanced — all optional with defaults)
 // ----------------------------------------------------------------------------
 
 export const communityGoalsSchema = z.object({
-  launchTimeline: z.string().datetime({ message: "Must be a valid ISO date" }),
+  launchTimeline: z
+    .string()
+    .datetime({ message: "Must be a valid ISO date" })
+    .default(() =>
+      new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString()
+    ),
   targetAudienceSize: z
     .number()
-    .min(0, "Target audience size must be 0 or greater"),
+    .min(0, "Target audience size must be 0 or greater")
+    .default(1000),
   weeklyTimeCommitment: z
     .number()
-    .min(1, "Weekly time commitment must be at least 1 hour"),
-  preferredPlatforms: z
-    .array(z.enum(platformValues))
-    .min(1, "At least one platform is required"),
-  contentComfortLevel: z.enum(contentComfortLevelValues),
+    .min(1, "Weekly time commitment must be at least 1 hour")
+    .default(5),
+  contentComfortLevel: z.enum(contentComfortLevelValues).default("beginner"),
 });
 
 export type CommunityGoals = z.infer<typeof communityGoalsSchema>;
 
 // ----------------------------------------------------------------------------
-// Full Quiz Schema (merges all 4 sections)
+// Full Quiz Schema — merges all sections; advanced fields are optional
 // ----------------------------------------------------------------------------
 
 export const fullQuizSchema = productDefinitionSchema

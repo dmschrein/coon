@@ -46,23 +46,23 @@ This is the right time to apply Pillar 2 — pause, assess, and fix the flow bef
 
 ### Critical Friction Points
 
-| #   | Friction Point                                                                              | Location                                                      | Impact                                      | Status |
-| --- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------- | ------ |
-| 1   | 4-step quiz with 20+ required fields, no save/resume                                        | `src/components/quiz/quiz-form.tsx`, step components          | High abandonment during onboarding          | OPEN   |
-| 2   | After quiz, user lands on empty "Generate Profile" state — no success moment                | `quiz-form.tsx` (hardcoded redirect to `/dashboard/audience`) | Confusion; user unsure if quiz worked       | OPEN   |
-| 3   | Audience profile generation is not automatic — user must find and click a button            | `src/app/dashboard/audience/page.tsx`                         | Extra unnecessary step                      | OPEN   |
-| 4   | Content generation silently gated behind audience profile (disabled button, no explanation) | `src/app/dashboard/content/page.tsx`                          | Users hit dead ends with no guidance        | OPEN   |
-| 5   | 2+ minute generation waits with only a spinner — no progress feedback                       | `src/app/api/content/route.ts` (120s timeout)                 | App appears frozen/broken                   | OPEN   |
-| 6   | 5 differently-named "Generate" buttons scattered across 4 pages with no connecting flow     | Multiple dashboard pages                                      | Inconsistent mental model, decision fatigue | OPEN   |
+| #   | Friction Point                                                                              | Location                                                      | Impact                                      | Status   |
+| --- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------- | -------- |
+| 1   | 4-step quiz with 20+ required fields, no save/resume                                        | `src/components/quiz/quiz-form.tsx`, step components          | High abandonment during onboarding          | RESOLVED |
+| 2   | After quiz, user lands on empty "Generate Profile" state — no success moment                | `quiz-form.tsx` (hardcoded redirect to `/dashboard/audience`) | Confusion; user unsure if quiz worked       | RESOLVED |
+| 3   | Audience profile generation is not automatic — user must find and click a button            | `src/app/dashboard/audience/page.tsx`                         | Extra unnecessary step                      | RESOLVED |
+| 4   | Content generation silently gated behind audience profile (disabled button, no explanation) | `src/app/dashboard/content/page.tsx`                          | Users hit dead ends with no guidance        | RESOLVED |
+| 5   | 2+ minute generation waits with only a spinner — no progress feedback                       | `src/app/api/content/route.ts` (120s timeout)                 | App appears frozen/broken                   | RESOLVED |
+| 6   | 5 differently-named "Generate" buttons scattered across 4 pages with no connecting flow     | Multiple dashboard pages                                      | Inconsistent mental model, decision fatigue | RESOLVED |
 
 ### Secondary Friction Points
 
-| #   | Friction Point                                                                                | Location                                       | Impact                                             | Status |
-| --- | --------------------------------------------------------------------------------------------- | ---------------------------------------------- | -------------------------------------------------- | ------ |
-| 7   | Tag-based inputs for niches, pain points, solutions — no autocomplete or examples             | `src/components/quiz/target-customer-step.tsx` | Users unsure how to fill inputs; poor data quality | OPEN   |
-| 8   | Campaign creation requires opening a modal + checking 11 platform checkboxes                  | `src/app/dashboard/campaign/page.tsx`          | Feature feels heavyweight; low discoverability     | OPEN   |
-| 9   | Content grid mixes all platforms with no visual grouping — becomes unusable at 20+ items      | `src/app/dashboard/content/page.tsx`           | Content is hard to find and use after generation   | OPEN   |
-| 10  | Sidebar includes "Quiz" link for logged-in users — no warning that retaking resets everything | `src/components/dashboard/sidebar.tsx`         | Users accidentally restart their workflow          | OPEN   |
+| #   | Friction Point                                                                                | Location                                       | Impact                                             | Status   |
+| --- | --------------------------------------------------------------------------------------------- | ---------------------------------------------- | -------------------------------------------------- | -------- |
+| 7   | Tag-based inputs for niches, pain points, solutions — no autocomplete or examples             | `src/components/quiz/target-customer-step.tsx` | Users unsure how to fill inputs; poor data quality | RESOLVED |
+| 8   | Campaign creation requires opening a modal + checking 11 platform checkboxes                  | `src/app/dashboard/campaign/page.tsx`          | Feature feels heavyweight; low discoverability     | RESOLVED |
+| 9   | Content grid mixes all platforms with no visual grouping — becomes unusable at 20+ items      | `src/app/dashboard/content/page.tsx`           | Content is hard to find and use after generation   | OPEN     |
+| 10  | Sidebar includes "Quiz" link for logged-in users — no warning that retaking resets everything | `src/components/dashboard/sidebar.tsx`         | Users accidentally restart their workflow          | RESOLVED |
 
 ---
 
@@ -125,9 +125,15 @@ Ordered by impact-to-effort ratio. Address these before launch.
 
 ## Iteration Log
 
-| Date | Change                  | Stage       | Notes                                                 |
-| ---- | ----------------------- | ----------- | ----------------------------------------------------- |
-| —    | Initial audit completed | Pre-Release | 10 friction points identified before any user testing |
+| Date       | Change                                         | Stage       | Notes                                                               |
+| ---------- | ---------------------------------------------- | ----------- | ------------------------------------------------------------------- |
+| 2026-03-07 | Initial audit completed                        | Pre-Release | 10 friction points identified before any user testing               |
+| 2026-03-08 | Quiz reduced from 4 steps/20+ fields to 2/10   | Pre-Release | Tag inputs replaced with plain textareas; platforms moved to step 2 |
+| 2026-03-08 | Audience profile auto-generates after quiz     | Pre-Release | Removed empty state; `?autoGenerate=true` triggers on mount         |
+| 2026-03-08 | Generation progress replaces bare spinners     | Pre-Release | Named steps + elapsed time on audience and content pages            |
+| 2026-03-08 | Audience → Content flow connected with CTA     | Pre-Release | "Generate Content" button on audience results page                  |
+| 2026-03-08 | Campaign platforms pre-selected from quiz data | Pre-Release | `useQuizResponses` used to prefill platform checkboxes              |
+| 2026-03-08 | "Quiz" removed from sidebar navigation         | Pre-Release | Prevents accidental workflow restarts post-onboarding               |
 
 ---
 
