@@ -3,24 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import {
-  LayoutDashboard,
-  FileText,
-  Users,
-  Sparkles,
-  Megaphone,
-} from "lucide-react";
+import { LayoutDashboard, Users, Sparkles, Megaphone } from "lucide-react";
 
 const navigation = [
   {
     name: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
-  },
-  {
-    name: "Quiz",
-    href: "/quiz",
-    icon: FileText,
   },
   {
     name: "Audience",
@@ -43,13 +32,14 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <div className="flex h-full w-64 flex-col border-r bg-muted/40">
+    <div className="bg-muted/40 flex h-full w-64 flex-col border-r">
       <div className="flex h-16 items-center border-b px-6">
         <h1 className="text-xl font-bold">Community Builder</h1>
       </div>
       <nav className="flex-1 space-y-1 px-3 py-4">
         {navigation.map((item) => {
-          const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
+          const isActive =
+            pathname === item.href || pathname?.startsWith(item.href + "/");
           return (
             <Link
               key={item.name}

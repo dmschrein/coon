@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GET } from "../route";
+import { AudienceProfileEntity } from "@/lib/core/domain/audience-profile";
+import type { AudienceProfile } from "@/types";
 
 // Mock Clerk auth
 const mockAuth = vi.fn();
@@ -7,55 +9,46 @@ vi.mock("@clerk/nextjs/server", () => ({
   auth: () => mockAuth(),
 }));
 
-// Mock database
-const mockSelect = vi.fn();
-const mockFrom = vi.fn();
-const mockWhere = vi.fn();
-const mockOrderBy = vi.fn();
-const mockLimit = vi.fn();
-
-vi.mock("@/lib/db", () => ({
-  db: {
-    select: () => {
-      mockSelect();
-      return {
-        from: (...args: unknown[]) => {
-          mockFrom(...args);
-          return {
-            where: (...args: unknown[]) => {
-              mockWhere(...args);
-              return {
-                orderBy: (...args: unknown[]) => {
-                  mockOrderBy(...args);
-                  return {
-                    limit: (n: number) => {
-                      mockLimit(n);
-                      return mockLimit._result;
-                    },
-                  };
-                },
-              };
-            },
-          };
-        },
-      };
+// Mock the DI container
+const mockGetActiveProfile = vi.fn();
+vi.mock("@/lib/core/di/container", () => ({
+  getContainer: () => ({
+    audienceService: {
+      getActiveProfile: (...args: unknown[]) => mockGetActiveProfile(...args),
     },
-  },
+  }),
 }));
 
-vi.mock("@/lib/db/schema", () => ({
-  audienceProfiles: {
-    userId: "userId",
-    isActive: "isActive",
-    generatedAt: "generatedAt",
+const mockProfileData: AudienceProfile = {
+  primaryPersonas: [
+    {
+      name: "Test",
+      description: "desc",
+      painPoints: ["pain"],
+      goals: ["goal"],
+      objections: ["obj"],
+      messagingAngle: "angle",
+    },
+  ],
+  psychographics: {
+    values: ["val"],
+    motivations: ["mot"],
+    frustrations: ["frus"],
+    goals: ["goal"],
   },
-}));
-
-vi.mock("drizzle-orm", () => ({
-  eq: vi.fn((...args: unknown[]) => ({ type: "eq", args })),
-  and: vi.fn((...args: unknown[]) => ({ type: "and", args })),
-  desc: vi.fn((col: unknown) => ({ type: "desc", col })),
-}));
+  demographics: {
+    ageRange: [25, 45],
+    locations: ["US"],
+    jobTitles: ["Dev"],
+  },
+  behavioralPatterns: {
+    contentConsumption: ["blogs"],
+    purchaseDrivers: ["recs"],
+    decisionMakingProcess: "research",
+  },
+  keywords: ["keyword"],
+  hashtags: ["#tag"],
+};
 
 describe("GET /api/audience-profile", () => {
   beforeEach(() => {
@@ -76,30 +69,26 @@ describe("GET /api/audience-profile", () => {
   it("returns profile when authenticated and profile exists", async () => {
     mockAuth.mockResolvedValue({ userId: "user_123" });
 
-    const mockProfile = {
-      id: "profile_1",
+    const profile = AudienceProfileEntity.create({
+      id: "p-1",
       userId: "user_123",
-      profileData: { primaryPersonas: [] },
-      isActive: true,
-    };
-
-    (mockLimit as ReturnType<typeof vi.fn> & { _result: unknown[] })._result = [
-      mockProfile,
-    ];
+      quizResponseId: "q-1",
+      profileData: mockProfileData,
+    });
+    mockGetActiveProfile.mockResolvedValue(profile);
 
     const response = await GET();
     const data = await response.json();
 
     expect(response.status).toBe(200);
-    expect(data.data).toEqual(mockProfile);
+    expect(data.data).toBeTruthy();
     expect(data.error).toBeNull();
+    expect(mockGetActiveProfile).toHaveBeenCalledWith("user_123");
   });
 
   it("returns null data when no profile exists", async () => {
     mockAuth.mockResolvedValue({ userId: "user_123" });
-
-    (mockLimit as ReturnType<typeof vi.fn> & { _result: unknown[] })._result =
-      [];
+    mockGetActiveProfile.mockResolvedValue(null);
 
     const response = await GET();
     const data = await response.json();
@@ -109,13 +98,14 @@ describe("GET /api/audience-profile", () => {
     expect(data.error).toBeNull();
   });
 
-  it("limits query to 1 result", async () => {
+  it("returns 500 on unexpected error", async () => {
     mockAuth.mockResolvedValue({ userId: "user_123" });
-    (mockLimit as ReturnType<typeof vi.fn> & { _result: unknown[] })._result =
-      [];
+    mockGetActiveProfile.mockRejectedValue(new Error("DB connection failed"));
 
-    await GET();
+    const response = await GET();
+    const data = await response.json();
 
-    expect(mockLimit).toHaveBeenCalledWith(1);
+    expect(response.status).toBe(500);
+    expect(data.error.code).toBe("INTERNAL_ERROR");
   });
 });

@@ -10,12 +10,12 @@ describe("personaSchema", () => {
   });
 
   it("rejects missing name", () => {
-    const { name: _, ...noName } = validPersona;
+    const { name: _name, ...noName } = validPersona;
     expect(() => personaSchema.parse(noName)).toThrow();
   });
 
   it("rejects missing painPoints", () => {
-    const { painPoints: _, ...noPainPoints } = validPersona;
+    const { painPoints: _painPoints, ...noPainPoints } = validPersona;
     expect(() => personaSchema.parse(noPainPoints)).toThrow();
   });
 
@@ -72,7 +72,7 @@ describe("audienceProfileSchema", () => {
   });
 
   it("allows optional incomeRange", () => {
-    const { incomeRange: _, ...demographicsNoIncome } =
+    const { incomeRange: _incomeRange, ...demographicsNoIncome } =
       audienceProfileFixture.demographics;
     expect(() =>
       audienceProfileSchema.parse({

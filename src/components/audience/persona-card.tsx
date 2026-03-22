@@ -1,5 +1,10 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import type { Persona } from "@/types";
 
 interface PersonaCardProps {
@@ -12,7 +17,7 @@ export function PersonaCard({ persona, index }: PersonaCardProps) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm">
+          <span className="bg-primary text-primary-foreground flex h-8 w-8 items-center justify-center rounded-full text-sm">
             {index + 1}
           </span>
           {persona.name}
@@ -22,12 +27,14 @@ export function PersonaCard({ persona, index }: PersonaCardProps) {
       <CardContent className="space-y-4">
         <div>
           <h4 className="mb-2 text-sm font-medium">Messaging Angle</h4>
-          <p className="text-sm text-muted-foreground">{persona.messagingAngle}</p>
+          <p className="text-muted-foreground text-sm">
+            {persona.messagingAngle}
+          </p>
         </div>
 
         <div>
           <h4 className="mb-2 text-sm font-medium">Goals</h4>
-          <ul className="space-y-1 text-sm text-muted-foreground">
+          <ul className="text-muted-foreground space-y-1 text-sm">
             {persona.goals.map((goal, idx) => (
               <li key={idx} className="flex items-start gap-2">
                 <span className="text-primary">•</span>
@@ -39,7 +46,7 @@ export function PersonaCard({ persona, index }: PersonaCardProps) {
 
         <div>
           <h4 className="mb-2 text-sm font-medium">Pain Points</h4>
-          <ul className="space-y-1 text-sm text-muted-foreground">
+          <ul className="text-muted-foreground space-y-1 text-sm">
             {persona.painPoints.map((pain, idx) => (
               <li key={idx} className="flex items-start gap-2">
                 <span className="text-destructive">•</span>
@@ -51,7 +58,7 @@ export function PersonaCard({ persona, index }: PersonaCardProps) {
 
         <div>
           <h4 className="mb-2 text-sm font-medium">Objections</h4>
-          <ul className="space-y-1 text-sm text-muted-foreground">
+          <ul className="text-muted-foreground space-y-1 text-sm">
             {persona.objections.map((objection, idx) => (
               <li key={idx} className="flex items-start gap-2">
                 <span className="text-amber-500">•</span>

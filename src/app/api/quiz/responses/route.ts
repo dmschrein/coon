@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { eq, desc } from "drizzle-orm";
 
 import { db } from "@/lib/db";
@@ -14,7 +14,10 @@ export async function POST(request: Request) {
 
     if (!userId) {
       return NextResponse.json(
-        { data: null, error: { message: "Unauthorized", code: "UNAUTHORIZED" } },
+        {
+          data: null,
+          error: { message: "Unauthorized", code: "UNAUTHORIZED" },
+        },
         { status: 401 }
       );
     }
@@ -35,6 +38,39 @@ export async function POST(request: Request) {
         },
         { status: 400 }
       );
+    }
+
+    // Ensure user exists in DB (webhook may not have fired yet)
+    const existingUser = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+    if (existingUser.length === 0) {
+      const clerkUser = await currentUser();
+      if (!clerkUser?.emailAddresses?.[0]?.emailAddress) {
+        return NextResponse.json(
+          {
+            data: null,
+            error: {
+              message: "Unable to resolve user email",
+              code: "USER_SYNC_ERROR",
+            },
+          },
+          { status: 500 }
+        );
+      }
+      const name =
+        [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") ||
+        null;
+      await db
+        .insert(users)
+        .values({
+          id: userId,
+          email: clerkUser.emailAddresses[0].emailAddress,
+          name,
+        })
+        .onConflictDoNothing();
     }
 
     const [newResponse] = await db
@@ -74,7 +110,10 @@ export async function GET() {
 
     if (!userId) {
       return NextResponse.json(
-        { data: null, error: { message: "Unauthorized", code: "UNAUTHORIZED" } },
+        {
+          data: null,
+          error: { message: "Unauthorized", code: "UNAUTHORIZED" },
+        },
         { status: 401 }
       );
     }

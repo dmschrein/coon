@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GET, POST } from "../route";
+import { Campaign } from "@/lib/core/domain/campaign";
+import { ServiceError } from "@/lib/core/services";
 
 // Mock Clerk auth
 const mockAuth = vi.fn();
@@ -7,94 +9,16 @@ vi.mock("@clerk/nextjs/server", () => ({
   auth: () => mockAuth(),
 }));
 
-// Chainable mock that works as both a thenable (for .orderBy() terminal calls)
-// and a chain (for .orderBy().limit() calls)
-let selectResult: unknown[] = [];
-let limitResults: unknown[][] = [];
-let limitCallCount = 0;
-
-function resetSelectMock(result: unknown[] = []) {
-  selectResult = result;
-  limitResults = [];
-  limitCallCount = 0;
-}
-
-function setLimitResult(index: number, result: unknown[]) {
-  limitResults[index] = result;
-}
-
-const mockInsert = vi.fn();
-const mockInsertValues = vi.fn();
-const mockInsertReturning = vi.fn();
-
-vi.mock("@/lib/db", () => ({
-  db: {
-    select: () => ({
-      from: () => ({
-        where: () => {
-          const orderByResult = {
-            // When used as a thenable (no .limit() call), resolve to selectResult
-            then: (resolve: (v: unknown) => void) => resolve(selectResult),
-            // When .limit() is chained after .orderBy()
-            limit: () => {
-              const idx = limitCallCount++;
-              return limitResults[idx] ?? selectResult;
-            },
-          };
-          return {
-            orderBy: () => orderByResult,
-          };
-        },
-        orderBy: () => {
-          // For direct .from().orderBy() without .where()
-          return {
-            then: (resolve: (v: unknown) => void) => resolve(selectResult),
-          };
-        },
-      }),
-    }),
-    insert: (...args: unknown[]) => {
-      mockInsert(...args);
-      return {
-        values: (...args: unknown[]) => {
-          mockInsertValues(...args);
-          return {
-            returning: () => mockInsertReturning(),
-          };
-        },
-      };
+// Mock the DI container
+const mockListCampaigns = vi.fn();
+const mockCreateCampaign = vi.fn();
+vi.mock("@/lib/core/di/container", () => ({
+  getContainer: () => ({
+    campaignService: {
+      listCampaigns: (...args: unknown[]) => mockListCampaigns(...args),
+      createCampaign: (...args: unknown[]) => mockCreateCampaign(...args),
     },
-  },
-}));
-
-vi.mock("@/lib/db/schema", () => ({
-  campaigns: { userId: "userId", createdAt: "createdAt" },
-  campaignContent: {},
-  audienceProfiles: {
-    userId: "userId",
-    isActive: "isActive",
-    generatedAt: "generatedAt",
-  },
-  quizResponses: { userId: "userId", completedAt: "completedAt" },
-  agentRuns: {},
-}));
-
-vi.mock("drizzle-orm", () => ({
-  eq: vi.fn((...args: unknown[]) => ({ type: "eq", args })),
-  and: vi.fn((...args: unknown[]) => ({ type: "and", args })),
-  desc: vi.fn((col: unknown) => ({ type: "desc", col })),
-}));
-
-// Mock the campaign strategy agent
-const mockGenerateStrategy = vi.fn();
-vi.mock("@/lib/agents/campaign-strategy", () => ({
-  generateCampaignStrategy: (...args: unknown[]) =>
-    mockGenerateStrategy(...args),
-}));
-
-// Mock logAgentRun
-vi.mock("@/lib/agents/utils", () => ({
-  logAgentRun: vi.fn(),
+  }),
 }));
 
 function createMockRequest(body?: unknown): Request {
@@ -108,13 +32,12 @@ function createMockRequest(body?: unknown): Request {
 describe("GET /api/campaign", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    resetSelectMock([]);
   });
 
   it("returns 401 when not authenticated", async () => {
     mockAuth.mockResolvedValue({ userId: null });
 
-    const response = await GET(createMockRequest());
+    const response = await GET();
     const data = await response.json();
 
     expect(response.status).toBe(401);
@@ -124,24 +47,30 @@ describe("GET /api/campaign", () => {
   it("returns campaigns for authenticated user", async () => {
     mockAuth.mockResolvedValue({ userId: "user_123" });
     const mockCampaigns = [
-      { id: "camp_1", name: "Campaign 1" },
-      { id: "camp_2", name: "Campaign 2" },
+      Campaign.create({
+        id: "c-1",
+        userId: "user_123",
+        selectedPlatforms: ["twitter"],
+        audienceProfileId: "p-1",
+        quizResponseId: "q-1",
+      }),
     ];
-    resetSelectMock(mockCampaigns);
+    mockListCampaigns.mockResolvedValue(mockCampaigns);
 
-    const response = await GET(createMockRequest());
+    const response = await GET();
     const data = await response.json();
 
     expect(response.status).toBe(200);
-    expect(data.data).toEqual(mockCampaigns);
+    expect(data.data).toHaveLength(1);
     expect(data.error).toBeNull();
+    expect(mockListCampaigns).toHaveBeenCalledWith("user_123");
   });
 
   it("returns empty array when no campaigns exist", async () => {
     mockAuth.mockResolvedValue({ userId: "user_123" });
-    resetSelectMock([]);
+    mockListCampaigns.mockResolvedValue([]);
 
-    const response = await GET(createMockRequest());
+    const response = await GET();
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -152,7 +81,6 @@ describe("GET /api/campaign", () => {
 describe("POST /api/campaign", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    resetSelectMock([]);
   });
 
   it("returns 401 when not authenticated", async () => {
@@ -169,9 +97,12 @@ describe("POST /api/campaign", () => {
 
   it("returns 400 when no audience profile exists", async () => {
     mockAuth.mockResolvedValue({ userId: "user_123" });
-
-    // .limit() returns empty for profile lookup
-    resetSelectMock([]);
+    mockCreateCampaign.mockRejectedValue(
+      new ServiceError(
+        "No audience profile found. Generate an audience profile first.",
+        "NO_PROFILE"
+      )
+    );
 
     const response = await POST(
       createMockRequest({ selectedPlatforms: ["twitter"] })
@@ -184,13 +115,9 @@ describe("POST /api/campaign", () => {
 
   it("returns 400 when no quiz response exists", async () => {
     mockAuth.mockResolvedValue({ userId: "user_123" });
-
-    const mockProfile = { id: "profile_1", profileData: {} };
-
-    // First .limit() call returns profile, second returns empty (no quiz)
-    resetSelectMock([]);
-    setLimitResult(0, [mockProfile]);
-    setLimitResult(1, []);
+    mockCreateCampaign.mockRejectedValue(
+      new ServiceError("No quiz response found.", "NO_QUIZ_RESPONSE")
+    );
 
     const response = await POST(
       createMockRequest({ selectedPlatforms: ["twitter"] })
@@ -203,23 +130,14 @@ describe("POST /api/campaign", () => {
 
   it("creates campaign with strategy on success", async () => {
     mockAuth.mockResolvedValue({ userId: "user_123" });
-
-    const mockProfile = { id: "profile_1", profileData: {} };
-    const mockQuiz = { id: "quiz_1", responseData: {} };
-    const mockCampaign = { id: "camp_1", name: "Test Campaign" };
-
-    // First .limit(): profile, second: quiz
-    resetSelectMock([]);
-    setLimitResult(0, [mockProfile]);
-    setLimitResult(1, [mockQuiz]);
-
-    mockGenerateStrategy.mockResolvedValue({
-      strategy: { campaignName: "Test Campaign" },
-      modelUsed: "claude-sonnet-4-20250514",
-      tokensUsed: 1500,
+    const mockCampaign = Campaign.create({
+      id: "c-1",
+      userId: "user_123",
+      selectedPlatforms: ["twitter", "linkedin"],
+      audienceProfileId: "p-1",
+      quizResponseId: "q-1",
     });
-
-    mockInsertReturning.mockReturnValue([mockCampaign]);
+    mockCreateCampaign.mockResolvedValue(mockCampaign);
 
     const response = await POST(
       createMockRequest({ selectedPlatforms: ["twitter", "linkedin"] })
@@ -227,21 +145,22 @@ describe("POST /api/campaign", () => {
     const data = await response.json();
 
     expect(response.status).toBe(200);
-    expect(data.data).toEqual(mockCampaign);
-    expect(mockGenerateStrategy).toHaveBeenCalledTimes(1);
+    expect(data.data).toBeTruthy();
+    expect(data.error).toBeNull();
+    expect(mockCreateCampaign).toHaveBeenCalledWith("user_123", [
+      "twitter",
+      "linkedin",
+    ]);
   });
 
   it("returns 500 when strategy generation fails", async () => {
     mockAuth.mockResolvedValue({ userId: "user_123" });
-
-    const mockProfile = { id: "profile_1", profileData: {} };
-    const mockQuiz = { id: "quiz_1", responseData: {} };
-
-    resetSelectMock([]);
-    setLimitResult(0, [mockProfile]);
-    setLimitResult(1, [mockQuiz]);
-
-    mockGenerateStrategy.mockRejectedValue(new Error("Claude API error"));
+    mockCreateCampaign.mockRejectedValue(
+      new ServiceError(
+        "Failed to generate campaign strategy. Please try again.",
+        "AGENT_FAILED"
+      )
+    );
 
     const response = await POST(
       createMockRequest({ selectedPlatforms: ["twitter"] })
@@ -256,8 +175,9 @@ describe("POST /api/campaign", () => {
     mockAuth.mockResolvedValue({ userId: "user_123" });
 
     const response = await POST(createMockRequest({ selectedPlatforms: [] }));
-    const data = await response.json();
+    await response.json();
 
+    // Zod validation error triggers the outer catch
     expect(response.status).toBe(500);
   });
 });
