@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import {
-  contentItems,
-  audienceProfiles,
-  quizResponses,
-} from "@/lib/db/schema";
+import { contentItems, audienceProfiles, quizResponses } from "@/lib/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { generateContent } from "@/lib/agents/content-generation";
 import { logAgentRun } from "@/lib/agents/utils";
@@ -18,7 +14,10 @@ export async function GET(req: Request) {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json(
-        { data: null, error: { message: "Unauthorized", code: "UNAUTHORIZED" } },
+        {
+          data: null,
+          error: { message: "Unauthorized", code: "UNAUTHORIZED" },
+        },
         { status: 401 }
       );
     }
@@ -27,7 +26,7 @@ export async function GET(req: Request) {
     const platform = url.searchParams.get("platform");
     const status = url.searchParams.get("status");
 
-    let query = db
+    const query = db
       .select()
       .from(contentItems)
       .where(eq(contentItems.userId, userId))
@@ -57,12 +56,15 @@ export async function GET(req: Request) {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(_req: Request) {
   try {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json(
-        { data: null, error: { message: "Unauthorized", code: "UNAUTHORIZED" } },
+        {
+          data: null,
+          error: { message: "Unauthorized", code: "UNAUTHORIZED" },
+        },
         { status: 401 }
       );
     }
@@ -148,7 +150,10 @@ export async function POST(req: Request) {
         userId,
         agentType: "content_generation",
         inputData: { profileId: profile.id, quizResponseId: quizResponse.id },
-        outputData: { strategy: result.strategy, draftCount: result.drafts.length },
+        outputData: {
+          strategy: result.strategy,
+          draftCount: result.drafts.length,
+        },
         modelUsed: result.modelUsed,
         tokensUsed: result.tokensUsed,
         durationMs,

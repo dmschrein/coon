@@ -1,6 +1,7 @@
 "use client";
 
 import { use } from "react";
+import type { CampaignStrategy } from "@/types";
 import {
   useCampaign,
   useGenerateCalendar,
@@ -24,7 +25,7 @@ export default function CampaignDetailPage({
     try {
       await generateCalendar.mutateAsync();
       toast.success("Calendar generated!");
-    } catch (err) {
+    } catch {
       toast.error("Failed to generate calendar");
     }
   };
@@ -32,8 +33,10 @@ export default function CampaignDetailPage({
   const handleGenerateNextBatch = async () => {
     try {
       const result = await generateNextBatch.mutateAsync();
-      toast.success(`Generated content for ${result.completed.length} platforms`);
-    } catch (err) {
+      toast.success(
+        `Generated content for ${result.completed.length} platforms`
+      );
+    } catch {
       toast.error("Failed to generate content");
     }
   };
@@ -42,8 +45,10 @@ export default function CampaignDetailPage({
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
-          <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-          <p className="mt-4 text-sm text-muted-foreground">Loading campaign...</p>
+          <Loader2 className="text-primary mx-auto h-8 w-8 animate-spin" />
+          <p className="text-muted-foreground mt-4 text-sm">
+            Loading campaign...
+          </p>
         </div>
       </div>
     );
@@ -53,7 +58,7 @@ export default function CampaignDetailPage({
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
-          <p className="text-sm text-destructive">Failed to load campaign</p>
+          <p className="text-destructive text-sm">Failed to load campaign</p>
           <Button
             onClick={() => window.location.reload()}
             className="mt-4"
@@ -67,19 +72,21 @@ export default function CampaignDetailPage({
   }
 
   const { campaign, content, calendarEntries } = data;
-  const strategy = campaign.strategyData as any;
+  const strategy = campaign.strategyData as CampaignStrategy | null;
 
   const pendingContent = content.filter(
-    (c: any) => c.status === "pending" || c.status === "failed"
+    (c: { status: string }) => c.status === "pending" || c.status === "failed"
   );
-  const completedContent = content.filter((c: any) => c.status === "complete");
+  const completedContent = content.filter(
+    (c: { status: string }) => c.status === "complete"
+  );
 
   return (
     <div className="space-y-8">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">{campaign.name}</h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           {campaign.selectedPlatforms?.length || 0} platforms
         </p>
       </div>
@@ -87,7 +94,7 @@ export default function CampaignDetailPage({
       {/* Strategy Summary */}
       {strategy && (
         <div className="rounded-lg border p-6">
-          <h2 className="text-xl font-semibold mb-4">Campaign Strategy</h2>
+          <h2 className="mb-4 text-xl font-semibold">Campaign Strategy</h2>
           <div className="space-y-3">
             <div>
               <span className="font-medium">Theme:</span> {strategy.theme}
@@ -96,7 +103,8 @@ export default function CampaignDetailPage({
               <span className="font-medium">Goal:</span> {strategy.goal}
             </div>
             <div>
-              <span className="font-medium">Timeline:</span> {strategy.timelineWeeks} weeks
+              <span className="font-medium">Timeline:</span>{" "}
+              {strategy.timelineWeeks} weeks
             </div>
             <div>
               <span className="font-medium">Core Message:</span>{" "}
@@ -112,7 +120,7 @@ export default function CampaignDetailPage({
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold">Campaign Calendar</h2>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Generate a posting schedule for your campaign
               </p>
             </div>
@@ -133,24 +141,32 @@ export default function CampaignDetailPage({
       {/* Calendar Display */}
       {campaign.calendarData && calendarEntries.length > 0 && (
         <div className="rounded-lg border p-6">
-          <h2 className="text-xl font-semibold mb-4">Posting Schedule</h2>
-          <div className="space-y-2 max-h-96 overflow-y-auto">
-            {calendarEntries.map((entry: any) => (
-              <div
-                key={entry.id}
-                className="flex items-center gap-4 rounded-lg border p-3"
-              >
-                <div className="font-mono text-sm text-muted-foreground">
-                  Day {entry.dayNumber}
-                </div>
-                <div className="flex-1">
-                  <div className="font-medium">{entry.title}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {entry.platform} • {entry.postingTime}
+          <h2 className="mb-4 text-xl font-semibold">Posting Schedule</h2>
+          <div className="max-h-96 space-y-2 overflow-y-auto">
+            {calendarEntries.map(
+              (entry: {
+                id: string;
+                dayNumber: number;
+                title: string;
+                platform: string;
+                postingTime: string;
+              }) => (
+                <div
+                  key={entry.id}
+                  className="flex items-center gap-4 rounded-lg border p-3"
+                >
+                  <div className="text-muted-foreground font-mono text-sm">
+                    Day {entry.dayNumber}
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium">{entry.title}</div>
+                    <div className="text-muted-foreground text-xs">
+                      {entry.platform} • {entry.postingTime}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            )}
           </div>
         </div>
       )}
@@ -160,10 +176,10 @@ export default function CampaignDetailPage({
         campaign.status === "generating_content" ||
         campaign.status === "complete") && (
         <div className="rounded-lg border p-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-4 flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold">Platform Content</h2>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 {completedContent.length} of {content.length} platforms complete
               </p>
             </div>
@@ -183,29 +199,33 @@ export default function CampaignDetailPage({
 
           {/* Platform Status List */}
           <div className="space-y-2">
-            {content.map((item: any) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between rounded-lg border p-3"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="font-medium capitalize">{item.platform}</div>
-                </div>
+            {content.map(
+              (item: { id: string; platform: string; status: string }) => (
                 <div
-                  className={`rounded-full px-2 py-1 text-xs font-medium ${
-                    item.status === "complete"
-                      ? "bg-green-100 text-green-700"
-                      : item.status === "generating"
-                      ? "bg-blue-100 text-blue-700"
-                      : item.status === "failed"
-                      ? "bg-red-100 text-red-700"
-                      : "bg-gray-100 text-gray-700"
-                  }`}
+                  key={item.id}
+                  className="flex items-center justify-between rounded-lg border p-3"
                 >
-                  {item.status}
+                  <div className="flex items-center gap-3">
+                    <div className="font-medium capitalize">
+                      {item.platform}
+                    </div>
+                  </div>
+                  <div
+                    className={`rounded-full px-2 py-1 text-xs font-medium ${
+                      item.status === "complete"
+                        ? "bg-green-100 text-green-700"
+                        : item.status === "generating"
+                          ? "bg-blue-100 text-blue-700"
+                          : item.status === "failed"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {item.status}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            )}
           </div>
         </div>
       )}

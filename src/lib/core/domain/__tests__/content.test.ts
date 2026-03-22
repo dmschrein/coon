@@ -1,9 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { CampaignContentEntity, ContentStateError } from "../content";
 
-function createTestContent(
-  _overrides?: Partial<ConstructorParameters<typeof CampaignContentEntity>[0]>
-) {
+function createTestContent() {
   return CampaignContentEntity.create({
     id: "content-1",
     campaignId: "campaign-1",

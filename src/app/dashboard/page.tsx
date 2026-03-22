@@ -4,12 +4,20 @@ import Link from "next/link";
 import { useAudienceProfile } from "@/hooks/use-audience-profile";
 import { useContentList } from "@/hooks/use-content";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { CheckCircle2, Circle, Loader2, ArrowRight } from "lucide-react";
 
 export default function DashboardPage() {
-  const { data: audienceProfile, isLoading: isLoadingProfile } = useAudienceProfile();
-  const { data: contentResponse, isLoading: isLoadingContent } = useContentList();
+  const { data: audienceProfile, isLoading: isLoadingProfile } =
+    useAudienceProfile();
+  const { data: contentResponse, isLoading: isLoadingContent } =
+    useContentList();
 
   const hasProfile = !!audienceProfile;
   const hasContent = contentResponse && contentResponse.length > 0;
@@ -32,7 +40,7 @@ export default function DashboardPage() {
               <CardTitle className="text-lg">Quiz Complete</CardTitle>
             </div>
             <CardDescription>
-              You've completed the onboarding quiz
+              You&apos;ve completed the onboarding quiz
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -50,11 +58,11 @@ export default function DashboardPage() {
           <CardHeader>
             <div className="flex items-center gap-2">
               {isLoadingProfile ? (
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
               ) : hasProfile ? (
                 <CheckCircle2 className="h-5 w-5 text-green-500" />
               ) : (
-                <Circle className="h-5 w-5 text-muted-foreground" />
+                <Circle className="text-muted-foreground h-5 w-5" />
               )}
               <CardTitle className="text-lg">Audience Analysis</CardTitle>
             </div>
@@ -65,7 +73,11 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button asChild variant={hasProfile ? "outline" : "default"} className="w-full">
+            <Button
+              asChild
+              variant={hasProfile ? "outline" : "default"}
+              className="w-full"
+            >
               <Link href="/dashboard/audience">
                 {hasProfile ? "View Profile" : "Generate Profile"}
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -79,11 +91,11 @@ export default function DashboardPage() {
           <CardHeader>
             <div className="flex items-center gap-2">
               {isLoadingContent ? (
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
               ) : hasContent ? (
                 <CheckCircle2 className="h-5 w-5 text-green-500" />
               ) : (
-                <Circle className="h-5 w-5 text-muted-foreground" />
+                <Circle className="text-muted-foreground h-5 w-5" />
               )}
               <CardTitle className="text-lg">Content Generation</CardTitle>
             </div>
@@ -106,7 +118,7 @@ export default function DashboardPage() {
               </Link>
             </Button>
             {!hasProfile && (
-              <p className="mt-2 text-xs text-muted-foreground">
+              <p className="text-muted-foreground mt-2 text-xs">
                 Complete audience analysis first
               </p>
             )}
@@ -129,7 +141,7 @@ export default function DashboardPage() {
             </div>
             <div className="flex-1">
               <h3 className="font-medium">Complete the Quiz</h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Already done! Your product and market insights are saved.
               </p>
             </div>
@@ -146,7 +158,7 @@ export default function DashboardPage() {
             </div>
             <div className="flex-1">
               <h3 className="font-medium">Generate Audience Profile</h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 AI analyzes your quiz to create detailed audience personas.
               </p>
             </div>
@@ -163,19 +175,21 @@ export default function DashboardPage() {
             </div>
             <div className="flex-1">
               <h3 className="font-medium">Generate Content</h3>
-              <p className="text-sm text-muted-foreground">
-                Get AI-generated content tailored to your audience and platforms.
+              <p className="text-muted-foreground text-sm">
+                Get AI-generated content tailored to your audience and
+                platforms.
               </p>
             </div>
           </div>
           <div className="flex items-start gap-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground">
+            <div className="bg-muted text-muted-foreground flex h-8 w-8 items-center justify-center rounded-full">
               4
             </div>
             <div className="flex-1">
               <h3 className="font-medium">Copy and Share</h3>
-              <p className="text-sm text-muted-foreground">
-                Copy content drafts and start building your audience on social platforms.
+              <p className="text-muted-foreground text-sm">
+                Copy content drafts and start building your audience on social
+                platforms.
               </p>
             </div>
           </div>

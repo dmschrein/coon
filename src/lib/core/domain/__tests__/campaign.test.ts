@@ -2,9 +2,7 @@ import { describe, it, expect } from "vitest";
 import { Campaign, CampaignStateError } from "../campaign";
 import type { CampaignStrategy, CampaignCalendar } from "@/types";
 
-function createTestCampaign(
-  _overrides?: Partial<ConstructorParameters<typeof Campaign>>
-) {
+function createTestCampaign() {
   return Campaign.create({
     id: "campaign-1",
     userId: "user-1",

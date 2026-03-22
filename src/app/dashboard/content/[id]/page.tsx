@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Copy, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 
 export default function ContentDetailPage() {
   const params = useParams();
@@ -20,19 +20,26 @@ export default function ContentDetailPage() {
   const { data: content, isLoading, error } = useContentItem(id);
   const updateContent = useUpdateContent();
 
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
-  const [hashtags, setHashtags] = useState("");
-  const [cta, setCta] = useState("");
+  // Derive initial form values from content; user edits tracked separately
+  const contentDefaults = useMemo(
+    () => ({
+      title: content?.title || "",
+      body: content?.body || "",
+      hashtags: content?.hashtags?.join(", ") || "",
+      cta: content?.cta || "",
+    }),
+    [content]
+  );
 
-  useEffect(() => {
-    if (content) {
-      setTitle(content.title || "");
-      setBody(content.body || "");
-      setHashtags(content.hashtags?.join(", ") || "");
-      setCta(content.cta || "");
-    }
-  }, [content]);
+  const [titleOverride, setTitle] = useState<string | null>(null);
+  const [bodyOverride, setBody] = useState<string | null>(null);
+  const [hashtagsOverride, setHashtags] = useState<string | null>(null);
+  const [ctaOverride, setCta] = useState<string | null>(null);
+
+  const title = titleOverride ?? contentDefaults.title;
+  const body = bodyOverride ?? contentDefaults.body;
+  const hashtags = hashtagsOverride ?? contentDefaults.hashtags;
+  const cta = ctaOverride ?? contentDefaults.cta;
 
   const handleSave = async () => {
     try {
@@ -40,17 +47,27 @@ export default function ContentDetailPage() {
         id,
         title: title || undefined,
         body,
-        hashtags: hashtags ? hashtags.split(",").map((tag) => tag.trim()) : undefined,
+        hashtags: hashtags
+          ? hashtags.split(",").map((tag) => tag.trim())
+          : undefined,
         cta: cta || undefined,
       });
       toast.success("Content updated successfully");
-    } catch (err) {
+    } catch {
       toast.error("Failed to update content");
     }
   };
 
   const handleCopy = () => {
-    const fullContent = [title, body, hashtags?.split(",").map((tag) => `#${tag.trim()}`).join(" "), cta]
+    const fullContent = [
+      title,
+      body,
+      hashtags
+        ?.split(",")
+        .map((tag) => `#${tag.trim()}`)
+        .join(" "),
+      cta,
+    ]
       .filter(Boolean)
       .join("\n\n");
 
@@ -62,8 +79,10 @@ export default function ContentDetailPage() {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
-          <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-          <p className="mt-4 text-sm text-muted-foreground">Loading content...</p>
+          <Loader2 className="text-primary mx-auto h-8 w-8 animate-spin" />
+          <p className="text-muted-foreground mt-4 text-sm">
+            Loading content...
+          </p>
         </div>
       </div>
     );
@@ -73,8 +92,12 @@ export default function ContentDetailPage() {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
-          <p className="text-sm text-destructive">Failed to load content</p>
-          <Button onClick={() => router.back()} className="mt-4" variant="outline">
+          <p className="text-destructive text-sm">Failed to load content</p>
+          <Button
+            onClick={() => router.back()}
+            className="mt-4"
+            variant="outline"
+          >
             Go Back
           </Button>
         </div>
@@ -123,7 +146,9 @@ export default function ContentDetailPage() {
             <Badge variant="secondary">{content.platform}</Badge>
             <Badge variant="outline">{content.contentType}</Badge>
             {content.pillar && <Badge>{content.pillar}</Badge>}
-            {content.status && <Badge variant="default">{content.status}</Badge>}
+            {content.status && (
+              <Badge variant="default">{content.status}</Badge>
+            )}
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -157,7 +182,7 @@ export default function ContentDetailPage() {
               onChange={(e) => setHashtags(e.target.value)}
               placeholder="Comma-separated hashtags (without #)"
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Example: tech, ai, startup
             </p>
           </div>
