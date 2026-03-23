@@ -28,6 +28,7 @@ import {
   generatePlatformBatch,
   getNextBatch,
 } from "@/lib/agents/campaign-content";
+import { generateCampaignPlan } from "@/lib/agents/campaign-generator";
 
 // ─── Singleton Instances ──────────────────────────────────────────────────────
 
@@ -86,6 +87,7 @@ class Container {
       { generateCampaignStrategy },
       { generateCampaignCalendar },
       { generatePlatformBatch, getNextBatch },
+      { generateCampaignPlan },
       this.pluginRunner
     );
   }

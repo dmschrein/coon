@@ -4,6 +4,35 @@ import { z } from "zod";
 // Campaign Validation Schemas
 // ============================================================================
 
+// --- Campaign Creator ---
+
+export const campaignGoalValues = [
+  "build-awareness",
+  "drive-engagement",
+  "generate-leads",
+  "promote-product",
+  "educate",
+] as const;
+
+export const campaignDurationValues = [
+  "1-week",
+  "2-weeks",
+  "4-weeks",
+  "8-weeks",
+  "12-weeks",
+] as const;
+
+export const campaignCreatorSchema = z.object({
+  name: z.string().min(1, "Campaign name is required").max(100),
+  goal: z.enum(campaignGoalValues),
+  topic: z.string().min(1, "Topic is required").max(500),
+  platforms: z.array(z.string()).min(1, "Select at least one platform"),
+  duration: z.enum(campaignDurationValues),
+  frequencyConfig: z.record(z.string(), z.number().int().min(1).max(14)),
+});
+
+export type CampaignCreatorFormData = z.infer<typeof campaignCreatorSchema>;
+
 // --- Campaign Platforms ---
 
 export const campaignPlatformValues = [

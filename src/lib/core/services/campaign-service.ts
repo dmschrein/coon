@@ -20,6 +20,10 @@ import type {
   AudienceProfile,
   QuizResponse,
   CampaignStrategy,
+  CampaignGoal,
+  CampaignDuration,
+  CampaignGeneratorOutput,
+  ContentApprovalStatus,
 } from "@/types";
 import { ServiceError } from "./audience-service";
 
@@ -41,6 +45,23 @@ interface CalendarAgent {
     profile: AudienceProfile
   ) => Promise<{
     calendar: import("@/types").CampaignCalendar;
+    modelUsed: string;
+    tokensUsed: number;
+  }>;
+}
+
+interface CampaignGeneratorAgent {
+  generateCampaignPlan: (input: {
+    profile: AudienceProfile;
+    quiz: QuizResponse;
+    name: string;
+    goal: CampaignGoal;
+    topic: string;
+    platforms: CampaignPlatform[];
+    duration: CampaignDuration;
+    frequencyConfig: Record<string, number>;
+  }) => Promise<{
+    output: CampaignGeneratorOutput;
     modelUsed: string;
     tokensUsed: number;
   }>;
@@ -74,8 +95,20 @@ export class CampaignService {
     private strategyAgent: StrategyAgent,
     private calendarAgent: CalendarAgent,
     private contentAgent: ContentAgent,
+    private campaignGeneratorAgent: CampaignGeneratorAgent,
     private pluginRunner?: PluginRunner
   ) {}
+
+  private durationToWeeks(duration: CampaignDuration | null): number {
+    const map: Record<string, number> = {
+      "1-week": 1,
+      "2-weeks": 2,
+      "4-weeks": 4,
+      "8-weeks": 8,
+      "12-weeks": 12,
+    };
+    return duration ? (map[duration] ?? 4) : 4;
+  }
 
   async listCampaigns(userId: string): Promise<Campaign[]> {
     return this.campaignRepo.findByUserId(userId);
@@ -185,6 +218,156 @@ export class CampaignService {
     }
   }
 
+  async createDraftCampaign(
+    userId: string,
+    input: {
+      name: string;
+      goal: CampaignGoal;
+      topic: string;
+      platforms: CampaignPlatform[];
+      duration: CampaignDuration;
+      frequencyConfig: Record<string, number>;
+    }
+  ): Promise<Campaign> {
+    const profile = await this.profileRepo.findActiveByUserId(userId);
+    if (!profile) {
+      throw new ServiceError(
+        "No audience profile found. Generate an audience profile first.",
+        "NO_PROFILE"
+      );
+    }
+
+    const quizResponse = await this.quizRepo.findLatestByUserId(userId);
+    if (!quizResponse) {
+      throw new ServiceError("No quiz response found.", "NO_QUIZ_RESPONSE");
+    }
+
+    const campaign = await this.campaignRepo.create({
+      userId,
+      selectedPlatforms: input.platforms,
+      audienceProfileId: profile.id,
+      quizResponseId: quizResponse.id,
+      name: input.name,
+      status: "draft",
+      strategyData: null,
+      totalTokensUsed: 0,
+      goal: input.goal,
+      topic: input.topic,
+      duration: input.duration,
+      frequencyConfig: input.frequencyConfig,
+    });
+
+    return campaign;
+  }
+
+  async generatePlan(
+    campaignId: string,
+    userId: string
+  ): Promise<CampaignGeneratorOutput> {
+    const campaign = await this.campaignRepo.findById(campaignId, userId);
+    if (!campaign) {
+      throw new ServiceError("Campaign not found", "NOT_FOUND");
+    }
+
+    if (!campaign.canGenerateStrategy()) {
+      throw new ServiceError(
+        "Campaign must be in draft or strategy_pending status",
+        "INVALID_STATE"
+      );
+    }
+
+    const profile = await this.profileRepo.findActiveByUserId(userId);
+    if (!profile) {
+      throw new ServiceError("No audience profile found", "NO_PROFILE");
+    }
+
+    const quizResponse = await this.quizRepo.findLatestByUserId(userId);
+    if (!quizResponse) {
+      throw new ServiceError("No quiz response found", "NO_QUIZ_RESPONSE");
+    }
+
+    const startTime = Date.now();
+
+    try {
+      const result = await this.campaignGeneratorAgent.generateCampaignPlan({
+        profile: profile.profileData,
+        quiz: quizResponse.responseData,
+        name: campaign.name ?? "Untitled Campaign",
+        goal: campaign.goal!,
+        topic: campaign.topic!,
+        platforms: campaign.selectedPlatforms,
+        duration: campaign.duration!,
+        frequencyConfig: campaign.frequencyConfig!,
+      });
+
+      const durationMs = Date.now() - startTime;
+
+      await this.campaignRepo.updatePlan(
+        campaignId,
+        result.output.strategySummary,
+        result.output.contentPillars,
+        result.tokensUsed
+      );
+
+      // Create content rows from the plan
+      const startDate = new Date();
+      await this.contentRepo.createMany(
+        result.output.contentPlan.map((item) => ({
+          campaignId,
+          userId,
+          platform: item.platform,
+          pillar: item.pillar,
+          title: item.title,
+          scheduledFor: new Date(
+            startDate.getTime() + (item.scheduledDay - 1) * 24 * 60 * 60 * 1000
+          ),
+        }))
+      );
+
+      await this.agentRunRepo.log({
+        userId,
+        agentType: "campaign_strategy",
+        inputData: { campaignId },
+        outputData: {
+          pillarsCount: result.output.contentPillars.length,
+          contentPlanCount: result.output.contentPlan.length,
+        },
+        modelUsed: result.modelUsed,
+        tokensUsed: result.tokensUsed,
+        durationMs,
+        status: "success",
+      });
+
+      return result.output;
+    } catch (error) {
+      const durationMs = Date.now() - startTime;
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+
+      await this.agentRunRepo.log({
+        userId,
+        agentType: "campaign_strategy",
+        inputData: { campaignId },
+        modelUsed: "claude-sonnet-4-20250514",
+        durationMs,
+        status: "failed",
+        errorMessage,
+      });
+
+      throw new ServiceError(
+        "Failed to generate campaign plan. Please try again.",
+        "AGENT_FAILED"
+      );
+    }
+  }
+
+  async updateContentApproval(
+    contentId: string,
+    approvalStatus: ContentApprovalStatus
+  ): Promise<void> {
+    await this.contentRepo.updateApprovalStatus(contentId, approvalStatus);
+  }
+
   async generateCalendar(
     campaignId: string,
     userId: string
@@ -213,8 +396,34 @@ export class CampaignService {
     const startTime = Date.now();
 
     try {
+      // Build strategy for the calendar agent — use existing strategyData or
+      // synthesize a minimal one from the new plan fields.
+      const strategyForCalendar: CampaignStrategy = campaign.strategy ?? {
+        campaignName: campaign.name ?? "Campaign",
+        theme: campaign.topic ?? "",
+        goal: campaign.goal ?? "",
+        targetOutcome: "",
+        timelineWeeks: this.durationToWeeks(campaign.duration),
+        messagingFramework: {
+          coreMessage: campaign.strategySummary ?? "",
+          supportingMessages: [],
+          toneGuidelines: "",
+          keyPhrases: [],
+          avoidPhrases: [],
+        },
+        platformAllocations: campaign.selectedPlatforms.map((p, i) => ({
+          platform: p,
+          role: "content",
+          contentFocus: "",
+          frequencySuggestion: `${campaign.frequencyConfig?.[p] ?? 3}x/week`,
+          priorityOrder: i + 1,
+        })),
+        contentPillars: campaign.contentPillars ?? [],
+        audienceHooks: [],
+      };
+
       const calendarResult = await this.calendarAgent.generateCampaignCalendar(
-        campaign.strategy!,
+        strategyForCalendar,
         profile.profileData
       );
 

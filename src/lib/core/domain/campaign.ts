@@ -10,6 +10,9 @@ import type {
   CampaignStatus,
   CampaignStrategy,
   CampaignCalendar,
+  CampaignGoal,
+  CampaignDuration,
+  ContentPillar,
 } from "@/types";
 
 export class Campaign {
@@ -25,15 +28,28 @@ export class Campaign {
     public totalTokensUsed: number,
     public readonly audienceProfileId: string | null,
     public readonly quizResponseId: string | null,
-    public readonly createdAt: Date
+    public readonly createdAt: Date,
+    public goal: CampaignGoal | null = null,
+    public topic: string | null = null,
+    public duration: CampaignDuration | null = null,
+    public frequencyConfig: Record<string, number> | null = null,
+    public strategySummary: string | null = null,
+    public contentPillars: ContentPillar[] | null = null
   ) {}
 
+  isDraft(): boolean {
+    return this.status === "draft";
+  }
+
   canGenerateStrategy(): boolean {
-    return this.status === "strategy_pending";
+    return this.status === "draft" || this.status === "strategy_pending";
   }
 
   canGenerateCalendar(): boolean {
-    return this.status === "strategy_complete" && this.strategy !== null;
+    return (
+      this.status === "strategy_complete" &&
+      (this.strategy !== null || this.contentPillars !== null)
+    );
   }
 
   canGenerateContent(): boolean {
@@ -119,18 +135,37 @@ export class Campaign {
   /**
    * Create a new Campaign in its initial state.
    */
+  setPlan(
+    strategySummary: string,
+    contentPillars: ContentPillar[],
+    tokensUsed: number
+  ): void {
+    if (!this.canGenerateStrategy()) {
+      throw new CampaignStateError(`Cannot set plan in status: ${this.status}`);
+    }
+    this.strategySummary = strategySummary;
+    this.contentPillars = contentPillars;
+    this.status = "strategy_complete";
+    this.totalTokensUsed += tokensUsed;
+  }
+
   static create(params: {
     id: string;
     userId: string;
     selectedPlatforms: CampaignPlatform[];
     audienceProfileId: string;
     quizResponseId: string;
+    name?: string;
+    goal?: CampaignGoal;
+    topic?: string;
+    duration?: CampaignDuration;
+    frequencyConfig?: Record<string, number>;
   }): Campaign {
     return new Campaign(
       params.id,
       params.userId,
-      null,
-      "strategy_pending",
+      params.name ?? null,
+      "draft",
       params.selectedPlatforms,
       [],
       null,
@@ -138,7 +173,13 @@ export class Campaign {
       0,
       params.audienceProfileId,
       params.quizResponseId,
-      new Date()
+      new Date(),
+      params.goal ?? null,
+      params.topic ?? null,
+      params.duration ?? null,
+      params.frequencyConfig ?? null,
+      null,
+      null
     );
   }
 }

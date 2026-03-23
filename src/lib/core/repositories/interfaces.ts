@@ -12,6 +12,10 @@ import type {
   CampaignPlatform,
   CampaignCalendar,
   CampaignStrategy,
+  CampaignGoal,
+  CampaignDuration,
+  ContentPillar,
+  ContentApprovalStatus,
   QuizResponse,
   AudienceProfile,
   AgentType,
@@ -33,7 +37,17 @@ export interface CampaignRepository {
     status: string;
     strategyData: CampaignStrategy | null;
     totalTokensUsed: number;
+    goal?: CampaignGoal;
+    topic?: string;
+    duration?: CampaignDuration;
+    frequencyConfig?: Record<string, number>;
   }): Promise<Campaign>;
+  updatePlan(
+    id: string,
+    strategySummary: string,
+    contentPillars: ContentPillar[],
+    tokensUsed: number
+  ): Promise<void>;
   updateStrategy(
     id: string,
     strategy: CampaignStrategy,
@@ -70,11 +84,15 @@ export interface AudienceProfileRepository {
 
 export interface CampaignContentRepository {
   findByCampaignId(campaignId: string): Promise<CampaignContentEntity[]>;
+  findById(id: string): Promise<CampaignContentEntity | null>;
   createMany(
     items: {
       campaignId: string;
       userId: string;
       platform: CampaignPlatform;
+      pillar?: string;
+      title?: string;
+      scheduledFor?: Date;
     }[]
   ): Promise<void>;
   updateStatus(
@@ -87,6 +105,11 @@ export interface CampaignContentRepository {
     contentData: unknown,
     tokensUsed: number
   ): Promise<void>;
+  updateApprovalStatus(
+    id: string,
+    approvalStatus: ContentApprovalStatus
+  ): Promise<void>;
+  updateBody(id: string, body: string): Promise<void>;
 }
 
 // ─── Quiz Response Repository ─────────────────────────────────────────────────

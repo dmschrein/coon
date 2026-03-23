@@ -6,7 +6,11 @@ import { eq } from "drizzle-orm";
 import { campaignContent } from "@/lib/db/schema";
 import { CampaignContentEntity } from "../domain/content";
 import type { CampaignContentRepository } from "./interfaces";
-import type { CampaignPlatform, CampaignContentStatus } from "@/types";
+import type {
+  CampaignPlatform,
+  CampaignContentStatus,
+  ContentApprovalStatus,
+} from "@/types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DrizzleDb = any;
@@ -30,6 +34,16 @@ export class DrizzleCampaignContentRepository implements CampaignContentReposito
     );
   }
 
+  async findById(id: string): Promise<CampaignContentEntity | null> {
+    const [row] = await this.db
+      .select()
+      .from(campaignContent)
+      .where(eq(campaignContent.id, id))
+      .limit(1);
+
+    return row ? this.toDomain(row) : null;
+  }
+
   async findByCampaignId(campaignId: string): Promise<CampaignContentEntity[]> {
     const rows = await this.db
       .select()
@@ -46,6 +60,9 @@ export class DrizzleCampaignContentRepository implements CampaignContentReposito
       campaignId: string;
       userId: string;
       platform: CampaignPlatform;
+      pillar?: string;
+      title?: string;
+      scheduledFor?: Date;
     }[]
   ): Promise<void> {
     if (items.length === 0) return;
@@ -55,6 +72,9 @@ export class DrizzleCampaignContentRepository implements CampaignContentReposito
         campaignId: item.campaignId,
         userId: item.userId,
         platform: item.platform,
+        pillar: item.pillar ?? null,
+        title: item.title ?? null,
+        scheduledFor: item.scheduledFor ?? null,
         status: "pending" as const,
       }))
     );
@@ -89,6 +109,23 @@ export class DrizzleCampaignContentRepository implements CampaignContentReposito
         errorMessage: null,
         updatedAt: new Date(),
       })
+      .where(eq(campaignContent.id, id));
+  }
+
+  async updateApprovalStatus(
+    id: string,
+    approvalStatus: ContentApprovalStatus
+  ): Promise<void> {
+    await this.db
+      .update(campaignContent)
+      .set({ approvalStatus, updatedAt: new Date() })
+      .where(eq(campaignContent.id, id));
+  }
+
+  async updateBody(id: string, body: string): Promise<void> {
+    await this.db
+      .update(campaignContent)
+      .set({ body, updatedAt: new Date() })
       .where(eq(campaignContent.id, id));
   }
 }

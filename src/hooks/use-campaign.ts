@@ -31,11 +31,22 @@ export function useCreateCampaign() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (selectedPlatforms: string[]) => {
+    mutationFn: async (
+      input:
+        | { selectedPlatforms: string[] }
+        | {
+            name: string;
+            goal: string;
+            topic: string;
+            platforms: string[];
+            duration: string;
+            frequencyConfig: Record<string, number>;
+          }
+    ) => {
       const res = await fetch("/api/campaign", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ selectedPlatforms }),
+        body: JSON.stringify(input),
       });
       if (!res.ok) throw new Error("Failed to create campaign");
       const json = await res.json();
@@ -44,6 +55,73 @@ export function useCreateCampaign() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+    },
+  });
+}
+
+export function useGeneratePlan(campaignId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/campaign/${campaignId}/plan`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("Failed to generate campaign plan");
+      const json = await res.json();
+      if (json.error) throw new Error(json.error.message);
+      return json.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["campaign", campaignId] });
+    },
+  });
+}
+
+export function useCampaignContent(campaignId: string) {
+  return useQuery({
+    queryKey: ["campaign", campaignId, "content"],
+    queryFn: async () => {
+      const res = await fetch(`/api/campaign/${campaignId}`);
+      if (!res.ok) throw new Error("Failed to fetch campaign content");
+      const json = await res.json();
+      if (json.error) throw new Error(json.error.message);
+      return json.data.content;
+    },
+    enabled: !!campaignId,
+  });
+}
+
+export function useUpdateContent(campaignId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      contentId,
+      ...updates
+    }: {
+      contentId: string;
+      approvalStatus?: string;
+      body?: string;
+    }) => {
+      const res = await fetch(
+        `/api/campaign/${campaignId}/content/${contentId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updates),
+        }
+      );
+      if (!res.ok) throw new Error("Failed to update content");
+      const json = await res.json();
+      if (json.error) throw new Error(json.error.message);
+      return json.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["campaign", campaignId, "content"],
+      });
+      queryClient.invalidateQueries({ queryKey: ["campaign", campaignId] });
     },
   });
 }

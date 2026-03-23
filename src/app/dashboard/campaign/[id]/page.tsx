@@ -4,10 +4,13 @@ import { use } from "react";
 import type { CampaignStrategy } from "@/types";
 import {
   useCampaign,
+  useGeneratePlan,
   useGenerateCalendar,
   useGenerateNextBatch,
 } from "@/hooks/use-campaign";
+import { CampaignOverview } from "@/components/campaign/campaign-overview";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Loader2, Calendar, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,8 +21,18 @@ export default function CampaignDetailPage({
 }) {
   const { id } = use(params);
   const { data, isLoading, error } = useCampaign(id);
+  const generatePlan = useGeneratePlan(id);
   const generateCalendar = useGenerateCalendar(id);
   const generateNextBatch = useGenerateNextBatch(id);
+
+  const handleGeneratePlan = async () => {
+    try {
+      await generatePlan.mutateAsync();
+      toast.success("Campaign plan generated!");
+    } catch {
+      toast.error("Failed to generate plan");
+    }
+  };
 
   const handleGenerateCalendar = async () => {
     try {
@@ -84,15 +97,66 @@ export default function CampaignDetailPage({
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">{campaign.name}</h1>
-        <p className="text-muted-foreground text-sm">
-          {campaign.selectedPlatforms?.length || 0} platforms
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">
+            {campaign.name ?? "Untitled Campaign"}
+          </h1>
+          <div className="mt-1 flex items-center gap-2">
+            {campaign.goal && (
+              <Badge variant="outline" className="capitalize">
+                {campaign.goal.replace(/-/g, " ")}
+              </Badge>
+            )}
+            <Badge variant="secondary">
+              {campaign.status.replace(/_/g, " ")}
+            </Badge>
+          </div>
+        </div>
       </div>
 
-      {/* Strategy Summary */}
-      {strategy && (
+      {/* Draft: Generate Plan CTA */}
+      {campaign.status === "draft" && (
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12">
+          <Sparkles className="text-primary h-12 w-12" />
+          <h2 className="mt-4 text-xl font-semibold">Ready to Plan</h2>
+          <p className="text-muted-foreground mt-2 text-center text-sm">
+            AI will generate a strategy summary, content pillars, and a full
+            content plan for your campaign.
+          </p>
+          <Button
+            onClick={handleGeneratePlan}
+            disabled={generatePlan.isPending}
+            className="mt-6"
+            size="lg"
+          >
+            {generatePlan.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating Plan...
+              </>
+            ) : (
+              <>
+                <Sparkles className="mr-2 h-4 w-4" />
+                Generate Campaign Plan
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+
+      {/* Campaign Overview (strategy summary + pillars) */}
+      {campaign.status !== "draft" && (
+        <CampaignOverview
+          strategySummary={campaign.strategySummary ?? null}
+          contentPillars={campaign.contentPillars ?? null}
+          selectedPlatforms={campaign.selectedPlatforms ?? []}
+          status={campaign.status}
+        />
+      )}
+
+      {/* Legacy Strategy Summary */}
+      {strategy && !campaign.strategySummary && (
         <div className="rounded-lg border p-6">
           <h2 className="mb-4 text-xl font-semibold">Campaign Strategy</h2>
           <div className="space-y-3">
@@ -101,10 +165,6 @@ export default function CampaignDetailPage({
             </div>
             <div>
               <span className="font-medium">Goal:</span> {strategy.goal}
-            </div>
-            <div>
-              <span className="font-medium">Timeline:</span>{" "}
-              {strategy.timelineWeeks} weeks
             </div>
             <div>
               <span className="font-medium">Core Message:</span>{" "}
@@ -172,63 +232,76 @@ export default function CampaignDetailPage({
       )}
 
       {/* Content Generation Progress */}
-      {(campaign.status === "calendar_complete" ||
-        campaign.status === "generating_content" ||
-        campaign.status === "complete") && (
-        <div className="rounded-lg border p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold">Platform Content</h2>
-              <p className="text-muted-foreground text-sm">
-                {completedContent.length} of {content.length} platforms complete
-              </p>
-            </div>
-            {pendingContent.length > 0 && (
-              <Button
-                onClick={handleGenerateNextBatch}
-                disabled={generateNextBatch.isPending}
-              >
-                {generateNextBatch.isPending && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                <Sparkles className="mr-2 h-4 w-4" />
-                Generate Next Batch
-              </Button>
-            )}
-          </div>
-
-          {/* Platform Status List */}
-          <div className="space-y-2">
-            {content.map(
-              (item: { id: string; platform: string; status: string }) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between rounded-lg border p-3"
+      {content.length > 0 &&
+        (campaign.status === "calendar_complete" ||
+          campaign.status === "generating_content" ||
+          campaign.status === "complete") && (
+          <div className="rounded-lg border p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold">Platform Content</h2>
+                <p className="text-muted-foreground text-sm">
+                  {completedContent.length} of {content.length} platforms
+                  complete
+                </p>
+              </div>
+              {pendingContent.length > 0 && (
+                <Button
+                  onClick={handleGenerateNextBatch}
+                  disabled={generateNextBatch.isPending}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="font-medium capitalize">
-                      {item.platform}
-                    </div>
-                  </div>
+                  {generateNextBatch.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Generate Next Batch
+                </Button>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              {content.map(
+                (item: {
+                  id: string;
+                  platform: string;
+                  status: string;
+                  title?: string;
+                  pillar?: string;
+                }) => (
                   <div
-                    className={`rounded-full px-2 py-1 text-xs font-medium ${
-                      item.status === "complete"
-                        ? "bg-green-100 text-green-700"
-                        : item.status === "generating"
-                          ? "bg-blue-100 text-blue-700"
-                          : item.status === "failed"
-                            ? "bg-red-100 text-red-700"
-                            : "bg-gray-100 text-gray-700"
-                    }`}
+                    key={item.id}
+                    className="flex items-center justify-between rounded-lg border p-3"
                   >
-                    {item.status}
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <div className="font-medium capitalize">
+                          {item.platform}
+                        </div>
+                        {item.title && (
+                          <div className="text-muted-foreground text-xs">
+                            {item.title}
+                            {item.pillar && ` • ${item.pillar}`}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <Badge
+                      variant={
+                        item.status === "complete"
+                          ? "default"
+                          : item.status === "failed"
+                            ? "destructive"
+                            : "secondary"
+                      }
+                    >
+                      {item.status}
+                    </Badge>
                   </div>
-                </div>
-              )
-            )}
+                )
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }

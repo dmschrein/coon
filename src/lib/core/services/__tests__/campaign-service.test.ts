@@ -123,6 +123,7 @@ describe("CampaignService", () => {
       findByUserId: vi.fn(),
       save: vi.fn(),
       create: vi.fn(),
+      updatePlan: vi.fn(),
       updateStrategy: vi.fn(),
       updateCalendar: vi.fn(),
       updateStatus: vi.fn(),
@@ -137,9 +138,12 @@ describe("CampaignService", () => {
     quizRepo = { findLatestByUserId: vi.fn() };
     contentRepo = {
       findByCampaignId: vi.fn(),
+      findById: vi.fn(),
       createMany: vi.fn(),
       updateStatus: vi.fn(),
       updateContent: vi.fn(),
+      updateApprovalStatus: vi.fn(),
+      updateBody: vi.fn(),
     };
     calendarEntryRepo = {
       findByCampaignId: vi.fn(),
@@ -153,6 +157,8 @@ describe("CampaignService", () => {
       getNextBatch: vi.fn(),
     };
 
+    const campaignGeneratorAgent = { generateCampaignPlan: vi.fn() };
+
     service = new CampaignService(
       campaignRepo as unknown as CampaignRepository,
       profileRepo as unknown as AudienceProfileRepository,
@@ -165,7 +171,9 @@ describe("CampaignService", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       calendarAgent as any,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      contentAgent as any
+      contentAgent as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      campaignGeneratorAgent as any
     );
   });
 

@@ -67,6 +67,8 @@ export interface Persona {
   messagingAngle: string;
 }
 
+export type ConfidenceLevel = "quiz_based" | "data_informed" | "data_validated";
+
 export interface AudienceProfile {
   primaryPersonas: Persona[];
   psychographics: {
@@ -157,7 +159,28 @@ export type CampaignPlatform =
   | "threads"
   | "email";
 
+export type CampaignGoal =
+  | "build-awareness"
+  | "drive-engagement"
+  | "generate-leads"
+  | "promote-product"
+  | "educate";
+
+export type CampaignDuration =
+  | "1-week"
+  | "2-weeks"
+  | "4-weeks"
+  | "8-weeks"
+  | "12-weeks";
+
+export type ContentApprovalStatus =
+  | "pending_review"
+  | "approved"
+  | "rejected"
+  | "needs_revision";
+
 export type CampaignStatus =
+  | "draft"
   | "strategy_pending"
   | "strategy_complete"
   | "calendar_pending"
@@ -171,6 +194,27 @@ export type CampaignContentStatus =
   | "generating"
   | "complete"
   | "failed";
+
+export interface CampaignCreatorInput {
+  name: string;
+  goal: CampaignGoal;
+  topic: string;
+  platforms: CampaignPlatform[];
+  duration: CampaignDuration;
+  frequencyConfig: Record<string, number>;
+}
+
+export interface CampaignGeneratorOutput {
+  strategySummary: string;
+  contentPillars: ContentPillar[];
+  contentPlan: {
+    platform: CampaignPlatform;
+    contentType: ContentType;
+    pillar: string;
+    title: string;
+    scheduledDay: number;
+  }[];
+}
 
 // --- Campaign Strategy ---
 
