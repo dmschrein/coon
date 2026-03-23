@@ -39,10 +39,10 @@ function buildStrategyPrompt(
 - Stage: ${quiz.currentStage}
 - Elevator Pitch: ${quiz.elevatorPitch}
 - Problem Solved: ${quiz.problemSolved}
-- Unique Angle: ${quiz.uniqueAngle}
-- Differentiators: ${quiz.differentiators.join(", ")}
 - Business Model: ${quiz.businessModel}
+- Primary Goal: ${quiz.primaryGoal}
 - Launch Timeline: ${quiz.launchTimeline}
+- Weekly Time Commitment: ${quiz.weeklyTimeCommitment} hours/week
 
 ## Selected Platforms
 ${selectedPlatforms.join(", ")}

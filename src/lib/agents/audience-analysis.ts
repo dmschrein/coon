@@ -12,25 +12,18 @@ function buildPrompt(quiz: QuizResponse): string {
 - Type: ${quiz.productType}
 - Elevator Pitch: ${quiz.elevatorPitch}
 - Problem Solved: ${quiz.problemSolved}
-- Unique Angle: ${quiz.uniqueAngle}
 - Current Stage: ${quiz.currentStage}
 
 ## Target Customer
 - Ideal Customer: ${quiz.idealCustomer}
 - Industry/Niche: ${quiz.industryNiche.join(", ")}
-- Pain Points: ${quiz.customerPainPoints.join(", ")}
-- Current Solutions: ${quiz.currentSolutions.join(", ")}
-- Budget Range: ${quiz.budgetRange}
 - Business Model: ${quiz.businessModel}
-
-## Competitive Landscape
-- Competitors: ${quiz.competitors.map((c) => c.name).join(", ") || "None listed"}
-- Competitor Strengths: ${quiz.competitorStrengths.join(", ") || "None listed"}
-- Competitor Weaknesses: ${quiz.competitorWeaknesses.join(", ") || "None listed"}
-- Differentiators: ${quiz.differentiators.join(", ")}
+- Budget Range: ${quiz.budgetRange}
 
 ## Goals
+- Primary Goal: ${quiz.primaryGoal}
 - Launch Timeline: ${quiz.launchTimeline}
+- Weekly Time Commitment: ${quiz.weeklyTimeCommitment} hours/week
 - Target Platforms: ${quiz.preferredPlatforms.join(", ")}
 - Content Comfort: ${quiz.contentComfortLevel}
 
@@ -72,7 +65,11 @@ Generate 2-3 personas. Be specific and actionable. Avoid generic descriptions.`;
 
 export async function analyzeAudience(
   quizData: QuizResponse
-): Promise<{ profile: AudienceProfile; modelUsed: string; tokensUsed: number }> {
+): Promise<{
+  profile: AudienceProfile;
+  modelUsed: string;
+  tokensUsed: number;
+}> {
   const prompt = buildPrompt(quizData);
 
   const result = await withRetry(async () => {

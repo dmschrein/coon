@@ -38,8 +38,8 @@ ${strategy.contentPillars.map((p) => `- ${p.theme}: ${p.description} (Topics: ${
 ## Product Context
 - Product: ${quiz.elevatorPitch}
 - Problem Solved: ${quiz.problemSolved}
-- Unique Angle: ${quiz.uniqueAngle}
-- Differentiators: ${quiz.differentiators.join(", ")}
+- Primary Goal: ${quiz.primaryGoal}
+- Business Model: ${quiz.businessModel}
 
 ## YouTube-Specific Requirements
 - Title: max 60 characters, curiosity-driven, keyword-rich

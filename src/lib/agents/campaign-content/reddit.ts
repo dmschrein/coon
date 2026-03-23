@@ -36,8 +36,8 @@ ${strategy.contentPillars.map((p) => `- ${p.theme}: ${p.description}`).join("\n"
 ## Product Context
 - Product: ${quiz.elevatorPitch}
 - Problem Solved: ${quiz.problemSolved}
-- Unique Angle: ${quiz.uniqueAngle}
-- Differentiators: ${quiz.differentiators.join(", ")}
+- Primary Goal: ${quiz.primaryGoal}
+- Business Model: ${quiz.businessModel}
 
 ## Reddit-Specific Requirements
 - NEVER be self-promotional — Reddit users will downvote obvious marketing

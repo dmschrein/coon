@@ -31,7 +31,7 @@ export function ProductDefinitionStep({ form }: ProductDefinitionStepProps) {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-semibold">Product Definition</h2>
+      <h2 className="text-lg font-semibold">Your Product</h2>
 
       {/* Product Type */}
       <div className="space-y-2">
@@ -56,7 +56,7 @@ export function ProductDefinitionStep({ form }: ProductDefinitionStepProps) {
           </SelectContent>
         </Select>
         {errors.productType && (
-          <p className="text-sm text-destructive">
+          <p className="text-destructive text-sm">
             {errors.productType.message}
           </p>
         )}
@@ -75,7 +75,7 @@ export function ProductDefinitionStep({ form }: ProductDefinitionStepProps) {
         />
         <div className="flex justify-between">
           {errors.elevatorPitch ? (
-            <p className="text-sm text-destructive">
+            <p className="text-destructive text-sm">
               {errors.elevatorPitch.message}
             </p>
           ) : (
@@ -96,25 +96,8 @@ export function ProductDefinitionStep({ form }: ProductDefinitionStepProps) {
           {...register("problemSolved")}
         />
         {errors.problemSolved && (
-          <p className="text-sm text-destructive">
+          <p className="text-destructive text-sm">
             {errors.problemSolved.message}
-          </p>
-        )}
-      </div>
-
-      {/* Unique Angle */}
-      <div className="space-y-2">
-        <Label htmlFor="uniqueAngle">
-          What&apos;s your unique angle/differentiator?
-        </Label>
-        <Textarea
-          id="uniqueAngle"
-          placeholder="What makes your approach different from existing solutions..."
-          {...register("uniqueAngle")}
-        />
-        {errors.uniqueAngle && (
-          <p className="text-sm text-destructive">
-            {errors.uniqueAngle.message}
           </p>
         )}
       </div>
@@ -139,7 +122,10 @@ export function ProductDefinitionStep({ form }: ProductDefinitionStepProps) {
             { value: "launched", label: "Launched" },
           ].map((option) => (
             <div key={option.value} className="flex items-center space-x-2">
-              <RadioGroupItem value={option.value} id={`stage-${option.value}`} />
+              <RadioGroupItem
+                value={option.value}
+                id={`stage-${option.value}`}
+              />
               <Label htmlFor={`stage-${option.value}`} className="font-normal">
                 {option.label}
               </Label>
@@ -147,7 +133,7 @@ export function ProductDefinitionStep({ form }: ProductDefinitionStepProps) {
           ))}
         </RadioGroup>
         {errors.currentStage && (
-          <p className="text-sm text-destructive">
+          <p className="text-destructive text-sm">
             {errors.currentStage.message}
           </p>
         )}

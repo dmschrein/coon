@@ -29,32 +29,28 @@ export type Platform =
 
 export type ContentComfortLevel = "beginner" | "intermediate" | "advanced";
 
-export interface Competitor {
-  name: string;
-  url?: string;
-  notes?: string;
-}
+export type PrimaryGoal =
+  | "pre-launch"
+  | "grow-existing"
+  | "promote-product"
+  | "thought-leadership";
 
 export interface QuizResponse {
+  // Step 1: Your Product
   productType: ProductType;
   elevatorPitch: string;
   problemSolved: string;
-  uniqueAngle: string;
   currentStage: CurrentStage;
+  // Step 2: Your Audience
   idealCustomer: string;
   industryNiche: string[];
-  customerPainPoints: string[];
-  currentSolutions: string[];
-  budgetRange: BudgetRange;
-  businessModel: BusinessModel;
-  competitors: Competitor[];
-  competitorStrengths: string[];
-  competitorWeaknesses: string[];
-  differentiators: string[];
-  launchTimeline: string;
-  targetAudienceSize: number;
-  weeklyTimeCommitment: number;
   preferredPlatforms: Platform[];
+  businessModel: BusinessModel;
+  budgetRange: BudgetRange;
+  // Step 3: Your Goals
+  primaryGoal: PrimaryGoal;
+  launchTimeline: string;
+  weeklyTimeCommitment: number;
   contentComfortLevel: ContentComfortLevel;
 }
 

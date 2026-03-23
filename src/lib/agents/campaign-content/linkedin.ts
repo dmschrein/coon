@@ -38,7 +38,7 @@ ${strategy.contentPillars.map((p) => `- ${p.theme}: ${p.description}`).join("\n"
 - Product: ${quiz.elevatorPitch}
 - Problem Solved: ${quiz.problemSolved}
 - Business Model: ${quiz.businessModel}
-- Differentiators: ${quiz.differentiators.join(", ")}
+- Primary Goal: ${quiz.primaryGoal}
 
 ## LinkedIn-Specific Requirements
 - Post: 1300 characters is the sweet spot (before "see more" truncation)

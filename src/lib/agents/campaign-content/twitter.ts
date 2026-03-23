@@ -36,7 +36,7 @@ ${strategy.contentPillars.map((p) => `- ${p.theme}: ${p.description}`).join("\n"
 ## Product Context
 - Product: ${quiz.elevatorPitch}
 - Problem Solved: ${quiz.problemSolved}
-- Differentiators: ${quiz.differentiators.join(", ")}
+- Primary Goal: ${quiz.primaryGoal}
 
 ## X/Twitter-Specific Requirements
 - Individual tweets: max 280 characters each
