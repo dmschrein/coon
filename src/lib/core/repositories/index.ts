@@ -10,6 +10,7 @@ export type {
   CalendarEntryRepository,
   AgentRunRepository,
   AgentRunMetrics,
+  ConnectedAccountRepository,
 } from "./interfaces";
 
 export { DrizzleCampaignRepository } from "./drizzle-campaign";
@@ -18,3 +19,4 @@ export { DrizzleCampaignContentRepository } from "./drizzle-campaign-content";
 export { DrizzleQuizResponseRepository } from "./drizzle-quiz-response";
 export { DrizzleCalendarEntryRepository } from "./drizzle-calendar-entry";
 export { DrizzleAgentRunRepository } from "./drizzle-agent-run";
+export { DrizzleConnectedAccountRepository } from "./drizzle-connected-account";

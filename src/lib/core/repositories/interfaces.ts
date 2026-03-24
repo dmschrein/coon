@@ -20,6 +20,8 @@ import type {
   AudienceProfile,
   AgentType,
   AgentStatus,
+  SocialPlatform,
+  ConnectedAccount,
 } from "@/types";
 
 // ─── Campaign Repository ─────────────────────────────────────────────────────
@@ -174,6 +176,35 @@ export interface AgentRunRepository {
     agentType?: AgentType;
     since?: Date;
   }): Promise<AgentRunMetrics>;
+}
+
+// ─── Connected Account Repository ────────────────────────────────────────────
+
+export interface ConnectedAccountRepository {
+  findByUserId(userId: string): Promise<ConnectedAccount[]>;
+  findByUserAndPlatform(
+    userId: string,
+    platform: SocialPlatform
+  ): Promise<ConnectedAccount | null>;
+  findById(id: string): Promise<ConnectedAccount | null>;
+  create(params: {
+    userId: string;
+    platform: SocialPlatform;
+    accessTokenEncrypted: string;
+    refreshTokenEncrypted?: string;
+    tokenExpiresAt?: Date;
+    accountName?: string;
+    accountId?: string;
+    scopes?: string[];
+  }): Promise<ConnectedAccount>;
+  updateTokens(
+    id: string,
+    accessTokenEncrypted: string,
+    refreshTokenEncrypted?: string,
+    tokenExpiresAt?: Date
+  ): Promise<void>;
+  deactivate(id: string): Promise<void>;
+  delete(id: string): Promise<void>;
 }
 
 export interface AgentRunMetrics {

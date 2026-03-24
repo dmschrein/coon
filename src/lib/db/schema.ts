@@ -145,6 +145,24 @@ export const campaignCalendarEntries = pgTable("campaign_calendar_entries", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// ─── Connected Accounts ─────────────────────────────────────────────────────
+export const connectedAccounts = pgTable("connected_accounts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  platform: text("platform").notNull(),
+  accessTokenEncrypted: text("access_token_encrypted").notNull(),
+  refreshTokenEncrypted: text("refresh_token_encrypted"),
+  tokenExpiresAt: timestamp("token_expires_at"),
+  accountName: text("account_name"),
+  accountId: text("account_id"),
+  isActive: boolean("is_active").default(true),
+  scopes: text("scopes").array(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // ─── Agent Runs ──────────────────────────────────────────────────────────────
 export const agentRuns = pgTable("agent_runs", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -167,6 +185,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   contentItems: many(contentItems),
   agentRuns: many(agentRuns),
   campaigns: many(campaigns),
+  connectedAccounts: many(connectedAccounts),
 }));
 
 export const quizResponsesRelations = relations(
@@ -239,6 +258,16 @@ export const campaignContentRelations = relations(
     }),
     user: one(users, {
       fields: [campaignContent.userId],
+      references: [users.id],
+    }),
+  })
+);
+
+export const connectedAccountsRelations = relations(
+  connectedAccounts,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [connectedAccounts.userId],
       references: [users.id],
     }),
   })

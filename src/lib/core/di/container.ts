@@ -13,9 +13,12 @@ import {
   DrizzleQuizResponseRepository,
   DrizzleCalendarEntryRepository,
   DrizzleAgentRunRepository,
+  DrizzleConnectedAccountRepository,
 } from "../repositories";
 import { AudienceService } from "../services/audience-service";
 import { CampaignService } from "../services/campaign-service";
+import { PublishService } from "../services/publish-service";
+import { getAdapter } from "@/lib/services/social";
 import {
   PluginRunner,
   TokenTrackingPlugin,
@@ -43,6 +46,7 @@ class Container {
   readonly quizRepo: DrizzleQuizResponseRepository;
   readonly calendarEntryRepo: DrizzleCalendarEntryRepository;
   readonly agentRunRepo: DrizzleAgentRunRepository;
+  readonly connectedAccountRepo: DrizzleConnectedAccountRepository;
 
   // Plugins
   readonly pluginRunner: PluginRunner;
@@ -52,6 +56,7 @@ class Container {
   // Services
   readonly audienceService: AudienceService;
   readonly campaignService: CampaignService;
+  readonly publishService: PublishService;
 
   constructor(database: typeof db) {
     // Initialize repositories
@@ -61,6 +66,7 @@ class Container {
     this.quizRepo = new DrizzleQuizResponseRepository(database);
     this.calendarEntryRepo = new DrizzleCalendarEntryRepository(database);
     this.agentRunRepo = new DrizzleAgentRunRepository(database);
+    this.connectedAccountRepo = new DrizzleConnectedAccountRepository(database);
 
     // Initialize plugins
     this.pluginRunner = new PluginRunner();
@@ -91,6 +97,12 @@ class Container {
       { generateCampaignPlan },
       { checkCampaignCohesion },
       this.pluginRunner
+    );
+
+    this.publishService = new PublishService(
+      this.connectedAccountRepo,
+      this.contentRepo,
+      getAdapter
     );
   }
 }

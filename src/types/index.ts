@@ -378,6 +378,52 @@ export interface CampaignCalendar {
 }
 
 // ----------------------------------------------------------------------------
+// Connected Account / Publish Types
+// ----------------------------------------------------------------------------
+
+export type SocialPlatform =
+  | "reddit"
+  | "instagram"
+  | "tiktok"
+  | "twitter"
+  | "youtube"
+  | "threads"
+  | "linkedin";
+
+export type PublishStatus = "scheduled" | "publishing" | "published" | "failed";
+
+export interface ConnectedAccount {
+  id: string;
+  userId: string;
+  platform: SocialPlatform;
+  accountName: string | null;
+  accountId: string | null;
+  isActive: boolean;
+  tokenExpiresAt: Date | null;
+  scopes: string[] | null;
+  createdAt: Date;
+}
+
+export interface PublishRequest {
+  contentId: string;
+  scheduledFor?: Date;
+}
+
+export interface PublishResult {
+  contentId: string;
+  status: PublishStatus;
+  externalPostId?: string;
+  externalPostUrl?: string;
+  error?: string;
+}
+
+export interface OAuthState {
+  platform: SocialPlatform;
+  userId: string;
+  redirectUri: string;
+}
+
+// ----------------------------------------------------------------------------
 // Agent Types
 // ----------------------------------------------------------------------------
 

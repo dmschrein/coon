@@ -11,7 +11,13 @@ import {
 import { CampaignOverview } from "@/components/campaign/campaign-overview";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Calendar, Sparkles, ClipboardCheck } from "lucide-react";
+import {
+  Loader2,
+  Calendar,
+  Sparkles,
+  ClipboardCheck,
+  Send,
+} from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -245,6 +251,26 @@ export default function CampaignDetailPage({
             <Button>
               <ClipboardCheck className="mr-2 h-4 w-4" />
               Review Content
+            </Button>
+          </Link>
+        </div>
+      )}
+
+      {/* Publish CTA */}
+      {content.some(
+        (c: { approvalStatus?: string }) => c.approvalStatus === "approved"
+      ) && (
+        <div className="flex items-center justify-between rounded-lg border p-6">
+          <div>
+            <h2 className="text-xl font-semibold">Publish</h2>
+            <p className="text-muted-foreground text-sm">
+              Connect your accounts and publish approved content
+            </p>
+          </div>
+          <Link href={`/dashboard/campaign/${id}/publish`}>
+            <Button>
+              <Send className="mr-2 h-4 w-4" />
+              Go to Publish
             </Button>
           </Link>
         </div>
