@@ -225,3 +225,74 @@ export interface AgentRunMetrics {
     }
   >;
 }
+
+// ─── Analytics Repository ────────────────────────────────────────────────────
+
+export interface CampaignAnalyticsSnapshot {
+  id: string;
+  campaignId: string;
+  totalReach: number;
+  totalEngagements: number;
+  totalImpressions: number;
+  engagementRate: string | null;
+  followerGrowth: number;
+  platformBreakdown: unknown;
+  pillarBreakdown: unknown;
+  aiInsights: unknown;
+  aiRecommendations: unknown;
+  snapshotDate: Date;
+}
+
+export interface ContentAnalyticsRow {
+  id: string;
+  campaignContentId: string;
+  campaignId: string;
+  platform: string;
+  reach: number;
+  impressions: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  clicks: number;
+  saves: number;
+  engagementRate: string | null;
+  fetchedAt: Date;
+}
+
+export interface AnalyticsRepository {
+  getLatestCampaignSnapshot(
+    campaignId: string,
+    userId: string
+  ): Promise<CampaignAnalyticsSnapshot | null>;
+  saveCampaignSnapshot(params: {
+    campaignId: string;
+    userId: string;
+    totalReach: number;
+    totalEngagements: number;
+    totalImpressions: number;
+    engagementRate: string;
+    followerGrowth: number;
+    platformBreakdown: unknown;
+    pillarBreakdown: unknown;
+    aiInsights: unknown;
+    aiRecommendations: unknown;
+  }): Promise<CampaignAnalyticsSnapshot>;
+  getContentAnalytics(
+    campaignId: string,
+    userId: string
+  ): Promise<ContentAnalyticsRow[]>;
+  saveContentAnalytics(params: {
+    campaignContentId: string;
+    campaignId: string;
+    userId: string;
+    platform: string;
+    reach: number;
+    impressions: number;
+    likes: number;
+    comments: number;
+    shares: number;
+    clicks: number;
+    saves: number;
+    engagementRate: string;
+  }): Promise<void>;
+}

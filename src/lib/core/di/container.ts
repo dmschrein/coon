@@ -14,10 +14,12 @@ import {
   DrizzleCalendarEntryRepository,
   DrizzleAgentRunRepository,
   DrizzleConnectedAccountRepository,
+  DrizzleAnalyticsRepository,
 } from "../repositories";
 import { AudienceService } from "../services/audience-service";
 import { CampaignService } from "../services/campaign-service";
 import { PublishService } from "../services/publish-service";
+import { AnalyticsService } from "../services/analytics-service";
 import { getAdapter } from "@/lib/services/social";
 import {
   PluginRunner,
@@ -33,6 +35,7 @@ import {
 } from "@/lib/agents/campaign-content";
 import { generateCampaignPlan } from "@/lib/agents/campaign-generator";
 import { checkCampaignCohesion } from "@/lib/agents/cohesion-checker";
+import { generateAnalyticsInsights } from "@/lib/agents/analytics-insights";
 
 // ─── Singleton Instances ──────────────────────────────────────────────────────
 
@@ -47,6 +50,7 @@ class Container {
   readonly calendarEntryRepo: DrizzleCalendarEntryRepository;
   readonly agentRunRepo: DrizzleAgentRunRepository;
   readonly connectedAccountRepo: DrizzleConnectedAccountRepository;
+  readonly analyticsRepo: DrizzleAnalyticsRepository;
 
   // Plugins
   readonly pluginRunner: PluginRunner;
@@ -57,6 +61,7 @@ class Container {
   readonly audienceService: AudienceService;
   readonly campaignService: CampaignService;
   readonly publishService: PublishService;
+  readonly analyticsService: AnalyticsService;
 
   constructor(database: typeof db) {
     // Initialize repositories
@@ -67,6 +72,7 @@ class Container {
     this.calendarEntryRepo = new DrizzleCalendarEntryRepository(database);
     this.agentRunRepo = new DrizzleAgentRunRepository(database);
     this.connectedAccountRepo = new DrizzleConnectedAccountRepository(database);
+    this.analyticsRepo = new DrizzleAnalyticsRepository(database);
 
     // Initialize plugins
     this.pluginRunner = new PluginRunner();
@@ -103,6 +109,15 @@ class Container {
       this.connectedAccountRepo,
       this.contentRepo,
       getAdapter
+    );
+
+    this.analyticsService = new AnalyticsService(
+      this.analyticsRepo,
+      this.campaignRepo,
+      this.contentRepo,
+      this.profileRepo,
+      this.agentRunRepo,
+      { generateAnalyticsInsights }
     );
   }
 }

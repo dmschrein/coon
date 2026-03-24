@@ -424,6 +424,67 @@ export interface OAuthState {
 }
 
 // ----------------------------------------------------------------------------
+// Analytics Types
+// ----------------------------------------------------------------------------
+
+export interface PlatformMetrics {
+  platform: string;
+  reach: number;
+  impressions: number;
+  engagements: number;
+  engagementRate: number;
+}
+
+export interface PillarMetrics {
+  pillar: string;
+  totalReach: number;
+  totalEngagements: number;
+  avgEngagementRate: number;
+  contentCount: number;
+}
+
+export interface ContentRanking {
+  contentId: string;
+  title: string | null;
+  platform: string;
+  pillar: string | null;
+  reach: number;
+  engagements: number;
+  engagementRate: number;
+}
+
+export interface CampaignAnalyticsData {
+  totalReach: number;
+  totalEngagements: number;
+  totalImpressions: number;
+  engagementRate: number;
+  followerGrowth: number;
+  platformBreakdown: PlatformMetrics[];
+  pillarBreakdown: PillarMetrics[];
+  contentRankings: ContentRanking[];
+  aiInsights: string[];
+  aiRecommendations: string[];
+  snapshotDate: string;
+}
+
+export interface AnalyticsInsightsInput {
+  campaignName: string;
+  strategySummary: string;
+  platformBreakdown: PlatformMetrics[];
+  pillarBreakdown: PillarMetrics[];
+  contentRankings: ContentRanking[];
+}
+
+export interface AnalyticsInsightsResult {
+  insights: string[];
+  recommendations: string[];
+  audienceUpdates: {
+    confidenceLevel: ConfidenceLevel;
+    newPatterns: string[];
+  };
+}
+
+// ----------------------------------------------------------------------------
 // Agent Types
 // ----------------------------------------------------------------------------
 
@@ -432,7 +493,8 @@ export type AgentType =
   | "content_generation"
   | "campaign_strategy"
   | "campaign_calendar"
-  | "campaign_content";
+  | "campaign_content"
+  | "analytics_insights";
 
 export type AgentStatus = "success" | "failed" | "partial";
 

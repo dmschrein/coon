@@ -17,6 +17,7 @@ import {
   Sparkles,
   ClipboardCheck,
   Send,
+  BarChart3,
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -271,6 +272,24 @@ export default function CampaignDetailPage({
             <Button>
               <Send className="mr-2 h-4 w-4" />
               Go to Publish
+            </Button>
+          </Link>
+        </div>
+      )}
+
+      {/* Analytics CTA */}
+      {content.length > 0 && campaign.status !== "draft" && (
+        <div className="flex items-center justify-between rounded-lg border p-6">
+          <div>
+            <h2 className="text-xl font-semibold">Analytics</h2>
+            <p className="text-muted-foreground text-sm">
+              Track performance and get AI-powered insights
+            </p>
+          </div>
+          <Link href={`/dashboard/campaign/${id}/analytics`}>
+            <Button>
+              <BarChart3 className="mr-2 h-4 w-4" />
+              View Analytics
             </Button>
           </Link>
         </div>
