@@ -109,6 +109,10 @@ export interface CampaignContentRepository {
     id: string,
     approvalStatus: ContentApprovalStatus
   ): Promise<void>;
+  bulkUpdateApprovalStatus(
+    ids: string[],
+    approvalStatus: ContentApprovalStatus
+  ): Promise<void>;
   updateBody(id: string, body: string): Promise<void>;
 }
 

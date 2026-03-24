@@ -106,4 +106,48 @@ describe("CampaignContentEntity", () => {
       expect(content.errorMessage).toBe("API timeout");
     });
   });
+
+  describe("approval status", () => {
+    it("defaults to pending_review", () => {
+      const content = createTestContent();
+      expect(content.approvalStatus).toBe("pending_review");
+      expect(content.isPendingReview()).toBe(true);
+    });
+
+    it("setApprovalStatus updates status", () => {
+      const content = createTestContent();
+      content.setApprovalStatus("approved");
+      expect(content.isApproved()).toBe(true);
+      expect(content.isPendingReview()).toBe(false);
+    });
+
+    it("isRejected returns true when rejected", () => {
+      const content = createTestContent();
+      content.setApprovalStatus("rejected");
+      expect(content.isRejected()).toBe(true);
+    });
+
+    it("needsRevision returns true when needs_revision", () => {
+      const content = createTestContent();
+      content.setApprovalStatus("needs_revision");
+      expect(content.needsRevision()).toBe(true);
+    });
+  });
+
+  describe("create() with optional fields", () => {
+    it("accepts title and pillar", () => {
+      const content = CampaignContentEntity.create({
+        id: "content-2",
+        campaignId: "campaign-1",
+        userId: "user-1",
+        platform: "instagram",
+        title: "My Post",
+        pillar: "education",
+      });
+      expect(content.title).toBe("My Post");
+      expect(content.pillar).toBe("education");
+      expect(content.body).toBeNull();
+      expect(content.scheduledFor).toBeNull();
+    });
+  });
 });

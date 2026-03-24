@@ -25,6 +25,10 @@ import type {
   CampaignGeneratorOutput,
   ContentApprovalStatus,
 } from "@/types";
+import type {
+  CohesionCheckInput,
+  CohesionCheckResult,
+} from "@/lib/agents/cohesion-checker";
 import { ServiceError } from "./audience-service";
 
 interface StrategyAgent {
@@ -84,6 +88,14 @@ interface ContentAgent {
   getNextBatch: (platforms: CampaignPlatform[]) => CampaignPlatform[];
 }
 
+interface CohesionCheckerAgent {
+  checkCampaignCohesion: (input: CohesionCheckInput) => Promise<{
+    result: CohesionCheckResult;
+    modelUsed: string;
+    tokensUsed: number;
+  }>;
+}
+
 export class CampaignService {
   constructor(
     private campaignRepo: CampaignRepository,
@@ -96,6 +108,7 @@ export class CampaignService {
     private calendarAgent: CalendarAgent,
     private contentAgent: ContentAgent,
     private campaignGeneratorAgent: CampaignGeneratorAgent,
+    private cohesionCheckerAgent?: CohesionCheckerAgent,
     private pluginRunner?: PluginRunner
   ) {}
 
@@ -366,6 +379,87 @@ export class CampaignService {
     approvalStatus: ContentApprovalStatus
   ): Promise<void> {
     await this.contentRepo.updateApprovalStatus(contentId, approvalStatus);
+  }
+
+  async bulkUpdateApproval(
+    contentIds: string[],
+    approvalStatus: ContentApprovalStatus
+  ): Promise<void> {
+    await this.contentRepo.bulkUpdateApprovalStatus(contentIds, approvalStatus);
+  }
+
+  async checkCohesion(
+    campaignId: string,
+    userId: string
+  ): Promise<CohesionCheckResult> {
+    if (!this.cohesionCheckerAgent) {
+      throw new ServiceError(
+        "Cohesion checker not configured",
+        "NOT_CONFIGURED"
+      );
+    }
+
+    const campaign = await this.campaignRepo.findById(campaignId, userId);
+    if (!campaign) {
+      throw new ServiceError("Campaign not found", "NOT_FOUND");
+    }
+
+    const content = await this.contentRepo.findByCampaignId(campaignId);
+
+    const startTime = Date.now();
+
+    try {
+      const { result, modelUsed, tokensUsed } =
+        await this.cohesionCheckerAgent.checkCampaignCohesion({
+          campaignName: campaign.name ?? "Untitled",
+          strategySummary: campaign.strategySummary ?? "",
+          contentPillars: (campaign.contentPillars ?? []).map((p) => ({
+            theme: p.theme,
+            description: p.description,
+          })),
+          contentPieces: content.map((c) => ({
+            id: c.id,
+            platform: c.platform,
+            title: c.title,
+            pillar: c.pillar,
+            body: c.body,
+          })),
+        });
+
+      const durationMs = Date.now() - startTime;
+
+      await this.agentRunRepo.log({
+        userId,
+        agentType: "campaign_content",
+        inputData: { campaignId, action: "cohesion_check" },
+        outputData: { score: result.score },
+        modelUsed,
+        tokensUsed,
+        durationMs,
+        status: "success",
+      });
+
+      return result;
+    } catch (error) {
+      const durationMs = Date.now() - startTime;
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+
+      await this.agentRunRepo.log({
+        userId,
+        agentType: "campaign_content",
+        inputData: { campaignId, action: "cohesion_check" },
+        modelUsed: "claude-sonnet-4-20250514",
+        durationMs,
+        status: "failed",
+        errorMessage,
+      });
+
+      throw new ServiceError(
+        "Failed to check campaign cohesion. Please try again.",
+        "AGENT_FAILED"
+      );
+    }
   }
 
   async generateCalendar(

@@ -29,6 +29,7 @@ import {
   getNextBatch,
 } from "@/lib/agents/campaign-content";
 import { generateCampaignPlan } from "@/lib/agents/campaign-generator";
+import { checkCampaignCohesion } from "@/lib/agents/cohesion-checker";
 
 // ─── Singleton Instances ──────────────────────────────────────────────────────
 
@@ -88,6 +89,7 @@ class Container {
       { generateCampaignCalendar },
       { generatePlatformBatch, getNextBatch },
       { generateCampaignPlan },
+      { checkCampaignCohesion },
       this.pluginRunner
     );
   }

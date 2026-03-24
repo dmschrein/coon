@@ -11,8 +11,9 @@ import {
 import { CampaignOverview } from "@/components/campaign/campaign-overview";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Calendar, Sparkles } from "lucide-react";
+import { Loader2, Calendar, Sparkles, ClipboardCheck } from "lucide-react";
 import { toast } from "sonner";
+import Link from "next/link";
 
 export default function CampaignDetailPage({
   params,
@@ -228,6 +229,24 @@ export default function CampaignDetailPage({
               )
             )}
           </div>
+        </div>
+      )}
+
+      {/* Review Content CTA */}
+      {completedContent.length > 0 && (
+        <div className="flex items-center justify-between rounded-lg border p-6">
+          <div>
+            <h2 className="text-xl font-semibold">Review Board</h2>
+            <p className="text-muted-foreground text-sm">
+              Review, edit, and approve your generated content
+            </p>
+          </div>
+          <Link href={`/dashboard/campaign/${id}/review`}>
+            <Button>
+              <ClipboardCheck className="mr-2 h-4 w-4" />
+              Review Content
+            </Button>
+          </Link>
         </div>
       )}
 

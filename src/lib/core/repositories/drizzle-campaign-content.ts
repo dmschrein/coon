@@ -2,7 +2,7 @@
  * Drizzle Campaign Content Repository - Data access for platform content.
  */
 
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { campaignContent } from "@/lib/db/schema";
 import { CampaignContentEntity } from "../domain/content";
 import type { CampaignContentRepository } from "./interfaces";
@@ -30,7 +30,12 @@ export class DrizzleCampaignContentRepository implements CampaignContentReposito
       row.contentData,
       row.tokensUsed,
       row.errorMessage,
-      row.createdAt ?? new Date()
+      row.createdAt ?? new Date(),
+      (row.approvalStatus as ContentApprovalStatus) ?? "pending_review",
+      row.title ?? null,
+      row.pillar ?? null,
+      row.body ?? null,
+      row.scheduledFor ?? null
     );
   }
 
@@ -120,6 +125,18 @@ export class DrizzleCampaignContentRepository implements CampaignContentReposito
       .update(campaignContent)
       .set({ approvalStatus, updatedAt: new Date() })
       .where(eq(campaignContent.id, id));
+  }
+
+  async bulkUpdateApprovalStatus(
+    ids: string[],
+    approvalStatus: ContentApprovalStatus
+  ): Promise<void> {
+    if (ids.length === 0) return;
+
+    await this.db
+      .update(campaignContent)
+      .set({ approvalStatus, updatedAt: new Date() })
+      .where(inArray(campaignContent.id, ids));
   }
 
   async updateBody(id: string, body: string): Promise<void> {

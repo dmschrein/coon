@@ -5,7 +5,11 @@
  * Zero external dependencies.
  */
 
-import type { CampaignPlatform, CampaignContentStatus } from "@/types";
+import type {
+  CampaignPlatform,
+  CampaignContentStatus,
+  ContentApprovalStatus,
+} from "@/types";
 
 export class CampaignContentEntity {
   constructor(
@@ -17,7 +21,12 @@ export class CampaignContentEntity {
     public contentData: unknown | null,
     public tokensUsed: number | null,
     public errorMessage: string | null,
-    public readonly createdAt: Date
+    public readonly createdAt: Date,
+    public approvalStatus: ContentApprovalStatus = "pending_review",
+    public title: string | null = null,
+    public pillar: string | null = null,
+    public body: string | null = null,
+    public scheduledFor: Date | null = null
   ) {}
 
   isPending(): boolean {
@@ -34,6 +43,22 @@ export class CampaignContentEntity {
 
   isFailed(): boolean {
     return this.status === "failed";
+  }
+
+  isPendingReview(): boolean {
+    return this.approvalStatus === "pending_review";
+  }
+
+  isApproved(): boolean {
+    return this.approvalStatus === "approved";
+  }
+
+  isRejected(): boolean {
+    return this.approvalStatus === "rejected";
+  }
+
+  needsRevision(): boolean {
+    return this.approvalStatus === "needs_revision";
   }
 
   canRetry(): boolean {
@@ -62,11 +87,17 @@ export class CampaignContentEntity {
     this.errorMessage = errorMessage;
   }
 
+  setApprovalStatus(status: ContentApprovalStatus): void {
+    this.approvalStatus = status;
+  }
+
   static create(params: {
     id: string;
     campaignId: string;
     userId: string;
     platform: CampaignPlatform;
+    title?: string;
+    pillar?: string;
   }): CampaignContentEntity {
     return new CampaignContentEntity(
       params.id,
@@ -77,7 +108,12 @@ export class CampaignContentEntity {
       null,
       null,
       null,
-      new Date()
+      new Date(),
+      "pending_review",
+      params.title ?? null,
+      params.pillar ?? null,
+      null,
+      null
     );
   }
 }
