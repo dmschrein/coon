@@ -49,6 +49,7 @@ export function ContentCardExpanded({
       Placeholder.configure({ placeholder: "Write your content here..." }),
     ],
     content: body ?? "",
+    immediatelyRender: false,
     onUpdate: () => setHasChanges(true),
   });
 

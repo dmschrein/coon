@@ -612,8 +612,32 @@ export class CampaignService {
       );
     }
 
+    // Build strategy — use existing or synthesize from plan fields
+    const strategy: CampaignStrategy = campaign.strategy ?? {
+      campaignName: campaign.name ?? "Campaign",
+      theme: campaign.topic ?? "",
+      goal: campaign.goal ?? "",
+      targetOutcome: "",
+      timelineWeeks: this.durationToWeeks(campaign.duration),
+      messagingFramework: {
+        coreMessage: campaign.strategySummary ?? "",
+        supportingMessages: [],
+        toneGuidelines: "",
+        keyPhrases: [],
+        avoidPhrases: [],
+      },
+      platformAllocations: campaign.selectedPlatforms.map((p, i) => ({
+        platform: p,
+        role: "content",
+        contentFocus: "",
+        frequencySuggestion: `${campaign.frequencyConfig?.[p] ?? 3}x/week`,
+        priorityOrder: i + 1,
+      })),
+      contentPillars: campaign.contentPillars ?? [],
+      audienceHooks: [],
+    };
+
     // Priority-sort pending platforms
-    const strategy = campaign.strategy!;
     const platformsByPriority = strategy.platformAllocations
       .sort((a, b) => a.priorityOrder - b.priorityOrder)
       .map((p) => p.platform);

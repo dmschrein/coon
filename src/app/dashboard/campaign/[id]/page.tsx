@@ -233,7 +233,7 @@ export default function CampaignDetailPage({
       )}
 
       {/* Review Content CTA */}
-      {completedContent.length > 0 && (
+      {content.length > 0 && (
         <div className="flex items-center justify-between rounded-lg border p-6">
           <div>
             <h2 className="text-xl font-semibold">Review Board</h2>

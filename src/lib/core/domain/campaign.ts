@@ -56,7 +56,7 @@ export class Campaign {
     return (
       (this.status === "calendar_complete" ||
         this.status === "generating_content") &&
-      this.strategy !== null
+      (this.strategy !== null || this.contentPillars !== null)
     );
   }
 
