@@ -20,6 +20,7 @@ import { AudienceService } from "../services/audience-service";
 import { CampaignService } from "../services/campaign-service";
 import { PublishService } from "../services/publish-service";
 import { AnalyticsService } from "../services/analytics-service";
+import { EnrichmentService } from "../services/enrichment-service";
 import { getAdapter } from "@/lib/services/social";
 import {
   PluginRunner,
@@ -36,6 +37,12 @@ import {
 import { generateCampaignPlan } from "@/lib/agents/campaign-generator";
 import { checkCampaignCohesion } from "@/lib/agents/cohesion-checker";
 import { generateAnalyticsInsights } from "@/lib/agents/analytics-insights";
+import {
+  enrichContentWithMedia,
+  isVisualPlatform,
+} from "@/lib/agents/media-enrichment";
+import { scoreContent } from "@/lib/agents/content-scoring";
+import { optimizeContent } from "@/lib/agents/seo-optimization";
 
 // ─── Singleton Instances ──────────────────────────────────────────────────────
 
@@ -62,6 +69,7 @@ class Container {
   readonly campaignService: CampaignService;
   readonly publishService: PublishService;
   readonly analyticsService: AnalyticsService;
+  readonly enrichmentService: EnrichmentService;
 
   constructor(database: typeof db) {
     // Initialize repositories
@@ -118,6 +126,14 @@ class Container {
       this.profileRepo,
       this.agentRunRepo,
       { generateAnalyticsInsights }
+    );
+
+    this.enrichmentService = new EnrichmentService(
+      this.contentRepo,
+      { enrichContentWithMedia, isVisualPlatform },
+      { scoreContent },
+      this.campaignRepo,
+      { optimizeContent }
     );
   }
 }

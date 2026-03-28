@@ -4,7 +4,9 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Camera } from "lucide-react";
 import type { ContentApprovalStatus, CampaignPlatform } from "@/types";
+import { ScoreBadge } from "./score-badge";
 
 interface ContentCardProps {
   id: string;
@@ -13,6 +15,8 @@ interface ContentCardProps {
   pillar: string | null;
   scheduledFor: Date | null;
   approvalStatus: ContentApprovalStatus;
+  hasMedia?: boolean;
+  overallScore?: number;
   onClick: () => void;
 }
 
@@ -36,6 +40,8 @@ export function ContentCard({
   title,
   pillar,
   scheduledFor,
+  hasMedia,
+  overallScore,
   onClick,
 }: ContentCardProps) {
   const {
@@ -73,14 +79,22 @@ export function ContentCard({
             </Badge>
           )}
         </div>
-        <p className="line-clamp-2 text-sm font-medium">
-          {title ?? "Untitled content"}
-        </p>
-        {scheduledFor && (
-          <p className="text-muted-foreground text-xs">
-            {new Date(scheduledFor).toLocaleDateString()}
+        <div className="flex items-center gap-1">
+          <p className="line-clamp-2 flex-1 text-sm font-medium">
+            {title ?? "Untitled content"}
           </p>
-        )}
+          {hasMedia && (
+            <Camera className="h-3.5 w-3.5 shrink-0 text-blue-500" />
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          {scheduledFor && (
+            <p className="text-muted-foreground flex-1 text-xs">
+              {new Date(scheduledFor).toLocaleDateString()}
+            </p>
+          )}
+          {overallScore != null && <ScoreBadge score={overallScore} />}
+        </div>
       </CardContent>
     </Card>
   );

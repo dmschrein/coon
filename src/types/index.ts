@@ -485,6 +485,73 @@ export interface AnalyticsInsightsResult {
 }
 
 // ----------------------------------------------------------------------------
+// Content Enrichment Types (Image Generation, Scoring, SEO)
+// ----------------------------------------------------------------------------
+
+export interface MediaAsset {
+  type: "image" | "storyboard_frame";
+  imageUrl: string;
+  revisedPrompt: string;
+  originalDescription: string;
+  altText: string;
+  dimensions: { width: number; height: number };
+  slideNumber?: number;
+  shotNumber?: number;
+}
+
+export interface MediaSuggestions {
+  assets: MediaAsset[];
+  generatedAt: string;
+}
+
+export interface ContentScores {
+  engagementPotential: number;
+  brandVoiceAlignment: number;
+  platformFit: number;
+  overallScore: number;
+  feedback: string[];
+  suggestions: string[];
+  scoredAt: string;
+}
+
+export interface HashtagAnalysis {
+  current: string[];
+  suggested: string[];
+  trending: string[];
+  removed: string[];
+  reasoning: string;
+}
+
+export interface SeoAnalysis {
+  keywordDensity: Record<string, number>;
+  missingKeywords: string[];
+  metaDescriptionScore: number;
+  headingStructureScore: number;
+  readabilityScore: number;
+  suggestions: string[];
+}
+
+export interface PostingTimeRecommendation {
+  bestTime: string;
+  timezone: string;
+  reasoning: string;
+  alternativeTimes: string[];
+}
+
+export interface SeoOptimizationData {
+  hashtags?: HashtagAnalysis;
+  seo?: SeoAnalysis;
+  postingTime: PostingTimeRecommendation;
+  optimizedAt: string;
+}
+
+export interface ContentEnrichments {
+  media?: MediaSuggestions;
+  scores?: ContentScores;
+  seoData?: SeoOptimizationData;
+}
+
+// ----------------------------------------------------------------------------
 // Agent Types
 // ----------------------------------------------------------------------------
 
@@ -494,7 +561,10 @@ export type AgentType =
   | "campaign_strategy"
   | "campaign_calendar"
   | "campaign_content"
-  | "analytics_insights";
+  | "analytics_insights"
+  | "image_generation"
+  | "content_scoring"
+  | "seo_optimization";
 
 export type AgentStatus = "success" | "failed" | "partial";
 

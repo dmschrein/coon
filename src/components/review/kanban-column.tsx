@@ -17,6 +17,8 @@ interface ContentItem {
   pillar: string | null;
   scheduledFor: Date | null;
   approvalStatus: ContentApprovalStatus;
+  hasMedia?: boolean;
+  overallScore?: number;
 }
 
 interface KanbanColumnProps {

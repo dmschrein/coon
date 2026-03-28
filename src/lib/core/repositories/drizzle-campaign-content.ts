@@ -35,7 +35,8 @@ export class DrizzleCampaignContentRepository implements CampaignContentReposito
       row.title ?? null,
       row.pillar ?? null,
       row.body ?? null,
-      row.scheduledFor ?? null
+      row.scheduledFor ?? null,
+      row.mediaSuggestions ?? null
     );
   }
 
@@ -143,6 +144,13 @@ export class DrizzleCampaignContentRepository implements CampaignContentReposito
     await this.db
       .update(campaignContent)
       .set({ body, updatedAt: new Date() })
+      .where(eq(campaignContent.id, id));
+  }
+
+  async updateEnrichments(id: string, enrichments: unknown): Promise<void> {
+    await this.db
+      .update(campaignContent)
+      .set({ mediaSuggestions: enrichments, updatedAt: new Date() })
       .where(eq(campaignContent.id, id));
   }
 }

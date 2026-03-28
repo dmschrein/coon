@@ -116,6 +116,7 @@ export interface CampaignContentRepository {
     approvalStatus: ContentApprovalStatus
   ): Promise<void>;
   updateBody(id: string, body: string): Promise<void>;
+  updateEnrichments(id: string, enrichments: unknown): Promise<void>;
 }
 
 // ─── Quiz Response Repository ─────────────────────────────────────────────────

@@ -8,6 +8,9 @@ import {
   useGenerateCalendar,
   useGenerateNextBatch,
 } from "@/hooks/use-campaign";
+import { useGenerateMedia } from "@/hooks/use-media";
+import { useScoreCampaign } from "@/hooks/use-content-scoring";
+import { useOptimizeCampaign } from "@/hooks/use-seo-optimization";
 import { CampaignOverview } from "@/components/campaign/campaign-overview";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +21,9 @@ import {
   ClipboardCheck,
   Send,
   BarChart3,
+  Camera,
+  Star,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -32,6 +38,40 @@ export default function CampaignDetailPage({
   const generatePlan = useGeneratePlan(id);
   const generateCalendar = useGenerateCalendar(id);
   const generateNextBatch = useGenerateNextBatch(id);
+  const generateMedia = useGenerateMedia(id);
+  const scoreCampaign = useScoreCampaign(id);
+  const optimizeCampaign = useOptimizeCampaign(id);
+
+  const handleOptimizeContent = async () => {
+    try {
+      const result = await optimizeCampaign.mutateAsync();
+      toast.success(
+        `Optimized ${result.succeeded} of ${result.total} content pieces`
+      );
+    } catch {
+      toast.error("Failed to optimize content");
+    }
+  };
+
+  const handleScoreContent = async () => {
+    try {
+      const result = await scoreCampaign.mutateAsync();
+      toast.success(
+        `Scored ${result.succeeded} of ${result.total} content pieces`
+      );
+    } catch {
+      toast.error("Failed to score content");
+    }
+  };
+
+  const handleGenerateMedia = async () => {
+    try {
+      await generateMedia.mutateAsync();
+      toast.success("Images generated!");
+    } catch {
+      toast.error("Failed to generate images");
+    }
+  };
 
   const handleGeneratePlan = async () => {
     try {
@@ -254,6 +294,92 @@ export default function CampaignDetailPage({
               Review Content
             </Button>
           </Link>
+        </div>
+      )}
+
+      {/* Generate Images CTA */}
+      {completedContent.length > 0 && (
+        <div className="flex items-center justify-between rounded-lg border p-6">
+          <div>
+            <h2 className="text-xl font-semibold">Generate Images</h2>
+            <p className="text-muted-foreground text-sm">
+              Create AI-generated visuals for Instagram, Pinterest, YouTube, and
+              TikTok content
+            </p>
+          </div>
+          <Button
+            onClick={handleGenerateMedia}
+            disabled={generateMedia.isPending}
+          >
+            {generateMedia.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Camera className="mr-2 h-4 w-4" />
+                Generate Images
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+
+      {/* Score Content CTA */}
+      {completedContent.length > 0 && (
+        <div className="flex items-center justify-between rounded-lg border p-6">
+          <div>
+            <h2 className="text-xl font-semibold">Score Content</h2>
+            <p className="text-muted-foreground text-sm">
+              AI-powered quality scoring for engagement, brand voice, and
+              platform fit
+            </p>
+          </div>
+          <Button
+            onClick={handleScoreContent}
+            disabled={scoreCampaign.isPending}
+          >
+            {scoreCampaign.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Scoring...
+              </>
+            ) : (
+              <>
+                <Star className="mr-2 h-4 w-4" />
+                Score Content
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+
+      {/* Optimize Content CTA */}
+      {completedContent.length > 0 && (
+        <div className="flex items-center justify-between rounded-lg border p-6">
+          <div>
+            <h2 className="text-xl font-semibold">Optimize Content</h2>
+            <p className="text-muted-foreground text-sm">
+              Hashtag analysis, SEO optimization, and best posting times
+            </p>
+          </div>
+          <Button
+            onClick={handleOptimizeContent}
+            disabled={optimizeCampaign.isPending}
+          >
+            {optimizeCampaign.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Optimizing...
+              </>
+            ) : (
+              <>
+                <Zap className="mr-2 h-4 w-4" />
+                Optimize Content
+              </>
+            )}
+          </Button>
         </div>
       )}
 

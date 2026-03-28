@@ -26,8 +26,16 @@ export class CampaignContentEntity {
     public title: string | null = null,
     public pillar: string | null = null,
     public body: string | null = null,
-    public scheduledFor: Date | null = null
+    public scheduledFor: Date | null = null,
+    public enrichments: unknown | null = null
   ) {}
+
+  hasMedia(): boolean {
+    if (!this.enrichments) return false;
+    const e = this.enrichments as Record<string, unknown>;
+    const media = e.media as { assets?: unknown[] } | undefined;
+    return !!media?.assets?.length;
+  }
 
   isPending(): boolean {
     return this.status === "pending";
@@ -112,6 +120,7 @@ export class CampaignContentEntity {
       "pending_review",
       params.title ?? null,
       params.pillar ?? null,
+      null,
       null,
       null
     );

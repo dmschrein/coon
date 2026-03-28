@@ -24,6 +24,8 @@ interface ContentItem {
   body: string | null;
   scheduledFor: Date | null;
   approvalStatus: ContentApprovalStatus;
+  hasMedia?: boolean;
+  overallScore?: number;
 }
 
 interface KanbanBoardProps {

@@ -18,7 +18,11 @@ import { BulkActionsBar } from "@/components/review/bulk-actions-bar";
 import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft, Wand2 } from "lucide-react";
 import Link from "next/link";
-import type { ContentApprovalStatus, CampaignPlatform } from "@/types";
+import type {
+  ContentApprovalStatus,
+  CampaignPlatform,
+  ContentEnrichments,
+} from "@/types";
 import type { CohesionCheckResult } from "@/lib/agents/cohesion-checker";
 
 export default function ReviewBoardPage({
@@ -60,14 +64,20 @@ export default function ReviewBoardPage({
           body: string | null;
           scheduledFor: string | null;
           approvalStatus: ContentApprovalStatus;
+          contentData: unknown;
+          mediaSuggestions: ContentEnrichments | null;
         }) => ({
           id: c.id,
           platform: c.platform,
           title: c.title,
           pillar: c.pillar,
           body: c.body,
+          contentData: c.contentData ?? null,
           scheduledFor: c.scheduledFor ? new Date(c.scheduledFor) : null,
           approvalStatus: c.approvalStatus ?? "pending_review",
+          enrichments: c.mediaSuggestions ?? null,
+          hasMedia: !!c.mediaSuggestions?.media?.assets?.length,
+          overallScore: c.mediaSuggestions?.scores?.overallScore,
         })
       );
   }, [content]);
@@ -185,6 +195,7 @@ export default function ReviewBoardPage({
         <ContentCardExpanded
           open={!!selectedCard}
           onClose={() => setSelectedCard(null)}
+          campaignId={id}
           {...selectedItem}
           onApprovalChange={handleStatusChange}
           onBodyUpdate={handleBodyUpdate}
