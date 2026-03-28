@@ -12,6 +12,7 @@ import { AudienceProfileCard } from "@/components/audience/audience-profile-card
 import { PersonaCard } from "@/components/audience/persona-card";
 import { KeywordsDisplay } from "@/components/audience/keywords-display";
 import { ConfidenceBadge } from "@/components/audience/confidence-badge";
+import { StrategyCard } from "@/components/audience/strategy-card";
 import { InsightsTab } from "@/components/audience/insights-tab";
 import { CtaBanner } from "@/components/audience/cta-banner";
 import { Loader2, RefreshCw, Sparkles } from "lucide-react";
@@ -193,35 +194,43 @@ export default function AudiencePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          <div>
-            <h1 className="text-3xl font-bold">Audience Analysis</h1>
-            <p className="text-muted-foreground">
-              Your AI-generated target audience profile
-            </p>
-          </div>
-          <ConfidenceBadge level={profile.confidenceLevel} />
-        </div>
-        <Button
-          onClick={handleRegenerate}
-          disabled={regenerate.isPending}
-          variant="outline"
-          size="sm"
-        >
-          {regenerate.isPending ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Regenerating...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Regenerate
-            </>
-          )}
-        </Button>
+      <div>
+        <h1 className="text-3xl font-bold">Audience Analysis</h1>
+        <p className="text-muted-foreground">
+          Your AI-generated target audience profile
+        </p>
       </div>
+
+      {profile.profileData.brandVoice && profile.profileData.contentPillars ? (
+        <StrategyCard
+          profile={profile.profileData}
+          confidenceLevel={profile.confidenceLevel}
+          onRegenerate={handleRegenerate}
+          isRegenerating={regenerate.isPending}
+        />
+      ) : (
+        <div className="flex items-center justify-between">
+          <ConfidenceBadge level={profile.confidenceLevel} />
+          <Button
+            onClick={handleRegenerate}
+            disabled={regenerate.isPending}
+            variant="outline"
+            size="sm"
+          >
+            {regenerate.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Regenerating...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Regenerate
+              </>
+            )}
+          </Button>
+        </div>
+      )}
 
       <Tabs defaultValue="overview">
         <TabsList>

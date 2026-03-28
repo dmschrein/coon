@@ -90,6 +90,15 @@ export interface AudienceProfile {
   };
   keywords: string[];
   hashtags: string[];
+  brandVoice?: {
+    descriptors: string[];
+    summary: string;
+  };
+  contentPillars?: {
+    name: string;
+    percentage: number;
+    description: string;
+  }[];
 }
 
 // ----------------------------------------------------------------------------

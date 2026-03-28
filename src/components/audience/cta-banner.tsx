@@ -2,10 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { useCampaignList } from "@/hooks/use-campaign";
+import { Plus } from "lucide-react";
 
 export function CtaBanner() {
   const router = useRouter();
+  const { data: campaigns } = useCampaignList();
+
+  if (campaigns && campaigns.length > 0) return null;
 
   return (
     <div className="bg-muted/40 flex items-center justify-between gap-4 rounded-lg border p-6">
@@ -16,8 +20,8 @@ export function CtaBanner() {
         </p>
       </div>
       <Button onClick={() => router.push("/dashboard/campaign/new")}>
-        Create Campaign
-        <ArrowRight className="ml-2 h-4 w-4" />
+        <Plus className="mr-2 h-4 w-4" />
+        New Campaign
       </Button>
     </div>
   );

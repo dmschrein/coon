@@ -57,15 +57,24 @@ Based on this information, generate a JSON object with this exact structure:
     "decisionMakingProcess": "string"
   },
   "keywords": ["string - 10-15 keywords this audience uses"],
-  "hashtags": ["string - 10-15 relevant hashtags with # prefix"]
+  "hashtags": ["string - 10-15 relevant hashtags with # prefix"],
+  "brandVoice": {
+    "descriptors": ["string - 3-4 words describing the ideal brand voice (e.g. Bold, Empathetic, Conversational)"],
+    "summary": "string - one sentence describing how to speak to this audience"
+  },
+  "contentPillars": [
+    {
+      "name": "string - short pillar name",
+      "percentage": "number - allocation percentage (all pillars must sum to 100)",
+      "description": "string - one sentence explaining this pillar"
+    }
+  ]
 }
 
-Generate 2-3 personas. Be specific and actionable. Avoid generic descriptions.`;
+Generate 2-3 personas. Generate exactly 3-4 brand voice descriptors. Generate exactly 3-4 content pillars whose percentages sum to 100. Be specific and actionable. Avoid generic descriptions.`;
 }
 
-export async function analyzeAudience(
-  quizData: QuizResponse
-): Promise<{
+export async function analyzeAudience(quizData: QuizResponse): Promise<{
   profile: AudienceProfile;
   modelUsed: string;
   tokensUsed: number;
