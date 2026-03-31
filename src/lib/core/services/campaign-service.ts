@@ -462,6 +462,48 @@ export class CampaignService {
     }
   }
 
+  async updateCampaign(
+    campaignId: string,
+    userId: string,
+    data: {
+      name?: string;
+      goal?: string;
+      topic?: string;
+      duration?: string;
+      platforms?: string[];
+      frequencyConfig?: Record<string, number>;
+    }
+  ): Promise<Campaign> {
+    const campaign = await this.campaignRepo.findById(campaignId, userId);
+    if (!campaign) {
+      throw new ServiceError("Campaign not found", "NOT_FOUND");
+    }
+
+    const updated = await this.campaignRepo.updateFields(campaignId, {
+      name: data.name,
+      goal: data.goal,
+      topic: data.topic,
+      duration: data.duration,
+      selectedPlatforms: data.platforms,
+      frequencyConfig: data.frequencyConfig,
+    });
+
+    if (!updated) {
+      throw new ServiceError("Failed to update campaign", "INTERNAL_ERROR");
+    }
+
+    return updated;
+  }
+
+  async deleteCampaign(campaignId: string, userId: string): Promise<void> {
+    const campaign = await this.campaignRepo.findById(campaignId, userId);
+    if (!campaign) {
+      throw new ServiceError("Campaign not found", "NOT_FOUND");
+    }
+
+    await this.campaignRepo.delete(campaignId);
+  }
+
   async generateCalendar(
     campaignId: string,
     userId: string

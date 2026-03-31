@@ -81,6 +81,7 @@ export default function CampaignPage() {
               status: string;
               goal: string | null;
               createdAt: string;
+              contentCount?: number;
             }) => (
               <CampaignCard
                 key={campaign.id}
@@ -90,9 +91,19 @@ export default function CampaignPage() {
                 selectedPlatforms={campaign.selectedPlatforms ?? []}
                 goal={campaign.goal}
                 createdAt={campaign.createdAt}
+                contentCount={campaign.contentCount}
               />
             )
           )}
+          <Link
+            href="/dashboard/campaign/new"
+            className="hover:border-primary/50 hover:bg-muted/50 flex min-h-[140px] flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors"
+          >
+            <Plus className="text-muted-foreground h-8 w-8" />
+            <span className="text-muted-foreground mt-2 text-sm font-medium">
+              New Campaign
+            </span>
+          </Link>
         </div>
       )}
     </div>

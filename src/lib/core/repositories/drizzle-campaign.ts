@@ -224,4 +224,38 @@ export class DrizzleCampaignRepository implements CampaignRepository {
       })
       .where(eq(campaigns.id, id));
   }
+
+  async updateFields(
+    id: string,
+    data: {
+      name?: string;
+      goal?: string;
+      topic?: string;
+      duration?: string;
+      selectedPlatforms?: string[];
+      frequencyConfig?: Record<string, number>;
+    }
+  ): Promise<Campaign | null> {
+    const updateData: Record<string, unknown> = { updatedAt: new Date() };
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.goal !== undefined) updateData.goal = data.goal;
+    if (data.topic !== undefined) updateData.topic = data.topic;
+    if (data.duration !== undefined) updateData.duration = data.duration;
+    if (data.selectedPlatforms !== undefined)
+      updateData.selectedPlatforms = data.selectedPlatforms;
+    if (data.frequencyConfig !== undefined)
+      updateData.frequencyConfig = data.frequencyConfig;
+
+    const [row] = await this.db
+      .update(campaigns)
+      .set(updateData)
+      .where(eq(campaigns.id, id))
+      .returning();
+
+    return row ? this.toDomain(row) : null;
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.db.delete(campaigns).where(eq(campaigns.id, id));
+  }
 }

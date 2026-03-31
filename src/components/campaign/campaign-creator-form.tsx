@@ -10,16 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { GoalSelector } from "./goal-selector";
+import { DurationSelector } from "./duration-selector";
 import { PlatformFrequencyConfig } from "./platform-frequency-config";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 
 interface CampaignCreatorFormProps {
   onSubmit: (data: CampaignCreatorFormData) => void;
@@ -44,7 +38,7 @@ export function CampaignCreatorForm({
       goal: "build-awareness",
       topic: "",
       platforms: [],
-      duration: "4-weeks",
+      duration: "1-month",
       frequencyConfig: {},
     },
   });
@@ -58,7 +52,7 @@ export function CampaignCreatorForm({
         <Label htmlFor="name">Campaign Name</Label>
         <Input
           id="name"
-          placeholder="e.g., Product Launch Q2"
+          placeholder="e.g., Healthy Recipe Collection, Product Launch Week"
           {...register("name")}
         />
         {errors.name && (
@@ -81,10 +75,10 @@ export function CampaignCreatorForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="topic">Topic / Focus</Label>
+        <Label htmlFor="topic">Campaign Topic</Label>
         <Textarea
           id="topic"
-          placeholder="What's this campaign about? e.g., Launching our new AI-powered feature..."
+          placeholder="Describe what this campaign is about. e.g., 'Share healthy recipes that busy professionals can make in under 30 minutes, positioning me as a wellness expert before my recipe book launches.'"
           {...register("topic")}
           rows={3}
         />
@@ -115,18 +109,7 @@ export function CampaignCreatorForm({
           name="duration"
           control={control}
           render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select duration" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1-week">1 Week</SelectItem>
-                <SelectItem value="2-weeks">2 Weeks</SelectItem>
-                <SelectItem value="4-weeks">4 Weeks</SelectItem>
-                <SelectItem value="8-weeks">8 Weeks</SelectItem>
-                <SelectItem value="12-weeks">12 Weeks</SelectItem>
-              </SelectContent>
-            </Select>
+            <DurationSelector value={field.value} onChange={field.onChange} />
           )}
         />
       </div>
@@ -143,7 +126,10 @@ export function CampaignCreatorForm({
             Creating Campaign...
           </>
         ) : (
-          "Create Campaign"
+          <>
+            <Sparkles className="mr-2 h-4 w-4" />
+            Generate Campaign
+          </>
         )}
       </Button>
     </form>

@@ -175,12 +175,7 @@ export type CampaignGoal =
   | "promote-product"
   | "educate";
 
-export type CampaignDuration =
-  | "1-week"
-  | "2-weeks"
-  | "4-weeks"
-  | "8-weeks"
-  | "12-weeks";
+export type CampaignDuration = "1-week" | "2-weeks" | "1-month" | "ongoing";
 
 export type ContentApprovalStatus =
   | "pending_review"

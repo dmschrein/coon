@@ -67,6 +67,18 @@ export interface CampaignRepository {
     completedPlatforms: CampaignPlatform[],
     tokensUsed: number
   ): Promise<void>;
+  updateFields(
+    id: string,
+    data: {
+      name?: string;
+      goal?: string;
+      topic?: string;
+      duration?: string;
+      selectedPlatforms?: string[];
+      frequencyConfig?: Record<string, number>;
+    }
+  ): Promise<Campaign | null>;
+  delete(id: string): Promise<void>;
 }
 
 // ─── Audience Profile Repository ──────────────────────────────────────────────

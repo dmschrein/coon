@@ -11,22 +11,22 @@ const GOALS = [
   {
     value: "drive-engagement",
     label: "Drive Engagement",
-    description: "Spark conversations and build community",
+    description: "Spark conversations and build relationships",
   },
   {
     value: "generate-leads",
     label: "Generate Leads",
-    description: "Capture interest and grow your pipeline",
+    description: "Capture emails and build your waitlist",
   },
   {
     value: "promote-product",
-    label: "Promote Product",
-    description: "Drive signups, sales, or downloads",
+    label: "Promote a Product",
+    description: "Create buzz around a launch or offer",
   },
   {
     value: "educate",
-    label: "Educate",
-    description: "Establish thought leadership and trust",
+    label: "Educate Your Audience",
+    description: "Establish expertise and build trust",
   },
 ] as const;
 

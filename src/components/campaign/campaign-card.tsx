@@ -17,6 +17,7 @@ interface CampaignCardProps {
   selectedPlatforms: string[];
   goal: string | null;
   createdAt: string;
+  contentCount?: number;
 }
 
 export function CampaignCard({
@@ -26,6 +27,7 @@ export function CampaignCard({
   selectedPlatforms,
   goal,
   createdAt,
+  contentCount,
 }: CampaignCardProps) {
   const statusColor =
     status === "complete"
@@ -59,6 +61,7 @@ export function CampaignCard({
             ))}
           </div>
           <p className="text-muted-foreground mt-2 text-xs">
+            {contentCount !== undefined && `${contentCount} pieces · `}
             Created {new Date(createdAt).toLocaleDateString()}
           </p>
         </CardContent>

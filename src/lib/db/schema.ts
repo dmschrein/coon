@@ -7,6 +7,7 @@ import {
   integer,
   jsonb,
   uuid,
+  index,
 } from "drizzle-orm/pg-core";
 
 // ─── Users ───────────────────────────────────────────────────────────────────
@@ -66,61 +67,76 @@ export const contentItems = pgTable("content_items", {
 });
 
 // ─── Campaigns ──────────────────────────────────────────────────────────────
-export const campaigns = pgTable("campaigns", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  audienceProfileId: uuid("audience_profile_id").references(
-    () => audienceProfiles.id
-  ),
-  quizResponseId: uuid("quiz_response_id").references(() => quizResponses.id),
-  name: text("name"),
-  goal: text("goal"),
-  topic: text("topic"),
-  duration: text("duration"),
-  frequencyConfig: jsonb("frequency_config"),
-  status: text("status").notNull().default("draft"),
-  strategyData: jsonb("strategy_data"),
-  strategySummary: text("strategy_summary"),
-  contentPillars: jsonb("content_pillars"),
-  calendarData: jsonb("calendar_data"),
-  selectedPlatforms: text("selected_platforms").array(),
-  completedPlatforms: text("completed_platforms").array().default([]),
-  totalTokensUsed: integer("total_tokens_used").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+export const campaigns = pgTable(
+  "campaigns",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    audienceProfileId: uuid("audience_profile_id").references(
+      () => audienceProfiles.id
+    ),
+    quizResponseId: uuid("quiz_response_id").references(() => quizResponses.id),
+    name: text("name"),
+    goal: text("goal"),
+    topic: text("topic"),
+    duration: text("duration"),
+    frequencyConfig: jsonb("frequency_config"),
+    status: text("status").notNull().default("draft"),
+    strategyData: jsonb("strategy_data"),
+    strategySummary: text("strategy_summary"),
+    contentPillars: jsonb("content_pillars"),
+    calendarData: jsonb("calendar_data"),
+    selectedPlatforms: text("selected_platforms").array(),
+    completedPlatforms: text("completed_platforms").array().default([]),
+    totalTokensUsed: integer("total_tokens_used").default(0),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [index("campaigns_user_status_idx").on(table.userId, table.status)]
+);
 
 // ─── Campaign Content ───────────────────────────────────────────────────────
-export const campaignContent = pgTable("campaign_content", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  campaignId: uuid("campaign_id")
-    .notNull()
-    .references(() => campaigns.id, { onDelete: "cascade" }),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  platform: text("platform").notNull(),
-  pillar: text("pillar"),
-  title: text("title"),
-  body: text("body"),
-  hashtags: text("hashtags").array(),
-  mediaSuggestions: jsonb("media_suggestions"),
-  targetCommunity: text("target_community"),
-  scheduledFor: timestamp("scheduled_for"),
-  postedAt: timestamp("posted_at"),
-  aiConfidenceScore: integer("ai_confidence_score"),
-  externalPostId: text("external_post_id"),
-  externalPostUrl: text("external_post_url"),
-  approvalStatus: text("approval_status").default("pending_review"),
-  status: text("status").notNull().default("pending"),
-  contentData: jsonb("content_data"),
-  tokensUsed: integer("tokens_used"),
-  errorMessage: text("error_message"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+export const campaignContent = pgTable(
+  "campaign_content",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    campaignId: uuid("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    platform: text("platform").notNull(),
+    pillar: text("pillar"),
+    title: text("title"),
+    body: text("body"),
+    hashtags: text("hashtags").array(),
+    mediaSuggestions: jsonb("media_suggestions"),
+    targetCommunity: text("target_community"),
+    scheduledFor: timestamp("scheduled_for"),
+    postedAt: timestamp("posted_at"),
+    aiConfidenceScore: integer("ai_confidence_score"),
+    externalPostId: text("external_post_id"),
+    externalPostUrl: text("external_post_url"),
+    approvalStatus: text("approval_status").default("pending_review"),
+    status: text("status").notNull().default("pending"),
+    contentData: jsonb("content_data"),
+    tokensUsed: integer("tokens_used"),
+    errorMessage: text("error_message"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    index("campaign_content_campaign_idx").on(table.campaignId),
+    index("campaign_content_campaign_status_idx").on(
+      table.campaignId,
+      table.status
+    ),
+    index("campaign_content_scheduled_idx").on(table.scheduledFor),
+  ]
+);
 
 // ─── Campaign Calendar Entries ──────────────────────────────────────────────
 export const campaignCalendarEntries = pgTable("campaign_calendar_entries", {

@@ -17,9 +17,8 @@ export const campaignGoalValues = [
 export const campaignDurationValues = [
   "1-week",
   "2-weeks",
-  "4-weeks",
-  "8-weeks",
-  "12-weeks",
+  "1-month",
+  "ongoing",
 ] as const;
 
 export const campaignCreatorSchema = z.object({
@@ -32,6 +31,10 @@ export const campaignCreatorSchema = z.object({
 });
 
 export type CampaignCreatorFormData = z.infer<typeof campaignCreatorSchema>;
+
+export const campaignUpdateSchema = campaignCreatorSchema.partial();
+
+export type CampaignUpdateData = z.infer<typeof campaignUpdateSchema>;
 
 // --- Campaign Platforms ---
 
