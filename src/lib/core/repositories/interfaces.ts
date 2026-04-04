@@ -129,6 +129,18 @@ export interface CampaignContentRepository {
   ): Promise<void>;
   updateBody(id: string, body: string): Promise<void>;
   updateEnrichments(id: string, enrichments: unknown): Promise<void>;
+  updateContentPiece(
+    id: string,
+    data: {
+      body: string;
+      hashtags: string[];
+      mediaSuggestions: unknown;
+      aiConfidenceScore: number;
+      targetCommunity: string;
+      contentData: unknown;
+      tokensUsed: number;
+    }
+  ): Promise<void>;
 }
 
 // ─── Quiz Response Repository ─────────────────────────────────────────────────

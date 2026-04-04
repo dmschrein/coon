@@ -7,11 +7,14 @@ import {
   useGeneratePlan,
   useGenerateCalendar,
   useGenerateNextBatch,
+  useGenerateFullCampaign,
+  useGenerationStatus,
 } from "@/hooks/use-campaign";
 import { useGenerateMedia } from "@/hooks/use-media";
 import { useScoreCampaign } from "@/hooks/use-content-scoring";
 import { useOptimizeCampaign } from "@/hooks/use-seo-optimization";
 import { CampaignOverview } from "@/components/campaign/campaign-overview";
+import { GenerationProgress } from "@/components/campaign/generation-progress";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -38,9 +41,22 @@ export default function CampaignDetailPage({
   const generatePlan = useGeneratePlan(id);
   const generateCalendar = useGenerateCalendar(id);
   const generateNextBatch = useGenerateNextBatch(id);
+  const generateFullCampaign = useGenerateFullCampaign(id);
   const generateMedia = useGenerateMedia(id);
   const scoreCampaign = useScoreCampaign(id);
   const optimizeCampaign = useOptimizeCampaign(id);
+
+  const isGenerating = data?.campaign?.status === "generating";
+  const generationStatus = useGenerationStatus(id, isGenerating);
+
+  const handleGenerateFullCampaign = async () => {
+    try {
+      await generateFullCampaign.mutateAsync();
+      toast.success("Campaign generation started!");
+    } catch {
+      toast.error("Failed to start generation");
+    }
+  };
 
   const handleOptimizeContent = async () => {
     try {
@@ -135,12 +151,46 @@ export default function CampaignDetailPage({
   const { campaign, content, calendarEntries } = data;
   const strategy = campaign.strategyData as CampaignStrategy | null;
 
+  // --- Generating State: Show Progress Screen ---
+  if (isGenerating && generationStatus.data) {
+    return (
+      <GenerationProgress
+        {...generationStatus.data}
+        onRetry={handleGenerateFullCampaign}
+      />
+    );
+  }
+
+  // Show minimal progress screen while polling data loads
+  if (isGenerating) {
+    return (
+      <GenerationProgress
+        status="generating"
+        strategyComplete={false}
+        totalPieces={0}
+        completedPieces={0}
+        failedPieces={0}
+        platforms={campaign.selectedPlatforms ?? []}
+        currentPlatform={null}
+        progress={0}
+        onRetry={handleGenerateFullCampaign}
+      />
+    );
+  }
+
   const pendingContent = content.filter(
     (c: { status: string }) => c.status === "pending" || c.status === "failed"
   );
   const completedContent = content.filter(
     (c: { status: string }) => c.status === "complete"
   );
+
+  // Build content summary for overview
+  const platformCounts: Record<string, number> = {};
+  for (const c of content) {
+    const p = c.platform as string;
+    platformCounts[p] = (platformCounts[p] ?? 0) + 1;
+  }
 
   return (
     <div className="space-y-8">
@@ -163,43 +213,68 @@ export default function CampaignDetailPage({
         </div>
       </div>
 
-      {/* Draft: Generate Plan CTA */}
+      {/* Draft: Generate Campaign CTA */}
       {campaign.status === "draft" && (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12">
           <Sparkles className="text-primary h-12 w-12" />
-          <h2 className="mt-4 text-xl font-semibold">Ready to Plan</h2>
+          <h2 className="mt-4 text-xl font-semibold">Ready to Generate</h2>
           <p className="text-muted-foreground mt-2 text-center text-sm">
-            AI will generate a strategy summary, content pillars, and a full
-            content plan for your campaign.
+            AI will generate a strategy, content pillars, and all content pieces
+            for your campaign.
           </p>
           <Button
-            onClick={handleGeneratePlan}
-            disabled={generatePlan.isPending}
+            onClick={handleGenerateFullCampaign}
+            disabled={generateFullCampaign.isPending}
             className="mt-6"
             size="lg"
           >
-            {generatePlan.isPending ? (
+            {generateFullCampaign.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating Plan...
+                Starting Generation...
               </>
             ) : (
               <>
                 <Sparkles className="mr-2 h-4 w-4" />
-                Generate Campaign Plan
+                Generate Campaign
               </>
             )}
           </Button>
         </div>
       )}
 
-      {/* Campaign Overview (strategy summary + pillars) */}
-      {campaign.status !== "draft" && (
+      {/* Failed: Show retry */}
+      {campaign.status === "failed" && (
+        <GenerationProgress
+          status="failed"
+          strategyComplete={!!campaign.strategySummary}
+          totalPieces={content.length}
+          completedPieces={completedContent.length}
+          failedPieces={pendingContent.length}
+          platforms={campaign.selectedPlatforms ?? []}
+          currentPlatform={null}
+          progress={0}
+          onRetry={handleGenerateFullCampaign}
+        />
+      )}
+
+      {/* Campaign Overview (strategy + pillars + platform breakdown) */}
+      {campaign.status !== "draft" && campaign.status !== "failed" && (
         <CampaignOverview
           strategySummary={campaign.strategySummary ?? null}
           contentPillars={campaign.contentPillars ?? null}
           selectedPlatforms={campaign.selectedPlatforms ?? []}
           status={campaign.status}
+          contentSummary={
+            content.length > 0
+              ? {
+                  totalPieces: content.length,
+                  completedPieces: completedContent.length,
+                  platformCounts,
+                }
+              : undefined
+          }
+          campaignId={id}
         />
       )}
 
@@ -222,7 +297,7 @@ export default function CampaignDetailPage({
         </div>
       )}
 
-      {/* Calendar Generation */}
+      {/* Calendar Generation (legacy multi-step) */}
       {campaign.status === "strategy_complete" && (
         <div className="rounded-lg border p-6">
           <div className="flex items-center justify-between">
@@ -280,7 +355,7 @@ export default function CampaignDetailPage({
       )}
 
       {/* Review Content CTA */}
-      {content.length > 0 && (
+      {completedContent.length > 0 && (
         <div className="flex items-center justify-between rounded-lg border p-6">
           <div>
             <h2 className="text-xl font-semibold">Review Board</h2>
@@ -421,11 +496,10 @@ export default function CampaignDetailPage({
         </div>
       )}
 
-      {/* Content Generation Progress */}
+      {/* Content Generation Progress (legacy multi-step) */}
       {content.length > 0 &&
         (campaign.status === "calendar_complete" ||
-          campaign.status === "generating_content" ||
-          campaign.status === "complete") && (
+          campaign.status === "generating_content") && (
           <div className="rounded-lg border p-6">
             <div className="mb-4 flex items-center justify-between">
               <div>

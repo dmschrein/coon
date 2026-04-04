@@ -186,6 +186,59 @@ export function useUpdateCampaign(campaignId: string) {
   });
 }
 
+export function useGenerateFullCampaign(campaignId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/campaign/${campaignId}/generate`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("Failed to trigger campaign generation");
+      const json = await res.json();
+      if (json.error) throw new Error(json.error.message);
+      return json.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["campaign", campaignId] });
+    },
+  });
+}
+
+export interface GenerationStatus {
+  status: string;
+  strategyComplete: boolean;
+  totalPieces: number;
+  completedPieces: number;
+  failedPieces: number;
+  platforms: string[];
+  currentPlatform: string | null;
+  progress: number;
+}
+
+export function useGenerationStatus(campaignId: string, enabled: boolean) {
+  const queryClient = useQueryClient();
+
+  return useQuery<GenerationStatus>({
+    queryKey: ["campaign", campaignId, "generation-status"],
+    queryFn: async () => {
+      const res = await fetch(`/api/campaign/${campaignId}/generation-status`);
+      if (!res.ok) throw new Error("Failed to fetch generation status");
+      const json = await res.json();
+      if (json.error) throw new Error(json.error.message);
+
+      // When generation completes, invalidate the campaign query
+      if (json.data.status !== "generating" && json.data.status !== "draft") {
+        queryClient.invalidateQueries({ queryKey: ["campaign", campaignId] });
+      }
+
+      return json.data;
+    },
+    enabled: enabled && !!campaignId,
+    refetchInterval: enabled ? 2000 : false,
+  });
+}
+
 export function useDeleteCampaign() {
   const queryClient = useQueryClient();
 

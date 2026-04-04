@@ -13,7 +13,9 @@ export default function NewCampaignPage() {
   const handleSubmit = async (data: CampaignCreatorFormData) => {
     try {
       const campaign = await createCampaign.mutateAsync(data);
-      toast.success("Campaign created! Generating your plan...");
+      // Fire off generation in the background (don't await)
+      fetch(`/api/campaign/${campaign.id}/generate`, { method: "POST" });
+      toast.success("Campaign created! Generating your content...");
       router.push(`/dashboard/campaign/${campaign.id}`);
     } catch {
       toast.error("Failed to create campaign. Please try again.");

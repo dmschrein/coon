@@ -185,6 +185,7 @@ export type ContentApprovalStatus =
 
 export type CampaignStatus =
   | "draft"
+  | "generating"
   | "strategy_pending"
   | "strategy_complete"
   | "calendar_pending"
@@ -565,6 +566,7 @@ export type AgentType =
   | "campaign_strategy"
   | "campaign_calendar"
   | "campaign_content"
+  | "content_piece_generation"
   | "analytics_insights"
   | "image_generation"
   | "content_scoring"

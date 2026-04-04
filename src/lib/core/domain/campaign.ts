@@ -41,8 +41,25 @@ export class Campaign {
     return this.status === "draft";
   }
 
+  canRunFullGeneration(): boolean {
+    return this.status === "draft";
+  }
+
+  markGenerating(): void {
+    if (!this.canRunFullGeneration()) {
+      throw new CampaignStateError(
+        `Cannot start generation in status: ${this.status}`
+      );
+    }
+    this.status = "generating";
+  }
+
   canGenerateStrategy(): boolean {
-    return this.status === "draft" || this.status === "strategy_pending";
+    return (
+      this.status === "draft" ||
+      this.status === "strategy_pending" ||
+      this.status === "generating"
+    );
   }
 
   canGenerateCalendar(): boolean {

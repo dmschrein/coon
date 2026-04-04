@@ -24,11 +24,17 @@ import type {
   CampaignDuration,
   CampaignGeneratorOutput,
   ContentApprovalStatus,
+  ContentPillar,
 } from "@/types";
 import type {
   CohesionCheckInput,
   CohesionCheckResult,
 } from "@/lib/agents/cohesion-checker";
+import type {
+  ContentBrief,
+  ContentPieceContext,
+} from "@/lib/agents/content-piece-generator";
+import type { ContentPieceOutput } from "@/lib/validations/content-piece";
 import { ServiceError } from "./audience-service";
 
 interface StrategyAgent {
@@ -96,6 +102,17 @@ interface CohesionCheckerAgent {
   }>;
 }
 
+interface ContentPieceAgent {
+  generateContentPiece: (
+    brief: ContentBrief,
+    context: ContentPieceContext
+  ) => Promise<{
+    output: ContentPieceOutput;
+    modelUsed: string;
+    tokensUsed: number;
+  }>;
+}
+
 export class CampaignService {
   constructor(
     private campaignRepo: CampaignRepository,
@@ -109,6 +126,7 @@ export class CampaignService {
     private contentAgent: ContentAgent,
     private campaignGeneratorAgent: CampaignGeneratorAgent,
     private cohesionCheckerAgent?: CohesionCheckerAgent,
+    private contentPieceAgent?: ContentPieceAgent,
     private pluginRunner?: PluginRunner
   ) {}
 
@@ -372,6 +390,229 @@ export class CampaignService {
         "AGENT_FAILED"
       );
     }
+  }
+
+  async generateFullCampaign(
+    campaignId: string,
+    userId: string
+  ): Promise<void> {
+    if (!this.contentPieceAgent) {
+      throw new ServiceError(
+        "Content piece agent not configured",
+        "NOT_CONFIGURED"
+      );
+    }
+
+    const campaign = await this.campaignRepo.findById(campaignId, userId);
+    if (!campaign) {
+      throw new ServiceError("Campaign not found", "NOT_FOUND");
+    }
+
+    if (!campaign.canRunFullGeneration()) {
+      throw new ServiceError(
+        "Campaign must be in draft status to generate",
+        "INVALID_STATE"
+      );
+    }
+
+    const profile = await this.profileRepo.findActiveByUserId(userId);
+    if (!profile) {
+      throw new ServiceError("No audience profile found", "NO_PROFILE");
+    }
+
+    const quizResponse = await this.quizRepo.findLatestByUserId(userId);
+    if (!quizResponse) {
+      throw new ServiceError("No quiz response found", "NO_QUIZ_RESPONSE");
+    }
+
+    // Mark as generating
+    await this.campaignRepo.updateStatus(campaignId, "generating");
+
+    // --- Phase A: Strategy Generation ---
+    const strategyStart = Date.now();
+    let planOutput: CampaignGeneratorOutput;
+
+    try {
+      const result = await this.campaignGeneratorAgent.generateCampaignPlan({
+        profile: profile.profileData,
+        quiz: quizResponse.responseData,
+        name: campaign.name ?? "Untitled Campaign",
+        goal: campaign.goal!,
+        topic: campaign.topic!,
+        platforms: campaign.selectedPlatforms,
+        duration: campaign.duration!,
+        frequencyConfig: campaign.frequencyConfig!,
+      });
+
+      planOutput = result.output;
+      const durationMs = Date.now() - strategyStart;
+
+      await this.campaignRepo.updatePlan(
+        campaignId,
+        result.output.strategySummary,
+        result.output.contentPillars,
+        result.tokensUsed
+      );
+
+      // Create content rows from the plan
+      const startDate = new Date();
+      await this.contentRepo.createMany(
+        result.output.contentPlan.map((item) => ({
+          campaignId,
+          userId,
+          platform: item.platform,
+          pillar: item.pillar,
+          title: item.title,
+          scheduledFor: new Date(
+            startDate.getTime() + (item.scheduledDay - 1) * 24 * 60 * 60 * 1000
+          ),
+        }))
+      );
+
+      await this.agentRunRepo.log({
+        userId,
+        agentType: "campaign_strategy",
+        inputData: { campaignId, action: "full_generation_strategy" },
+        outputData: {
+          pillarsCount: result.output.contentPillars.length,
+          contentPlanCount: result.output.contentPlan.length,
+        },
+        modelUsed: result.modelUsed,
+        tokensUsed: result.tokensUsed,
+        durationMs,
+        status: "success",
+      });
+    } catch (error) {
+      const durationMs = Date.now() - strategyStart;
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+
+      await this.agentRunRepo.log({
+        userId,
+        agentType: "campaign_strategy",
+        inputData: { campaignId, action: "full_generation_strategy" },
+        modelUsed: "claude-sonnet-4-20250514",
+        durationMs,
+        status: "failed",
+        errorMessage,
+      });
+
+      await this.campaignRepo.updateStatus(campaignId, "failed");
+      return;
+    }
+
+    // --- Phase B: Content Piece Generation ---
+    const allContent = await this.contentRepo.findByCampaignId(campaignId);
+    const pendingContent = allContent.filter((c) => c.isPending());
+
+    const pieceContext: ContentPieceContext = {
+      audienceProfile: profile.profileData,
+      strategySummary: planOutput.strategySummary,
+      contentPillars: planOutput.contentPillars,
+      campaignGoal: campaign.goal ?? "build-awareness",
+      campaignTopic: campaign.topic ?? "",
+    };
+
+    const BATCH_SIZE = 3;
+    let totalTokensUsed = 0;
+
+    for (let i = 0; i < pendingContent.length; i += BATCH_SIZE) {
+      const batch = pendingContent.slice(i, i + BATCH_SIZE);
+
+      // Mark batch as generating
+      for (const row of batch) {
+        await this.contentRepo.updateStatus(row.id, "generating");
+      }
+
+      const results = await Promise.allSettled(
+        batch.map(async (row) => {
+          const brief: ContentBrief = {
+            platform: row.platform,
+            contentType:
+              planOutput.contentPlan.find(
+                (p) => p.title === row.title && p.platform === row.platform
+              )?.contentType ?? "educational",
+            pillar: row.pillar ?? planOutput.contentPillars[0]?.theme ?? "",
+            title: row.title ?? "Untitled",
+            targetCommunity: undefined,
+          };
+
+          const pieceStart = Date.now();
+          const result = await this.contentPieceAgent!.generateContentPiece(
+            brief,
+            pieceContext
+          );
+
+          const durationMs = Date.now() - pieceStart;
+
+          await this.contentRepo.updateContentPiece(row.id, {
+            body: result.output.body,
+            hashtags: result.output.hashtags,
+            mediaSuggestions: result.output.mediaSuggestions,
+            aiConfidenceScore: result.output.confidenceScore,
+            targetCommunity: result.output.targetCommunity,
+            contentData: result.output,
+            tokensUsed: result.tokensUsed,
+          });
+
+          await this.agentRunRepo.log({
+            userId,
+            agentType: "content_piece_generation",
+            inputData: {
+              campaignId,
+              contentId: row.id,
+              platform: row.platform,
+            },
+            outputData: { platform: row.platform, title: row.title },
+            modelUsed: result.modelUsed,
+            tokensUsed: result.tokensUsed,
+            durationMs,
+            status: "success",
+          });
+
+          totalTokensUsed += result.tokensUsed;
+          return result;
+        })
+      );
+
+      // Handle failures
+      for (let j = 0; j < results.length; j++) {
+        const outcome = results[j];
+        if (outcome.status === "rejected") {
+          const row = batch[j];
+          const errorMessage =
+            outcome.reason instanceof Error
+              ? outcome.reason.message
+              : String(outcome.reason);
+
+          await this.contentRepo.updateStatus(row.id, "failed", errorMessage);
+
+          await this.agentRunRepo.log({
+            userId,
+            agentType: "content_piece_generation",
+            inputData: {
+              campaignId,
+              contentId: row.id,
+              platform: row.platform,
+            },
+            modelUsed: "claude-sonnet-4-20250514",
+            status: "failed",
+            errorMessage,
+          });
+        }
+      }
+    }
+
+    // Update campaign tokens and final status
+    if (totalTokensUsed > 0) {
+      await this.campaignRepo.updateCompletedPlatforms(
+        campaignId,
+        campaign.selectedPlatforms,
+        totalTokensUsed
+      );
+    }
+
+    await this.campaignRepo.updateStatus(campaignId, "complete");
   }
 
   async updateContentApproval(

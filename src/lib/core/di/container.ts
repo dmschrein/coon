@@ -35,6 +35,7 @@ import {
   getNextBatch,
 } from "@/lib/agents/campaign-content";
 import { generateCampaignPlan } from "@/lib/agents/campaign-generator";
+import { generateContentPiece } from "@/lib/agents/content-piece-generator";
 import { checkCampaignCohesion } from "@/lib/agents/cohesion-checker";
 import { generateAnalyticsInsights } from "@/lib/agents/analytics-insights";
 import {
@@ -110,6 +111,7 @@ class Container {
       { generatePlatformBatch, getNextBatch },
       { generateCampaignPlan },
       { checkCampaignCohesion },
+      { generateContentPiece },
       this.pluginRunner
     );
 

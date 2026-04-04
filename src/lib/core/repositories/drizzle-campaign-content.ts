@@ -153,4 +153,34 @@ export class DrizzleCampaignContentRepository implements CampaignContentReposito
       .set({ mediaSuggestions: enrichments, updatedAt: new Date() })
       .where(eq(campaignContent.id, id));
   }
+
+  async updateContentPiece(
+    id: string,
+    data: {
+      body: string;
+      hashtags: string[];
+      mediaSuggestions: unknown;
+      aiConfidenceScore: number;
+      targetCommunity: string;
+      contentData: unknown;
+      tokensUsed: number;
+    }
+  ): Promise<void> {
+    await this.db
+      .update(campaignContent)
+      .set({
+        body: data.body,
+        hashtags: data.hashtags,
+        mediaSuggestions: data.mediaSuggestions,
+        aiConfidenceScore: Math.round(data.aiConfidenceScore * 100),
+        targetCommunity: data.targetCommunity,
+        contentData: data.contentData,
+        tokensUsed: data.tokensUsed,
+        status: "complete",
+        approvalStatus: "pending_review",
+        errorMessage: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(campaignContent.id, id));
+  }
 }

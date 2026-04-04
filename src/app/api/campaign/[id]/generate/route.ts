@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getContainer } from "@/lib/core/di/container";
 import { ServiceError } from "@/lib/core/services";
 
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 export async function POST(
   req: Request,
@@ -24,31 +24,49 @@ export async function POST(
     const { id: campaignId } = await params;
     const { campaignService } = getContainer();
 
-    const result = await campaignService.generateContentBatch(
-      campaignId,
-      userId
-    );
+    // Validate the campaign can be generated before kicking off background work
+    const { campaign } = await campaignService.getCampaign(campaignId, userId);
+    if (!campaign.canRunFullGeneration()) {
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            message: "Campaign must be in draft status to generate",
+            code: "INVALID_STATE",
+          },
+        },
+        { status: 400 }
+      );
+    }
 
-    return NextResponse.json({ data: result, error: null });
+    // Run the full pipeline in the background
+    after(async () => {
+      try {
+        await campaignService.generateFullCampaign(campaignId, userId);
+      } catch (error) {
+        console.error("Background campaign generation failed:", error);
+      }
+    });
+
+    return NextResponse.json({
+      data: { campaignId, status: "generating" },
+      error: null,
+    });
   } catch (error) {
     if (error instanceof ServiceError) {
       const status =
         error.code === "NOT_FOUND"
           ? 404
-          : error.code === "INVALID_STATE" ||
-              error.code === "NOTHING_TO_GENERATE" ||
-              error.code === "EMPTY_BATCH"
-            ? 400
-            : error.code === "AGENT_FAILED"
-              ? 500
-              : 400;
+          : error.code === "UNAUTHORIZED"
+            ? 401
+            : 400;
       return NextResponse.json(
         { data: null, error: { message: error.message, code: error.code } },
         { status }
       );
     }
 
-    console.error("Error generating content:", error);
+    console.error("Error triggering generation:", error);
     return NextResponse.json(
       {
         data: null,

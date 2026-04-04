@@ -128,6 +128,8 @@ describe("CampaignService", () => {
       updateCalendar: vi.fn(),
       updateStatus: vi.fn(),
       updateCompletedPlatforms: vi.fn(),
+      updateFields: vi.fn(),
+      delete: vi.fn(),
     };
     profileRepo = {
       findActiveByUserId: vi.fn(),
@@ -143,7 +145,10 @@ describe("CampaignService", () => {
       updateStatus: vi.fn(),
       updateContent: vi.fn(),
       updateApprovalStatus: vi.fn(),
+      bulkUpdateApprovalStatus: vi.fn(),
       updateBody: vi.fn(),
+      updateEnrichments: vi.fn(),
+      updateContentPiece: vi.fn(),
     };
     calendarEntryRepo = {
       findByCampaignId: vi.fn(),
