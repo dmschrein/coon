@@ -78,6 +78,11 @@ export interface CampaignRepository {
       frequencyConfig?: Record<string, number>;
     }
   ): Promise<Campaign | null>;
+  updateCohesionResult(
+    id: string,
+    result: unknown,
+    contentHash: string
+  ): Promise<void>;
   delete(id: string): Promise<void>;
 }
 

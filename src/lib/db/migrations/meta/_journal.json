@@ -15,6 +15,13 @@
       "when": 1774291362356,
       "tag": "0001_dusty_tarantula",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1775411401071,
+      "tag": "0002_warm_mole_man",
+      "breakpoints": true
     }
   ]
 }

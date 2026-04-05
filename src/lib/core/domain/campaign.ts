@@ -34,7 +34,9 @@ export class Campaign {
     public duration: CampaignDuration | null = null,
     public frequencyConfig: Record<string, number> | null = null,
     public strategySummary: string | null = null,
-    public contentPillars: ContentPillar[] | null = null
+    public contentPillars: ContentPillar[] | null = null,
+    public cohesionResult: unknown = null,
+    public cohesionContentHash: string | null = null
   ) {}
 
   isDraft(): boolean {

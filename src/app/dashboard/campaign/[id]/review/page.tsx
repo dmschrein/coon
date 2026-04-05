@@ -123,6 +123,8 @@ export default function ReviewBoardPage({
         onClose={() => review.setCohesionOpen(false)}
         result={review.cohesionResult}
         isLoading={review.isCohesionLoading}
+        onRecheck={review.handleRecheck}
+        onContentClick={review.handleScrollToCard}
       />
 
       {/* Bulk Actions */}

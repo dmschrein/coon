@@ -41,7 +41,9 @@ export class DrizzleCampaignRepository implements CampaignRepository {
       (row.duration as CampaignDuration) ?? null,
       (row.frequencyConfig as Record<string, number>) ?? null,
       row.strategySummary ?? null,
-      (row.contentPillars as ContentPillar[]) ?? null
+      (row.contentPillars as ContentPillar[]) ?? null,
+      row.cohesionResult ?? null,
+      row.cohesionContentHash ?? null
     );
   }
 
@@ -253,6 +255,21 @@ export class DrizzleCampaignRepository implements CampaignRepository {
       .returning();
 
     return row ? this.toDomain(row) : null;
+  }
+
+  async updateCohesionResult(
+    id: string,
+    result: unknown,
+    contentHash: string
+  ): Promise<void> {
+    await this.db
+      .update(campaigns)
+      .set({
+        cohesionResult: result,
+        cohesionContentHash: contentHash,
+        updatedAt: new Date(),
+      })
+      .where(eq(campaigns.id, id));
   }
 
   async delete(id: string): Promise<void> {

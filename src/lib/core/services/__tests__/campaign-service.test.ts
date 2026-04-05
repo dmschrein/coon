@@ -129,6 +129,7 @@ describe("CampaignService", () => {
       updateStatus: vi.fn(),
       updateCompletedPlatforms: vi.fn(),
       updateFields: vi.fn(),
+      updateCohesionResult: vi.fn(),
       delete: vi.fn(),
     };
     profileRepo = {

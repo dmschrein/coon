@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import {
   useCampaign,
   useCampaignContent,
@@ -6,6 +6,7 @@ import {
 } from "@/hooks/use-campaign";
 import {
   useBulkUpdateApproval,
+  useCohesionQuery,
   useCohesionCheck,
   useDeleteContent,
   useRegenerateContent,
@@ -17,8 +18,8 @@ import type {
   CampaignPlatform,
   ContentEnrichments,
   ReviewBoardColumn,
+  CohesionCheckResult,
 } from "@/types";
-import type { CohesionCheckResult } from "@/lib/agents/cohesion-checker";
 import { toast } from "sonner";
 
 export interface ReviewItem {
@@ -75,10 +76,14 @@ function extractContentType(
 export function useReviewPage(campaignId: string) {
   const { data: campaignData, isLoading: campaignLoading } =
     useCampaign(campaignId);
-  const { data: content, isLoading: contentLoading } =
-    useCampaignContent(campaignId);
+  const {
+    data: content,
+    isLoading: contentLoading,
+    dataUpdatedAt,
+  } = useCampaignContent(campaignId);
   const updateContent = useUpdateContent(campaignId);
   const bulkUpdate = useBulkUpdateApproval(campaignId);
+  const cohesionQuery = useCohesionQuery(campaignId);
   const cohesionCheck = useCohesionCheck(campaignId);
   const deleteContent = useDeleteContent(campaignId);
   const regenerateContent = useRegenerateContent(campaignId);
@@ -89,8 +94,6 @@ export function useReviewPage(campaignId: string) {
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [cohesionOpen, setCohesionOpen] = useState(false);
-  const [cohesionResult, setCohesionResult] =
-    useState<CohesionCheckResult | null>(null);
   const [activeView, setActiveView] = useState<"board" | "calendar">("board");
 
   // Schedule picker state
@@ -110,6 +113,29 @@ export function useReviewPage(campaignId: string) {
   const [activeContentType, setActiveContentType] = useState<string | null>(
     null
   );
+
+  // Cohesion result from query or mutation
+  const cohesionResult: CohesionCheckResult | null =
+    cohesionCheck.data?.result ?? cohesionQuery.data?.result ?? null;
+
+  // Auto-run cohesion check on initial load
+  const hasAutoRun = useRef(false);
+  useEffect(() => {
+    if (
+      hasAutoRun.current ||
+      contentLoading ||
+      !content?.length ||
+      cohesionCheck.isPending
+    ) {
+      return;
+    }
+
+    // If no cached result, auto-run
+    if (cohesionQuery.data && !cohesionQuery.data.result) {
+      hasAutoRun.current = true;
+      cohesionCheck.mutate();
+    }
+  }, [content, contentLoading, cohesionQuery.data, cohesionCheck]);
 
   // Process items
   const items: ReviewItem[] = useMemo(() => {
@@ -198,9 +224,17 @@ export function useReviewPage(campaignId: string) {
 
   const handleBodyUpdate = useCallback(
     (contentId: string, body: string) => {
-      updateContent.mutate({ contentId, body });
+      updateContent.mutate(
+        { contentId, body },
+        {
+          onSuccess: () => {
+            // Content changed — re-run cohesion check
+            cohesionCheck.mutate();
+          },
+        }
+      );
     },
-    [updateContent]
+    [updateContent, cohesionCheck]
   );
 
   const handleHashtagsUpdate = useCallback(
@@ -229,13 +263,16 @@ export function useReviewPage(campaignId: string) {
 
   const handleCohesionCheck = useCallback(async () => {
     setCohesionOpen(true);
-    try {
-      const result = await cohesionCheck.mutateAsync();
-      setCohesionResult(result);
-    } catch {
-      // Error handled by mutation
-    }
+    cohesionCheck.mutate();
   }, [cohesionCheck]);
+
+  const handleRecheck = useCallback(() => {
+    cohesionCheck.mutate();
+  }, [cohesionCheck]);
+
+  const handleScrollToCard = useCallback((contentId: string) => {
+    setSelectedCard(contentId);
+  }, []);
 
   const handleDragToSchedule = useCallback((contentId: string) => {
     setScheduleTarget({ type: "single", contentId });
@@ -268,11 +305,15 @@ export function useReviewPage(campaignId: string) {
   const handleRegenerate = useCallback(
     (contentId: string) => {
       regenerateContent.mutate(contentId, {
-        onSuccess: () => toast.success("Content regenerated!"),
+        onSuccess: () => {
+          toast.success("Content regenerated!");
+          // Content changed — re-run cohesion check
+          cohesionCheck.mutate();
+        },
         onError: () => toast.error("Failed to regenerate content"),
       });
     },
-    [regenerateContent]
+    [regenerateContent, cohesionCheck]
   );
 
   const handleDelete = useCallback(
@@ -297,10 +338,12 @@ export function useReviewPage(campaignId: string) {
       onSuccess: (data) => {
         toast.success(`Regenerated ${data.regenerated} items`);
         setSelectedIds(new Set());
+        // Content changed — re-run cohesion check
+        cohesionCheck.mutate();
       },
       onError: () => toast.error("Failed to regenerate"),
     });
-  }, [bulkRegenerate, selectedIds]);
+  }, [bulkRegenerate, selectedIds, cohesionCheck]);
 
   const handleScheduleFromPanel = useCallback((contentId: string) => {
     setScheduleTarget({ type: "single", contentId });
@@ -347,6 +390,8 @@ export function useReviewPage(campaignId: string) {
     handleTargetCommunityUpdate,
     handleBulkAction,
     handleCohesionCheck,
+    handleRecheck,
+    handleScrollToCard,
     handleDragToSchedule,
     handleScheduleConfirm,
     handleRegenerate,

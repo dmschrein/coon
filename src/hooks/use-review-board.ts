@@ -1,5 +1,5 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { ContentApprovalStatus } from "@/types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { ContentApprovalStatus, CohesionCheckResult } from "@/types";
 
 export function useBulkUpdateApproval(campaignId: string) {
   const queryClient = useQueryClient();
@@ -28,8 +28,32 @@ export function useBulkUpdateApproval(campaignId: string) {
   });
 }
 
+export function useCohesionQuery(campaignId: string) {
+  return useQuery<{
+    result: CohesionCheckResult | null;
+    contentHash: string;
+    cached: boolean;
+  }>({
+    queryKey: ["campaign", campaignId, "cohesion"],
+    queryFn: async () => {
+      const res = await fetch(`/api/campaign/${campaignId}/cohesion`);
+      if (!res.ok) throw new Error("Failed to fetch cohesion");
+      const json = await res.json();
+      if (json.error) throw new Error(json.error.message);
+      return json.data;
+    },
+    enabled: !!campaignId,
+  });
+}
+
 export function useCohesionCheck(campaignId: string) {
-  return useMutation({
+  const queryClient = useQueryClient();
+
+  return useMutation<{
+    result: CohesionCheckResult;
+    contentHash: string;
+    cached: boolean;
+  }>({
     mutationFn: async () => {
       const res = await fetch(`/api/campaign/${campaignId}/cohesion`, {
         method: "POST",
@@ -38,6 +62,11 @@ export function useCohesionCheck(campaignId: string) {
       const json = await res.json();
       if (json.error) throw new Error(json.error.message);
       return json.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["campaign", campaignId, "cohesion"],
+      });
     },
   });
 }

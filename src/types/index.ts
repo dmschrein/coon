@@ -576,6 +576,13 @@ export interface ContentEnrichments {
 // Agent Types
 // ----------------------------------------------------------------------------
 
+export type {
+  CohesionCheckResult,
+  CohesionFlag,
+  CohesionDimension,
+  CohesionRecommendation,
+} from "@/lib/validations/campaign";
+
 export type AgentType =
   | "audience_analysis"
   | "content_generation"

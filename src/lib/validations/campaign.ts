@@ -272,3 +272,41 @@ export const campaignCalendarSchema = z.object({
     })
   ),
 });
+
+// ----------------------------------------------------------------------------
+// Cohesion Check Schemas
+// ----------------------------------------------------------------------------
+
+export const cohesionFlagSchema = z.object({
+  dimension: z.enum(["messaging", "tone", "factual", "strategic"]),
+  content_ids: z.array(z.string()),
+  issue: z.string(),
+  fix: z.string(),
+});
+
+export const cohesionDimensionSchema = z.object({
+  score: z.number().min(0).max(100),
+  flags: z.array(cohesionFlagSchema),
+});
+
+export const cohesionRecommendationSchema = z.object({
+  text: z.string(),
+  content_ids: z.array(z.string()),
+  priority: z.enum(["high", "medium", "low"]),
+});
+
+export const cohesionCheckResultSchema = z.object({
+  overall_score: z.number().min(0).max(100),
+  messaging: cohesionDimensionSchema,
+  tone: cohesionDimensionSchema,
+  factual: cohesionDimensionSchema,
+  strategic: cohesionDimensionSchema,
+  recommendations: z.array(cohesionRecommendationSchema),
+});
+
+export type CohesionCheckResult = z.infer<typeof cohesionCheckResultSchema>;
+export type CohesionFlag = z.infer<typeof cohesionFlagSchema>;
+export type CohesionDimension = z.infer<typeof cohesionDimensionSchema>;
+export type CohesionRecommendation = z.infer<
+  typeof cohesionRecommendationSchema
+>;

@@ -26,16 +26,26 @@ import type {
   ContentApprovalStatus,
   ContentPillar,
 } from "@/types";
-import type {
-  CohesionCheckInput,
-  CohesionCheckResult,
-} from "@/lib/agents/cohesion-checker";
+import type { CohesionCheckInput } from "@/lib/agents/cohesion-checker";
+import type { CohesionCheckResult } from "@/types";
+import { computeContentHash } from "@/lib/agents/utils";
 import type {
   ContentBrief,
   ContentPieceContext,
 } from "@/lib/agents/content-piece-generator";
 import type { ContentPieceOutput } from "@/lib/validations/content-piece";
 import { ServiceError } from "./audience-service";
+
+function extractContentTypeFromData(contentData: unknown): string | null {
+  if (!contentData || typeof contentData !== "object") return null;
+  const data = contentData as Record<string, unknown>;
+  if (typeof data.contentType === "string") return data.contentType;
+  if (data.tweets || data.threadSeparated) return "thread";
+  if (data.bodyMarkdown) return "article";
+  if (data.scriptBody || data.script) return "video";
+  if (data.subjectLine) return "article";
+  return "post";
+}
 
 interface StrategyAgent {
   generateCampaignStrategy: (
@@ -629,10 +639,41 @@ export class CampaignService {
     await this.contentRepo.bulkUpdateApprovalStatus(contentIds, approvalStatus);
   }
 
+  async getCachedCohesion(
+    campaignId: string,
+    userId: string
+  ): Promise<{ result: CohesionCheckResult | null; contentHash: string }> {
+    const campaign = await this.campaignRepo.findById(campaignId, userId);
+    if (!campaign) {
+      throw new ServiceError("Campaign not found", "NOT_FOUND");
+    }
+
+    const content = await this.contentRepo.findByCampaignId(campaignId);
+    const contentHash = computeContentHash(
+      content.map((c) => ({ id: c.id, body: c.body }))
+    );
+
+    if (
+      campaign.cohesionContentHash === contentHash &&
+      campaign.cohesionResult
+    ) {
+      return {
+        result: campaign.cohesionResult as CohesionCheckResult,
+        contentHash,
+      };
+    }
+
+    return { result: null, contentHash };
+  }
+
   async checkCohesion(
     campaignId: string,
     userId: string
-  ): Promise<CohesionCheckResult> {
+  ): Promise<{
+    result: CohesionCheckResult;
+    contentHash: string;
+    cached: boolean;
+  }> {
     if (!this.cohesionCheckerAgent) {
       throw new ServiceError(
         "Cohesion checker not configured",
@@ -646,6 +687,21 @@ export class CampaignService {
     }
 
     const content = await this.contentRepo.findByCampaignId(campaignId);
+    const contentHash = computeContentHash(
+      content.map((c) => ({ id: c.id, body: c.body }))
+    );
+
+    // Return cached result if content hasn't changed
+    if (
+      campaign.cohesionContentHash === contentHash &&
+      campaign.cohesionResult
+    ) {
+      return {
+        result: campaign.cohesionResult as CohesionCheckResult,
+        contentHash,
+        cached: true,
+      };
+    }
 
     const startTime = Date.now();
 
@@ -653,6 +709,8 @@ export class CampaignService {
       const { result, modelUsed, tokensUsed } =
         await this.cohesionCheckerAgent.checkCampaignCohesion({
           campaignName: campaign.name ?? "Untitled",
+          campaignGoal: campaign.goal ?? "",
+          campaignTopic: campaign.topic ?? "",
           strategySummary: campaign.strategySummary ?? "",
           contentPillars: (campaign.contentPillars ?? []).map((p) => ({
             theme: p.theme,
@@ -661,6 +719,7 @@ export class CampaignService {
           contentPieces: content.map((c) => ({
             id: c.id,
             platform: c.platform,
+            contentType: extractContentTypeFromData(c.contentData),
             title: c.title,
             pillar: c.pillar,
             body: c.body,
@@ -669,18 +728,21 @@ export class CampaignService {
 
       const durationMs = Date.now() - startTime;
 
-      await this.agentRunRepo.log({
-        userId,
-        agentType: "campaign_content",
-        inputData: { campaignId, action: "cohesion_check" },
-        outputData: { score: result.score },
-        modelUsed,
-        tokensUsed,
-        durationMs,
-        status: "success",
-      });
+      await Promise.all([
+        this.campaignRepo.updateCohesionResult(campaignId, result, contentHash),
+        this.agentRunRepo.log({
+          userId,
+          agentType: "campaign_content",
+          inputData: { campaignId, action: "cohesion_check" },
+          outputData: { overall_score: result.overall_score },
+          modelUsed,
+          tokensUsed,
+          durationMs,
+          status: "success",
+        }),
+      ]);
 
-      return result;
+      return { result, contentHash, cached: false };
     } catch (error) {
       const durationMs = Date.now() - startTime;
       const errorMessage =

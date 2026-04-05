@@ -91,6 +91,8 @@ export const campaigns = pgTable(
     selectedPlatforms: text("selected_platforms").array(),
     completedPlatforms: text("completed_platforms").array().default([]),
     totalTokensUsed: integer("total_tokens_used").default(0),
+    cohesionResult: jsonb("cohesion_result"),
+    cohesionContentHash: text("cohesion_content_hash"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },
