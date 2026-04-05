@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CalendarClock, RefreshCw } from "lucide-react";
 import type { ContentApprovalStatus } from "@/types";
 
 interface BulkActionsBarProps {
@@ -11,7 +12,10 @@ interface BulkActionsBarProps {
   onSelectAll: () => void;
   onDeselectAll: () => void;
   onBulkAction: (status: ContentApprovalStatus) => void;
+  onBulkSchedule: () => void;
+  onBulkRegenerate: () => void;
   isLoading: boolean;
+  isRegenerating: boolean;
 }
 
 export function BulkActionsBar({
@@ -21,7 +25,10 @@ export function BulkActionsBar({
   onSelectAll,
   onDeselectAll,
   onBulkAction,
+  onBulkSchedule,
+  onBulkRegenerate,
   isLoading,
+  isRegenerating,
 }: BulkActionsBarProps) {
   if (selectedCount === 0) return null;
 
@@ -50,10 +57,20 @@ export function BulkActionsBar({
         <Button
           size="sm"
           variant="outline"
-          onClick={() => onBulkAction("needs_revision")}
+          onClick={onBulkSchedule}
           disabled={isLoading}
         >
-          Request Revision
+          <CalendarClock className="mr-1.5 h-3.5 w-3.5" />
+          Schedule All
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onBulkRegenerate}
+          disabled={isRegenerating}
+        >
+          <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+          Regenerate Selected
         </Button>
         <Button
           size="sm"

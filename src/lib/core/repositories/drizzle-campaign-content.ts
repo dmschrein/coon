@@ -183,4 +183,49 @@ export class DrizzleCampaignContentRepository implements CampaignContentReposito
       })
       .where(eq(campaignContent.id, id));
   }
+
+  async delete(id: string): Promise<void> {
+    await this.db.delete(campaignContent).where(eq(campaignContent.id, id));
+  }
+
+  async updateSchedule(id: string, scheduledFor: Date): Promise<void> {
+    await this.db
+      .update(campaignContent)
+      .set({
+        scheduledFor,
+        approvalStatus: "approved",
+        updatedAt: new Date(),
+      })
+      .where(eq(campaignContent.id, id));
+  }
+
+  async bulkUpdateSchedule(ids: string[], scheduledFor: Date): Promise<void> {
+    if (ids.length === 0) return;
+
+    await this.db
+      .update(campaignContent)
+      .set({
+        scheduledFor,
+        approvalStatus: "approved",
+        updatedAt: new Date(),
+      })
+      .where(inArray(campaignContent.id, ids));
+  }
+
+  async updateHashtags(id: string, hashtags: string[]): Promise<void> {
+    await this.db
+      .update(campaignContent)
+      .set({ hashtags, updatedAt: new Date() })
+      .where(eq(campaignContent.id, id));
+  }
+
+  async updateTargetCommunity(
+    id: string,
+    targetCommunity: string
+  ): Promise<void> {
+    await this.db
+      .update(campaignContent)
+      .set({ targetCommunity, updatedAt: new Date() })
+      .where(eq(campaignContent.id, id));
+  }
 }

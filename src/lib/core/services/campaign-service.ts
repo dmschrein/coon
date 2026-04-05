@@ -745,6 +745,165 @@ export class CampaignService {
     await this.campaignRepo.delete(campaignId);
   }
 
+  async deleteContent(contentId: string, userId: string): Promise<void> {
+    const content = await this.contentRepo.findById(contentId);
+    if (!content) {
+      throw new ServiceError("Content not found", "NOT_FOUND");
+    }
+    if (content.userId !== userId) {
+      throw new ServiceError("Unauthorized", "UNAUTHORIZED");
+    }
+    await this.contentRepo.delete(contentId);
+  }
+
+  async scheduleContent(
+    contentId: string,
+    userId: string,
+    scheduledFor: Date
+  ): Promise<void> {
+    const content = await this.contentRepo.findById(contentId);
+    if (!content) {
+      throw new ServiceError("Content not found", "NOT_FOUND");
+    }
+    if (content.userId !== userId) {
+      throw new ServiceError("Unauthorized", "UNAUTHORIZED");
+    }
+    await this.contentRepo.updateSchedule(contentId, scheduledFor);
+  }
+
+  async bulkScheduleContent(
+    contentIds: string[],
+    userId: string,
+    scheduledFor: Date
+  ): Promise<void> {
+    await this.contentRepo.bulkUpdateSchedule(contentIds, scheduledFor);
+  }
+
+  async regenerateContent(
+    campaignId: string,
+    contentId: string,
+    userId: string
+  ): Promise<void> {
+    if (!this.contentPieceAgent) {
+      throw new ServiceError(
+        "Content piece agent not configured",
+        "NOT_CONFIGURED"
+      );
+    }
+
+    const campaign = await this.campaignRepo.findById(campaignId, userId);
+    if (!campaign) {
+      throw new ServiceError("Campaign not found", "NOT_FOUND");
+    }
+
+    const content = await this.contentRepo.findById(contentId);
+    if (!content) {
+      throw new ServiceError("Content not found", "NOT_FOUND");
+    }
+
+    // Mark as generating
+    await this.contentRepo.updateStatus(contentId, "generating");
+
+    // Build context for content piece agent
+    if (!campaign.audienceProfileId) {
+      throw new ServiceError("Audience profile not found", "NOT_FOUND");
+    }
+    const profile = await this.profileRepo.findById(campaign.audienceProfileId);
+    if (!profile) {
+      throw new ServiceError("Audience profile not found", "NOT_FOUND");
+    }
+
+    const strategy: CampaignStrategy = campaign.strategy ?? {
+      campaignName: campaign.name ?? "Campaign",
+      theme: campaign.topic ?? "",
+      goal: campaign.goal ?? "",
+      targetOutcome: "",
+      timelineWeeks: this.durationToWeeks(campaign.duration),
+      messagingFramework: {
+        coreMessage: campaign.strategySummary ?? "",
+        supportingMessages: [],
+        toneGuidelines: "",
+        keyPhrases: [],
+        avoidPhrases: [],
+      },
+      platformAllocations: campaign.selectedPlatforms.map((p, i) => ({
+        platform: p,
+        role: "content",
+        contentFocus: "",
+        frequencySuggestion: `${campaign.frequencyConfig?.[p] ?? 3}x/week`,
+        priorityOrder: i + 1,
+      })),
+      contentPillars: campaign.contentPillars ?? [],
+      audienceHooks: [],
+    };
+
+    const brief: ContentBrief = {
+      platform: content.platform,
+      pillar: content.pillar ?? "",
+      title: content.title ?? "",
+      contentType: "post",
+    };
+
+    const context: ContentPieceContext = {
+      audienceProfile: profile.profileData,
+      strategySummary: campaign.strategySummary ?? strategy.theme,
+      contentPillars: strategy.contentPillars,
+      campaignGoal: campaign.goal ?? strategy.goal,
+      campaignTopic: campaign.topic ?? strategy.theme,
+    };
+
+    const startTime = Date.now();
+
+    try {
+      const { output, modelUsed, tokensUsed } =
+        await this.contentPieceAgent.generateContentPiece(brief, context);
+
+      const durationMs = Date.now() - startTime;
+
+      await this.contentRepo.updateContentPiece(contentId, {
+        body: output.body,
+        hashtags: output.hashtags ?? [],
+        mediaSuggestions: output.mediaSuggestions ?? null,
+        aiConfidenceScore: output.confidenceScore ?? 0.7,
+        targetCommunity: output.targetCommunity ?? "",
+        contentData: output,
+        tokensUsed,
+      });
+
+      await this.agentRunRepo.log({
+        userId,
+        agentType: "content_piece_generation",
+        inputData: { campaignId, contentId, action: "regenerate" },
+        outputData: { platform: content.platform },
+        modelUsed,
+        tokensUsed,
+        durationMs,
+        status: "success",
+      });
+    } catch (error) {
+      const durationMs = Date.now() - startTime;
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+
+      await this.contentRepo.updateStatus(contentId, "failed", errorMessage);
+
+      await this.agentRunRepo.log({
+        userId,
+        agentType: "content_piece_generation",
+        inputData: { campaignId, contentId, action: "regenerate" },
+        modelUsed: "claude-sonnet-4-20250514",
+        durationMs,
+        status: "failed",
+        errorMessage,
+      });
+
+      throw new ServiceError(
+        "Failed to regenerate content. Please try again.",
+        "AGENT_FAILED"
+      );
+    }
+  }
+
   async generateCalendar(
     campaignId: string,
     userId: string

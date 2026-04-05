@@ -97,3 +97,30 @@ export const contentPlanSchema = z.object({
 });
 
 export type ContentPlanSchema = z.infer<typeof contentPlanSchema>;
+
+// ----------------------------------------------------------------------------
+// Review Board Schemas
+// ----------------------------------------------------------------------------
+
+export const scheduleContentSchema = z.object({
+  scheduledFor: z.string().datetime("Must be a valid ISO datetime"),
+});
+
+export type ScheduleContentInput = z.infer<typeof scheduleContentSchema>;
+
+export const bulkScheduleSchema = z.object({
+  contentIds: z
+    .array(z.string().uuid())
+    .min(1, "At least one content ID required"),
+  scheduledFor: z.string().datetime("Must be a valid ISO datetime"),
+});
+
+export type BulkScheduleInput = z.infer<typeof bulkScheduleSchema>;
+
+export const bulkRegenerateSchema = z.object({
+  contentIds: z
+    .array(z.string().uuid())
+    .min(1, "At least one content ID required"),
+});
+
+export type BulkRegenerateInput = z.infer<typeof bulkRegenerateSchema>;

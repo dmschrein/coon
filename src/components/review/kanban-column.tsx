@@ -8,7 +8,11 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { ContentCard } from "./content-card";
-import type { ContentApprovalStatus, CampaignPlatform } from "@/types";
+import type {
+  ContentApprovalStatus,
+  CampaignPlatform,
+  ReviewBoardColumn,
+} from "@/types";
 
 interface ContentItem {
   id: string;
@@ -17,22 +21,25 @@ interface ContentItem {
   pillar: string | null;
   scheduledFor: Date | null;
   approvalStatus: ContentApprovalStatus;
+  boardColumn: ReviewBoardColumn;
+  contentType?: string | null;
+  aiConfidenceScore?: number | null;
   hasMedia?: boolean;
   overallScore?: number;
 }
 
 interface KanbanColumnProps {
-  status: ContentApprovalStatus;
+  status: ReviewBoardColumn;
   label: string;
   items: ContentItem[];
   onCardClick: (id: string) => void;
 }
 
-const statusColors: Record<ContentApprovalStatus, string> = {
+const statusColors: Record<ReviewBoardColumn, string> = {
   pending_review: "bg-yellow-100 text-yellow-800",
-  needs_revision: "bg-orange-100 text-orange-800",
   approved: "bg-green-100 text-green-800",
-  rejected: "bg-red-100 text-red-800",
+  scheduled: "bg-blue-100 text-blue-800",
+  posted: "bg-purple-100 text-purple-800",
 };
 
 export function KanbanColumn({

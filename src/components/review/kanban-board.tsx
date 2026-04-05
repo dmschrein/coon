@@ -14,7 +14,11 @@ import type { DragStartEvent, DragEndEvent } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { KanbanColumn } from "./kanban-column";
 import { ContentCard } from "./content-card";
-import type { ContentApprovalStatus, CampaignPlatform } from "@/types";
+import type {
+  ContentApprovalStatus,
+  CampaignPlatform,
+  ReviewBoardColumn,
+} from "@/types";
 
 interface ContentItem {
   id: string;
@@ -24,6 +28,9 @@ interface ContentItem {
   body: string | null;
   scheduledFor: Date | null;
   approvalStatus: ContentApprovalStatus;
+  boardColumn: ReviewBoardColumn;
+  contentType?: string | null;
+  aiConfidenceScore?: number | null;
   hasMedia?: boolean;
   overallScore?: number;
 }
@@ -32,19 +39,21 @@ interface KanbanBoardProps {
   items: ContentItem[];
   onStatusChange: (id: string, status: ContentApprovalStatus) => void;
   onCardClick: (id: string) => void;
+  onDragToSchedule: (id: string) => void;
 }
 
-const columns: { status: ContentApprovalStatus; label: string }[] = [
+const columns: { status: ReviewBoardColumn; label: string }[] = [
   { status: "pending_review", label: "Pending Review" },
-  { status: "needs_revision", label: "Needs Revision" },
   { status: "approved", label: "Approved" },
-  { status: "rejected", label: "Rejected" },
+  { status: "scheduled", label: "Scheduled" },
+  { status: "posted", label: "Posted" },
 ];
 
 export function KanbanBoard({
   items,
   onStatusChange,
   onCardClick,
+  onDragToSchedule,
 }: KanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -66,17 +75,23 @@ export function KanbanBoard({
       if (!over) return;
 
       const itemId = String(active.id);
-      const targetStatus = String(over.id) as ContentApprovalStatus;
+      const targetColumn = String(over.id) as ReviewBoardColumn;
 
-      // Check if dropped on a column (over.id is a status string)
-      if (columns.some((c) => c.status === targetStatus)) {
-        const item = items.find((i) => i.id === itemId);
-        if (item && item.approvalStatus !== targetStatus) {
-          onStatusChange(itemId, targetStatus);
-        }
+      if (!columns.some((c) => c.status === targetColumn)) return;
+
+      const item = items.find((i) => i.id === itemId);
+      if (!item || item.boardColumn === targetColumn) return;
+
+      if (targetColumn === "scheduled") {
+        onDragToSchedule(itemId);
+      } else if (targetColumn === "approved") {
+        onStatusChange(itemId, "approved");
+      } else if (targetColumn === "pending_review") {
+        onStatusChange(itemId, "pending_review");
       }
+      // "posted" column is read-only — cannot drag into it
     },
-    [items, onStatusChange]
+    [items, onStatusChange, onDragToSchedule]
   );
 
   const activeItem = activeId ? items.find((i) => i.id === activeId) : null;
@@ -94,7 +109,7 @@ export function KanbanBoard({
             key={col.status}
             status={col.status}
             label={col.label}
-            items={items.filter((i) => i.approvalStatus === col.status)}
+            items={items.filter((i) => i.boardColumn === col.status)}
             onCardClick={onCardClick}
           />
         ))}

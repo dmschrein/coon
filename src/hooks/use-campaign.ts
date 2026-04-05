@@ -103,6 +103,9 @@ export function useUpdateContent(campaignId: string) {
       contentId: string;
       approvalStatus?: string;
       body?: string;
+      scheduledFor?: string;
+      hashtags?: string[];
+      targetCommunity?: string;
     }) => {
       const res = await fetch(
         `/api/campaign/${campaignId}/content/${contentId}`,

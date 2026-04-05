@@ -141,6 +141,11 @@ export interface CampaignContentRepository {
       tokensUsed: number;
     }
   ): Promise<void>;
+  delete(id: string): Promise<void>;
+  updateSchedule(id: string, scheduledFor: Date): Promise<void>;
+  bulkUpdateSchedule(ids: string[], scheduledFor: Date): Promise<void>;
+  updateHashtags(id: string, hashtags: string[]): Promise<void>;
+  updateTargetCommunity(id: string, targetCommunity: string): Promise<void>;
 }
 
 // ─── Quiz Response Repository ─────────────────────────────────────────────────

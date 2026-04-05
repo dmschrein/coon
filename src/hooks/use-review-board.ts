@@ -41,3 +41,100 @@ export function useCohesionCheck(campaignId: string) {
     },
   });
 }
+
+export function useDeleteContent(campaignId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (contentId: string) => {
+      const res = await fetch(
+        `/api/campaign/${campaignId}/content/${contentId}`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) throw new Error("Failed to delete content");
+      const json = await res.json();
+      if (json.error) throw new Error(json.error.message);
+      return json.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["campaign", campaignId, "content"],
+      });
+      queryClient.invalidateQueries({ queryKey: ["campaign", campaignId] });
+    },
+  });
+}
+
+export function useRegenerateContent(campaignId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (contentId: string) => {
+      const res = await fetch(
+        `/api/campaign/${campaignId}/content/${contentId}/regenerate`,
+        { method: "POST" }
+      );
+      if (!res.ok) throw new Error("Failed to regenerate content");
+      const json = await res.json();
+      if (json.error) throw new Error(json.error.message);
+      return json.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["campaign", campaignId, "content"],
+      });
+      queryClient.invalidateQueries({ queryKey: ["campaign", campaignId] });
+    },
+  });
+}
+
+export function useBulkSchedule(campaignId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: {
+      contentIds: string[];
+      scheduledFor: string;
+    }) => {
+      const res = await fetch(`/api/campaign/${campaignId}/content/bulk`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "schedule", ...input }),
+      });
+      if (!res.ok) throw new Error("Failed to bulk schedule");
+      const json = await res.json();
+      if (json.error) throw new Error(json.error.message);
+      return json.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["campaign", campaignId, "content"],
+      });
+      queryClient.invalidateQueries({ queryKey: ["campaign", campaignId] });
+    },
+  });
+}
+
+export function useBulkRegenerate(campaignId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (contentIds: string[]) => {
+      const res = await fetch(`/api/campaign/${campaignId}/content/bulk`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "regenerate", contentIds }),
+      });
+      if (!res.ok) throw new Error("Failed to bulk regenerate");
+      const json = await res.json();
+      if (json.error) throw new Error(json.error.message);
+      return json.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["campaign", campaignId, "content"],
+      });
+      queryClient.invalidateQueries({ queryKey: ["campaign", campaignId] });
+    },
+  });
+}

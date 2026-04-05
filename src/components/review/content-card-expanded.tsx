@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import type {
   ContentApprovalStatus,
   CampaignPlatform,
@@ -23,8 +25,17 @@ import { HashtagOptimizer } from "./hashtag-optimizer";
 import { SeoPanel } from "./seo-panel";
 import { PostingTimeCard } from "./posting-time-card";
 import { PlatformPreview } from "./platform-preview";
+import { HashtagInput } from "./hashtag-input";
 import { useGenerateContentMedia } from "@/hooks/use-media";
-import { Camera, Loader2, Eye, Pencil } from "lucide-react";
+import {
+  Camera,
+  Loader2,
+  Eye,
+  Pencil,
+  RefreshCw,
+  Trash2,
+  CalendarClock,
+} from "lucide-react";
 import { toast } from "sonner";
 
 interface ContentCardExpandedProps {
@@ -40,8 +51,32 @@ interface ContentCardExpandedProps {
   approvalStatus: ContentApprovalStatus;
   scheduledFor: Date | null;
   enrichments: ContentEnrichments | null;
+  hashtags?: string[];
+  targetCommunity?: string | null;
+  contentType?: string | null;
+  aiConfidenceScore?: number | null;
   onApprovalChange: (id: string, status: ContentApprovalStatus) => void;
   onBodyUpdate: (id: string, body: string) => void;
+  onHashtagsUpdate: (id: string, hashtags: string[]) => void;
+  onTargetCommunityUpdate: (id: string, community: string) => void;
+  onRegenerate: (id: string) => void;
+  onDelete: (id: string) => void;
+  onSchedule: (id: string) => void;
+  isRegenerating?: boolean;
+}
+
+function ConfidenceBadge({ score }: { score: number }) {
+  const color =
+    score >= 80
+      ? "bg-green-100 text-green-800"
+      : score >= 50
+        ? "bg-yellow-100 text-yellow-800"
+        : "bg-red-100 text-red-800";
+  return (
+    <Badge className={color} variant="secondary">
+      {score}% confidence
+    </Badge>
+  );
 }
 
 export function ContentCardExpanded({
@@ -57,8 +92,18 @@ export function ContentCardExpanded({
   approvalStatus,
   scheduledFor,
   enrichments,
+  hashtags = [],
+  targetCommunity,
+  contentType,
+  aiConfidenceScore,
   onApprovalChange,
   onBodyUpdate,
+  onHashtagsUpdate,
+  onTargetCommunityUpdate,
+  onRegenerate,
+  onDelete,
+  onSchedule,
+  isRegenerating,
 }: ContentCardExpandedProps) {
   const [hasChanges, setHasChanges] = useState(false);
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
@@ -82,14 +127,29 @@ export function ContentCardExpanded({
     }
   };
 
+  const handleDelete = () => {
+    if (window.confirm("Are you sure you want to delete this content?")) {
+      onDelete(id);
+      onClose();
+    }
+  };
+
   return (
     <Sheet open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <SheetContent className="w-[500px] overflow-y-auto sm:max-w-[500px]">
         <SheetHeader>
           <SheetTitle>{title ?? "Untitled content"}</SheetTitle>
-          <div className="flex gap-2 pt-1">
+          <div className="flex flex-wrap gap-2 pt-1">
             <Badge variant="outline">{platform}</Badge>
+            {contentType && (
+              <Badge variant="secondary" className="capitalize">
+                {contentType}
+              </Badge>
+            )}
             {pillar && <Badge variant="secondary">{pillar}</Badge>}
+            {aiConfidenceScore != null && (
+              <ConfidenceBadge score={aiConfidenceScore} />
+            )}
           </div>
           {scheduledFor && (
             <p className="text-muted-foreground text-xs">
@@ -131,6 +191,29 @@ export function ContentCardExpanded({
                 <Button onClick={handleSave} size="sm">
                   Save changes
                 </Button>
+              )}
+
+              {/* Hashtag editing */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Hashtags</Label>
+                <HashtagInput
+                  hashtags={hashtags}
+                  onChange={(tags) => onHashtagsUpdate(id, tags)}
+                />
+              </div>
+
+              {/* Target community for Reddit */}
+              {platform === "reddit" && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">
+                    Target Subreddit
+                  </Label>
+                  <Input
+                    placeholder="e.g., r/startups"
+                    defaultValue={targetCommunity ?? ""}
+                    onBlur={(e) => onTargetCommunityUpdate(id, e.target.value)}
+                  />
+                </div>
               )}
             </>
           ) : (
@@ -202,32 +285,56 @@ export function ContentCardExpanded({
             </div>
           )}
 
-          <div className="flex gap-2 border-t pt-4">
-            <Button
-              size="sm"
-              variant={approvalStatus === "approved" ? "default" : "outline"}
-              onClick={() => onApprovalChange(id, "approved")}
-            >
-              Approve
-            </Button>
-            <Button
-              size="sm"
-              variant={
-                approvalStatus === "needs_revision" ? "default" : "outline"
-              }
-              onClick={() => onApprovalChange(id, "needs_revision")}
-            >
-              Needs Revision
-            </Button>
-            <Button
-              size="sm"
-              variant={
-                approvalStatus === "rejected" ? "destructive" : "outline"
-              }
-              onClick={() => onApprovalChange(id, "rejected")}
-            >
-              Reject
-            </Button>
+          {/* Actions */}
+          <div className="space-y-3 border-t pt-4">
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                className="bg-green-600 hover:bg-green-700"
+                onClick={() => onApprovalChange(id, "approved")}
+              >
+                Approve
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-orange-300 text-orange-600 hover:bg-orange-50"
+                onClick={() => onApprovalChange(id, "needs_revision")}
+              >
+                Request Edit
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onSchedule.bind(null, id)}
+              >
+                <CalendarClock className="mr-1.5 h-3.5 w-3.5" />
+                Schedule
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onRegenerate(id)}
+                disabled={isRegenerating}
+              >
+                {isRegenerating ? (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                )}
+                Regenerate
+              </Button>
+              <button
+                type="button"
+                className="ml-auto flex items-center gap-1 text-sm text-red-600 hover:text-red-700"
+                onClick={handleDelete}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       </SheetContent>

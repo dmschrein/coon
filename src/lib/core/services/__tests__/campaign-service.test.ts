@@ -149,6 +149,11 @@ describe("CampaignService", () => {
       updateBody: vi.fn(),
       updateEnrichments: vi.fn(),
       updateContentPiece: vi.fn(),
+      delete: vi.fn(),
+      updateSchedule: vi.fn(),
+      bulkUpdateSchedule: vi.fn(),
+      updateHashtags: vi.fn(),
+      updateTargetCommunity: vi.fn(),
     };
     calendarEntryRepo = {
       findByCampaignId: vi.fn(),

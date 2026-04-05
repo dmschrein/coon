@@ -183,6 +183,22 @@ export type ContentApprovalStatus =
   | "rejected"
   | "needs_revision";
 
+export type ReviewBoardColumn =
+  | "pending_review"
+  | "approved"
+  | "scheduled"
+  | "posted";
+
+export type ContentFormatType =
+  | "post"
+  | "carousel"
+  | "reel"
+  | "video"
+  | "story"
+  | "comment"
+  | "thread"
+  | "article";
+
 export type CampaignStatus =
   | "draft"
   | "generating"
