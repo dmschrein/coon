@@ -55,6 +55,7 @@ export class RedditAdapter implements SocialPlatformAdapter {
       expiresAt: new Date(Date.now() + data.expires_in * 1000),
       accountId: accountInfo.accountId,
       accountName: accountInfo.accountName,
+      profileImageUrl: accountInfo.profileImageUrl,
       scopes: (data.scope as string)?.split(" "),
     };
   }
@@ -105,6 +106,7 @@ export class RedditAdapter implements SocialPlatformAdapter {
     return {
       accountId: data.id,
       accountName: data.name,
+      profileImageUrl: data.icon_img ?? undefined,
     };
   }
 

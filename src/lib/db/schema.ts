@@ -175,6 +175,7 @@ export const connectedAccounts = pgTable("connected_accounts", {
   tokenExpiresAt: timestamp("token_expires_at"),
   accountName: text("account_name"),
   accountId: text("account_id"),
+  profileImageUrl: text("profile_image_url"),
   isActive: boolean("is_active").default(true),
   scopes: text("scopes").array(),
   createdAt: timestamp("created_at").defaultNow(),

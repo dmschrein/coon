@@ -24,7 +24,7 @@ export async function GET(
       const baseUrl =
         process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
       return NextResponse.redirect(
-        `${baseUrl}/dashboard/campaign?error=oauth_denied`
+        `${baseUrl}/dashboard/settings?tab=accounts&error=oauth_denied`
       );
     }
 
@@ -69,15 +69,15 @@ export async function GET(
       redirectUri
     );
 
-    // Redirect back to the app with success
+    // Redirect back to settings with success
     return NextResponse.redirect(
-      `${baseUrl}/dashboard/campaign?connected=${platform}`
+      `${baseUrl}/dashboard/settings?tab=accounts&connected=${platform}`
     );
   } catch (error) {
     console.error("OAuth callback error:", error);
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
     return NextResponse.redirect(
-      `${baseUrl}/dashboard/campaign?error=oauth_failed`
+      `${baseUrl}/dashboard/settings?tab=accounts&error=oauth_failed`
     );
   }
 }

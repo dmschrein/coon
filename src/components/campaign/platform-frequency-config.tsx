@@ -1,6 +1,9 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { CheckCircle2, ExternalLink } from "lucide-react";
+import Link from "next/link";
+import type { ConnectedAccount } from "@/types";
 
 const PLATFORMS = [
   { value: "reddit", label: "Reddit" },
@@ -21,6 +24,7 @@ interface PlatformFrequencyConfigProps {
   onPlatformsChange: (platforms: string[]) => void;
   frequencyConfig: Record<string, number>;
   onFrequencyChange: (config: Record<string, number>) => void;
+  connectedAccounts?: ConnectedAccount[];
 }
 
 export function PlatformFrequencyConfig({
@@ -28,6 +32,7 @@ export function PlatformFrequencyConfig({
   onPlatformsChange,
   frequencyConfig,
   onFrequencyChange,
+  connectedAccounts,
 }: PlatformFrequencyConfigProps) {
   const togglePlatform = (platform: string) => {
     const updated = selectedPlatforms.includes(platform)
@@ -41,15 +46,15 @@ export function PlatformFrequencyConfig({
     }
   };
 
-  const updateFrequency = (platform: string, freq: number) => {
-    onFrequencyChange({ ...frequencyConfig, [platform]: freq });
-  };
+  const isConnected = (platform: string) =>
+    connectedAccounts?.some((a) => a.platform === platform && a.isActive);
 
   return (
     <div className="space-y-4">
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {PLATFORMS.map((platform) => {
           const isSelected = selectedPlatforms.includes(platform.value);
+          const connected = isConnected(platform.value);
           return (
             <div key={platform.value} className="space-y-2">
               <button
@@ -62,7 +67,22 @@ export function PlatformFrequencyConfig({
                     : "border-border hover:border-primary/50"
                 )}
               >
-                {platform.label}
+                <span className="flex items-center justify-between">
+                  <span>{platform.label}</span>
+                  {connectedAccounts && connected && (
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  )}
+                  {connectedAccounts && !connected && (
+                    <Link
+                      href="/dashboard/settings?tab=accounts"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-muted-foreground hover:text-foreground"
+                      title="Connect account in Settings"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </Link>
+                  )}
+                </span>
               </button>
               {isSelected && (
                 <div className="flex items-center gap-2 px-1">
@@ -72,7 +92,10 @@ export function PlatformFrequencyConfig({
                     max={14}
                     value={frequencyConfig[platform.value] ?? 3}
                     onChange={(e) =>
-                      updateFrequency(platform.value, Number(e.target.value))
+                      onFrequencyChange({
+                        ...frequencyConfig,
+                        [platform.value]: Number(e.target.value),
+                      })
                     }
                     className="h-2 flex-1"
                   />

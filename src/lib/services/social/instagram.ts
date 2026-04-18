@@ -66,6 +66,7 @@ export class InstagramAdapter implements SocialPlatformAdapter {
       expiresAt: new Date(Date.now() + longLivedData.expires_in * 1000),
       accountId: accountInfo.accountId,
       accountName: accountInfo.accountName,
+      profileImageUrl: accountInfo.profileImageUrl,
       scopes: ["instagram_basic", "instagram_content_publish"],
     };
   }
@@ -88,7 +89,7 @@ export class InstagramAdapter implements SocialPlatformAdapter {
 
   async getAccountInfo(accessToken: string) {
     const response = await fetch(
-      `https://graph.instagram.com/me?fields=id,username&access_token=${accessToken}`
+      `https://graph.instagram.com/me?fields=id,username,profile_picture_url&access_token=${accessToken}`
     );
 
     if (!response.ok) {
@@ -99,6 +100,7 @@ export class InstagramAdapter implements SocialPlatformAdapter {
     return {
       accountId: data.id,
       accountName: data.username,
+      profileImageUrl: data.profile_picture_url ?? undefined,
     };
   }
 

@@ -2,9 +2,12 @@
  * Drizzle Connected Account Repository - Data access for OAuth connected accounts.
  */
 
-import { eq, and } from "drizzle-orm";
+import { eq, and, lte, sql } from "drizzle-orm";
 import { connectedAccounts } from "@/lib/db/schema";
-import type { ConnectedAccountRepository } from "./interfaces";
+import type {
+  ConnectedAccountRepository,
+  ConnectedAccountWithTokens,
+} from "./interfaces";
 import type { ConnectedAccount, SocialPlatform } from "@/types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,10 +22,21 @@ function toConnectedAccount(
     platform: row.platform as SocialPlatform,
     accountName: row.accountName ?? null,
     accountId: row.accountId ?? null,
+    profileImageUrl: row.profileImageUrl ?? null,
     isActive: row.isActive ?? true,
     tokenExpiresAt: row.tokenExpiresAt ?? null,
     scopes: row.scopes ?? null,
     createdAt: row.createdAt ?? new Date(),
+  };
+}
+
+function toConnectedAccountWithTokens(
+  row: typeof connectedAccounts.$inferSelect
+): ConnectedAccountWithTokens {
+  return {
+    ...toConnectedAccount(row),
+    accessTokenEncrypted: row.accessTokenEncrypted,
+    refreshTokenEncrypted: row.refreshTokenEncrypted ?? null,
   };
 }
 
@@ -72,6 +86,56 @@ export class DrizzleConnectedAccountRepository implements ConnectedAccountReposi
     return row ? toConnectedAccount(row) : null;
   }
 
+  async findByIdWithTokens(
+    id: string
+  ): Promise<ConnectedAccountWithTokens | null> {
+    const [row] = await this.db
+      .select()
+      .from(connectedAccounts)
+      .where(eq(connectedAccounts.id, id))
+      .limit(1);
+
+    return row ? toConnectedAccountWithTokens(row) : null;
+  }
+
+  async findByUserAndPlatformWithTokens(
+    userId: string,
+    platform: SocialPlatform
+  ): Promise<ConnectedAccountWithTokens | null> {
+    const [row] = await this.db
+      .select()
+      .from(connectedAccounts)
+      .where(
+        and(
+          eq(connectedAccounts.userId, userId),
+          eq(connectedAccounts.platform, platform),
+          eq(connectedAccounts.isActive, true)
+        )
+      )
+      .limit(1);
+
+    return row ? toConnectedAccountWithTokens(row) : null;
+  }
+
+  async findExpiringTokens(
+    withinDays: number
+  ): Promise<ConnectedAccountWithTokens[]> {
+    const rows = await this.db
+      .select()
+      .from(connectedAccounts)
+      .where(
+        and(
+          eq(connectedAccounts.isActive, true),
+          lte(
+            connectedAccounts.tokenExpiresAt,
+            sql`NOW() + INTERVAL '${sql.raw(String(withinDays))} days'`
+          )
+        )
+      );
+
+    return rows.map(toConnectedAccountWithTokens);
+  }
+
   async create(params: {
     userId: string;
     platform: SocialPlatform;
@@ -80,6 +144,7 @@ export class DrizzleConnectedAccountRepository implements ConnectedAccountReposi
     tokenExpiresAt?: Date;
     accountName?: string;
     accountId?: string;
+    profileImageUrl?: string;
     scopes?: string[];
   }): Promise<ConnectedAccount> {
     const [row] = await this.db
@@ -92,6 +157,7 @@ export class DrizzleConnectedAccountRepository implements ConnectedAccountReposi
         tokenExpiresAt: params.tokenExpiresAt ?? null,
         accountName: params.accountName ?? null,
         accountId: params.accountId ?? null,
+        profileImageUrl: params.profileImageUrl ?? null,
         scopes: params.scopes ?? null,
         isActive: true,
       })

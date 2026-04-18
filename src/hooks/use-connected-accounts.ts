@@ -54,3 +54,22 @@ export function useDisconnectAccount() {
     },
   });
 }
+
+export function useRefreshAccount() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (accountId: string) => {
+      const res = await fetch(`/api/accounts/${accountId}/refresh`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("Failed to refresh account tokens");
+      const json = await res.json();
+      if (json.error) throw new Error(json.error.message);
+      return json.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["connected-accounts"] });
+    },
+  });
+}

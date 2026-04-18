@@ -419,6 +419,7 @@ export interface ConnectedAccount {
   platform: SocialPlatform;
   accountName: string | null;
   accountId: string | null;
+  profileImageUrl: string | null;
   isActive: boolean;
   tokenExpiresAt: Date | null;
   scopes: string[] | null;

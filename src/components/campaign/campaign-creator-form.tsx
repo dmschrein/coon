@@ -14,6 +14,7 @@ import { GoalSelector } from "./goal-selector";
 import { DurationSelector } from "./duration-selector";
 import { PlatformFrequencyConfig } from "./platform-frequency-config";
 import { Loader2, Sparkles } from "lucide-react";
+import { useConnectedAccounts } from "@/hooks/use-connected-accounts";
 
 interface CampaignCreatorFormProps {
   onSubmit: (data: CampaignCreatorFormData) => void;
@@ -45,6 +46,7 @@ export function CampaignCreatorForm({
 
   const platforms = watch("platforms");
   const frequencyConfig = watch("frequencyConfig");
+  const { data: connectedAccounts } = useConnectedAccounts();
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
@@ -97,6 +99,7 @@ export function CampaignCreatorForm({
           onPlatformsChange={(p) => setValue("platforms", p)}
           frequencyConfig={frequencyConfig}
           onFrequencyChange={(c) => setValue("frequencyConfig", c)}
+          connectedAccounts={connectedAccounts}
         />
         {errors.platforms && (
           <p className="text-destructive text-sm">{errors.platforms.message}</p>

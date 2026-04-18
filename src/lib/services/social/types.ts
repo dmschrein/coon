@@ -24,6 +24,7 @@ export interface SocialPlatformAdapter {
   getAccountInfo(accessToken: string): Promise<{
     accountId: string;
     accountName: string;
+    profileImageUrl?: string;
   }>;
   getAuthUrl(redirectUri: string, state: string): string;
   exchangeCode(
@@ -35,6 +36,7 @@ export interface SocialPlatformAdapter {
     expiresAt?: Date;
     accountId: string;
     accountName: string;
+    profileImageUrl?: string;
     scopes?: string[];
   }>;
   refreshAccessToken?(refreshToken: string): Promise<{

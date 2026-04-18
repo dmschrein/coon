@@ -18,6 +18,7 @@ import type {
   SocialPlatformAdapter,
   PostPayload,
 } from "@/lib/services/social/types";
+import { encrypt, decrypt } from "@/lib/crypto";
 import { ServiceError } from "./audience-service";
 
 type AdapterRegistry = (
@@ -74,11 +75,14 @@ export class PublishService {
     return this.accountRepo.create({
       userId,
       platform,
-      accessTokenEncrypted: tokens.accessToken,
-      refreshTokenEncrypted: tokens.refreshToken,
+      accessTokenEncrypted: encrypt(tokens.accessToken),
+      refreshTokenEncrypted: tokens.refreshToken
+        ? encrypt(tokens.refreshToken)
+        : undefined,
       tokenExpiresAt: tokens.expiresAt,
       accountName: tokens.accountName,
       accountId: tokens.accountId,
+      profileImageUrl: tokens.profileImageUrl,
       scopes: tokens.scopes,
     });
   }
@@ -89,6 +93,46 @@ export class PublishService {
       throw new ServiceError("Account not found");
     }
     await this.accountRepo.deactivate(accountId);
+  }
+
+  async refreshAccountTokens(
+    userId: string,
+    accountId: string
+  ): Promise<ConnectedAccount> {
+    const account = await this.accountRepo.findByIdWithTokens(accountId);
+    if (!account || account.userId !== userId) {
+      throw new ServiceError("Account not found");
+    }
+
+    const adapter = this.getAdapter(account.platform);
+    if (!adapter || !adapter.refreshAccessToken) {
+      throw new ServiceError(
+        `Token refresh not supported for ${account.platform}`
+      );
+    }
+
+    // For Instagram, the access token itself is used as the refresh token
+    const refreshToken = account.refreshTokenEncrypted
+      ? decrypt(account.refreshTokenEncrypted)
+      : decrypt(account.accessTokenEncrypted);
+
+    try {
+      const newTokens = await adapter.refreshAccessToken(refreshToken);
+
+      await this.accountRepo.updateTokens(
+        accountId,
+        encrypt(newTokens.accessToken),
+        newTokens.refreshToken ? encrypt(newTokens.refreshToken) : undefined,
+        newTokens.expiresAt
+      );
+
+      return (await this.accountRepo.findById(accountId))!;
+    } catch {
+      await this.accountRepo.deactivate(accountId);
+      throw new ServiceError(
+        `Token refresh failed for ${account.platform}. Please re-authorize.`
+      );
+    }
   }
 
   // ─── Publishing ─────────────────────────────────────────────────────────────
@@ -109,7 +153,7 @@ export class PublishService {
     }
 
     const platform = content.platform as SocialPlatform;
-    const account = await this.accountRepo.findByUserAndPlatform(
+    const account = await this.accountRepo.findByUserAndPlatformWithTokens(
       userId,
       platform
     );
@@ -124,14 +168,11 @@ export class PublishService {
       throw new ServiceError(`Platform ${platform} is not supported`);
     }
 
-    // Build post payload from content data
     const payload = this.buildPostPayload(content);
+    const accessToken = decrypt(account.accessTokenEncrypted);
 
     try {
-      // TODO: In production, decrypt the token before using
-      const result = await adapter.post(account.accountId ?? "", payload);
-
-      // Update content with external post info
+      const result = await adapter.post(accessToken, payload);
       await this.contentRepo.updateStatus(contentId, "complete");
 
       return {
@@ -164,8 +205,6 @@ export class PublishService {
       throw new ServiceError("Unauthorized");
     }
 
-    // Use the existing updateStatus + a separate scheduledFor update
-    // For now, just store the scheduled time
     await this.contentRepo.updateApprovalStatus(contentId, "approved");
   }
 

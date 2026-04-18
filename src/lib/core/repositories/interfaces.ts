@@ -215,6 +215,11 @@ export interface AgentRunRepository {
 
 // ─── Connected Account Repository ────────────────────────────────────────────
 
+export interface ConnectedAccountWithTokens extends ConnectedAccount {
+  accessTokenEncrypted: string;
+  refreshTokenEncrypted: string | null;
+}
+
 export interface ConnectedAccountRepository {
   findByUserId(userId: string): Promise<ConnectedAccount[]>;
   findByUserAndPlatform(
@@ -222,6 +227,12 @@ export interface ConnectedAccountRepository {
     platform: SocialPlatform
   ): Promise<ConnectedAccount | null>;
   findById(id: string): Promise<ConnectedAccount | null>;
+  findByIdWithTokens(id: string): Promise<ConnectedAccountWithTokens | null>;
+  findByUserAndPlatformWithTokens(
+    userId: string,
+    platform: SocialPlatform
+  ): Promise<ConnectedAccountWithTokens | null>;
+  findExpiringTokens(withinDays: number): Promise<ConnectedAccountWithTokens[]>;
   create(params: {
     userId: string;
     platform: SocialPlatform;
@@ -230,6 +241,7 @@ export interface ConnectedAccountRepository {
     tokenExpiresAt?: Date;
     accountName?: string;
     accountId?: string;
+    profileImageUrl?: string;
     scopes?: string[];
   }): Promise<ConnectedAccount>;
   updateTokens(
