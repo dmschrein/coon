@@ -6,24 +6,30 @@ import type { Platform } from "@/types";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface TargetCustomerStepProps {
   form: UseFormReturn<FullQuizResponse>;
   industryNicheText: string;
   onIndustryNicheChange: (v: string) => void;
-  customerPainPointsText: string;
-  onCustomerPainPointsChange: (v: string) => void;
 }
 
 const PLATFORM_OPTIONS: { value: Platform; label: string }[] = [
-  { value: "twitter", label: "Twitter / X" },
-  { value: "linkedin", label: "LinkedIn" },
   { value: "reddit", label: "Reddit" },
-  { value: "discord", label: "Discord" },
-  { value: "youtube", label: "YouTube" },
-  { value: "tiktok", label: "TikTok" },
   { value: "instagram", label: "Instagram" },
+  { value: "tiktok", label: "TikTok" },
   { value: "threads", label: "Threads" },
+  { value: "youtube", label: "YouTube" },
+  { value: "twitter", label: "Twitter / X" },
+  { value: "discord", label: "Discord" },
+  { value: "linkedin", label: "LinkedIn" },
   { value: "hackernews", label: "Hacker News" },
   { value: "producthunt", label: "Product Hunt" },
   { value: "indiehackers", label: "Indie Hackers" },
@@ -40,8 +46,6 @@ export function TargetCustomerStep({
   form,
   industryNicheText,
   onIndustryNicheChange,
-  customerPainPointsText,
-  onCustomerPainPointsChange,
 }: TargetCustomerStepProps) {
   const {
     register,
@@ -51,6 +55,8 @@ export function TargetCustomerStep({
   } = form;
 
   const preferredPlatforms = watch("preferredPlatforms") ?? [];
+  const businessModel = watch("businessModel");
+  const budgetRange = watch("budgetRange");
 
   const handlePlatformToggle = (platform: Platform, checked: boolean) => {
     const updated = checked
@@ -61,12 +67,6 @@ export function TargetCustomerStep({
 
   const handleNicheBlur = () => {
     setValue("industryNiche", parseTextToArray(industryNicheText), {
-      shouldValidate: true,
-    });
-  };
-
-  const handlePainPointsBlur = () => {
-    setValue("customerPainPoints", parseTextToArray(customerPainPointsText), {
       shouldValidate: true,
     });
   };
@@ -111,29 +111,9 @@ export function TargetCustomerStep({
         )}
       </div>
 
-      {/* Pain Points */}
-      <div className="space-y-2">
-        <Label htmlFor="customerPainPoints">
-          What are their biggest pain points?
-        </Label>
-        <Textarea
-          id="customerPainPoints"
-          placeholder="e.g. too expensive, too complex, no good alternatives — separate with commas"
-          rows={2}
-          value={customerPainPointsText}
-          onChange={(e) => onCustomerPainPointsChange(e.target.value)}
-          onBlur={handlePainPointsBlur}
-        />
-        {errors.customerPainPoints && (
-          <p className="text-destructive text-sm">
-            {errors.customerPainPoints.message}
-          </p>
-        )}
-      </div>
-
       {/* Preferred Platforms */}
       <div className="space-y-3">
-        <Label>Where does your audience hang out?</Label>
+        <Label>Where does your audience hang out online?</Label>
         <div className="grid grid-cols-2 gap-3">
           {PLATFORM_OPTIONS.map((platform) => {
             const isChecked = preferredPlatforms.includes(platform.value);
@@ -159,6 +139,68 @@ export function TargetCustomerStep({
         {errors.preferredPlatforms && (
           <p className="text-destructive text-sm">
             {errors.preferredPlatforms.message}
+          </p>
+        )}
+      </div>
+
+      {/* Business Model */}
+      <div className="space-y-3">
+        <Label>Business model</Label>
+        <RadioGroup
+          value={businessModel}
+          onValueChange={(value) =>
+            setValue(
+              "businessModel",
+              value as FullQuizResponse["businessModel"],
+              { shouldValidate: true }
+            )
+          }
+        >
+          {[
+            { value: "b2b", label: "B2B" },
+            { value: "b2c", label: "B2C" },
+            { value: "both", label: "Both" },
+          ].map((option) => (
+            <div key={option.value} className="flex items-center space-x-2">
+              <RadioGroupItem value={option.value} id={`biz-${option.value}`} />
+              <Label htmlFor={`biz-${option.value}`} className="font-normal">
+                {option.label}
+              </Label>
+            </div>
+          ))}
+        </RadioGroup>
+        {errors.businessModel && (
+          <p className="text-destructive text-sm">
+            {errors.businessModel.message}
+          </p>
+        )}
+      </div>
+
+      {/* Budget Range */}
+      <div className="space-y-2">
+        <Label>Monthly marketing budget</Label>
+        <Select
+          value={budgetRange}
+          onValueChange={(value) =>
+            setValue("budgetRange", value as FullQuizResponse["budgetRange"], {
+              shouldValidate: true,
+            })
+          }
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select budget range" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="free">Free / No budget</SelectItem>
+            <SelectItem value="low">Low ($1-100/mo)</SelectItem>
+            <SelectItem value="medium">Medium ($100-500/mo)</SelectItem>
+            <SelectItem value="high">High ($500-2000/mo)</SelectItem>
+            <SelectItem value="enterprise">Enterprise ($2000+/mo)</SelectItem>
+          </SelectContent>
+        </Select>
+        {errors.budgetRange && (
+          <p className="text-destructive text-sm">
+            {errors.budgetRange.message}
           </p>
         )}
       </div>

@@ -36,7 +36,7 @@ ${strategy.contentPillars.map((p) => `- ${p.theme}: ${p.description}`).join("\n"
 
 ## Product Context
 - Product: ${quiz.elevatorPitch}
-- Differentiators: ${quiz.differentiators.join(", ")}
+- Primary Goal: ${quiz.primaryGoal}
 
 ## Instagram-Specific Requirements
 - Caption max: 2200 characters (aim for 150-300 words for engagement)

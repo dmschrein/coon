@@ -52,6 +52,25 @@ const behavioralPatternsSchema = z.object({
 });
 
 // ----------------------------------------------------------------------------
+// Brand Voice Schema
+// ----------------------------------------------------------------------------
+
+const brandVoiceSchema = z.object({
+  descriptors: z.array(z.string()).min(3).max(5),
+  summary: z.string(),
+});
+
+// ----------------------------------------------------------------------------
+// Content Pillar Item Schema
+// ----------------------------------------------------------------------------
+
+const contentPillarItemSchema = z.object({
+  name: z.string(),
+  percentage: z.number().min(0).max(100),
+  description: z.string(),
+});
+
+// ----------------------------------------------------------------------------
 // Full Audience Profile Schema
 // ----------------------------------------------------------------------------
 
@@ -64,6 +83,8 @@ export const audienceProfileSchema = z.object({
   behavioralPatterns: behavioralPatternsSchema,
   keywords: z.array(z.string()),
   hashtags: z.array(z.string()),
+  brandVoice: brandVoiceSchema.optional(),
+  contentPillars: z.array(contentPillarItemSchema).min(3).max(5).optional(),
 });
 
 export type AudienceProfileSchema = z.infer<typeof audienceProfileSchema>;

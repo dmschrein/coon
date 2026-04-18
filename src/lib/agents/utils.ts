@@ -1,3 +1,4 @@
+import { createHash } from "crypto";
 import { db } from "@/lib/db";
 import { agentRuns } from "@/lib/db/schema";
 import type { AgentType, AgentStatus } from "@/types";
@@ -62,6 +63,14 @@ export async function logAgentRun(params: {
     status: params.status,
     errorMessage: params.errorMessage,
   });
+}
+
+export function computeContentHash(
+  bodies: { id: string; body: string | null }[]
+): string {
+  const sorted = [...bodies].sort((a, b) => a.id.localeCompare(b.id));
+  const concatenated = sorted.map((b) => `${b.id}:${b.body ?? ""}`).join("|");
+  return createHash("sha256").update(concatenated).digest("hex");
 }
 
 export async function withRetry<T>(

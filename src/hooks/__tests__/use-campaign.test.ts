@@ -110,7 +110,9 @@ describe("useCreateCampaign", () => {
       wrapper: createWrapper(),
     });
 
-    result.current.mutate(["twitter", "linkedin"]);
+    result.current.mutate({
+      selectedPlatforms: ["twitter", "linkedin"],
+    });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -118,7 +120,9 @@ describe("useCreateCampaign", () => {
     expect(mockFetch).toHaveBeenCalledWith("/api/campaign", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ selectedPlatforms: ["twitter", "linkedin"] }),
+      body: JSON.stringify({
+        selectedPlatforms: ["twitter", "linkedin"],
+      }),
     });
   });
 
@@ -132,7 +136,7 @@ describe("useCreateCampaign", () => {
       wrapper: createWrapper(),
     });
 
-    result.current.mutate(["twitter"]);
+    result.current.mutate({ selectedPlatforms: ["twitter"] });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
 

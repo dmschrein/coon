@@ -29,32 +29,28 @@ export type Platform =
 
 export type ContentComfortLevel = "beginner" | "intermediate" | "advanced";
 
-export interface Competitor {
-  name: string;
-  url?: string;
-  notes?: string;
-}
+export type PrimaryGoal =
+  | "pre-launch"
+  | "grow-existing"
+  | "promote-product"
+  | "thought-leadership";
 
 export interface QuizResponse {
+  // Step 1: Your Product
   productType: ProductType;
   elevatorPitch: string;
   problemSolved: string;
-  uniqueAngle: string;
   currentStage: CurrentStage;
+  // Step 2: Your Audience
   idealCustomer: string;
   industryNiche: string[];
-  customerPainPoints: string[];
-  currentSolutions: string[];
-  budgetRange: BudgetRange;
-  businessModel: BusinessModel;
-  competitors: Competitor[];
-  competitorStrengths: string[];
-  competitorWeaknesses: string[];
-  differentiators: string[];
-  launchTimeline: string;
-  targetAudienceSize: number;
-  weeklyTimeCommitment: number;
   preferredPlatforms: Platform[];
+  businessModel: BusinessModel;
+  budgetRange: BudgetRange;
+  // Step 3: Your Goals
+  primaryGoal: PrimaryGoal;
+  launchTimeline: string;
+  weeklyTimeCommitment: number;
   contentComfortLevel: ContentComfortLevel;
 }
 
@@ -70,6 +66,8 @@ export interface Persona {
   objections: string[];
   messagingAngle: string;
 }
+
+export type ConfidenceLevel = "quiz_based" | "data_informed" | "data_validated";
 
 export interface AudienceProfile {
   primaryPersonas: Persona[];
@@ -92,6 +90,15 @@ export interface AudienceProfile {
   };
   keywords: string[];
   hashtags: string[];
+  brandVoice?: {
+    descriptors: string[];
+    summary: string;
+  };
+  contentPillars?: {
+    name: string;
+    percentage: number;
+    description: string;
+  }[];
 }
 
 // ----------------------------------------------------------------------------
@@ -161,7 +168,40 @@ export type CampaignPlatform =
   | "threads"
   | "email";
 
+export type CampaignGoal =
+  | "build-awareness"
+  | "drive-engagement"
+  | "generate-leads"
+  | "promote-product"
+  | "educate";
+
+export type CampaignDuration = "1-week" | "2-weeks" | "1-month" | "ongoing";
+
+export type ContentApprovalStatus =
+  | "pending_review"
+  | "approved"
+  | "rejected"
+  | "needs_revision";
+
+export type ReviewBoardColumn =
+  | "pending_review"
+  | "approved"
+  | "scheduled"
+  | "posted";
+
+export type ContentFormatType =
+  | "post"
+  | "carousel"
+  | "reel"
+  | "video"
+  | "story"
+  | "comment"
+  | "thread"
+  | "article";
+
 export type CampaignStatus =
+  | "draft"
+  | "generating"
   | "strategy_pending"
   | "strategy_complete"
   | "calendar_pending"
@@ -175,6 +215,27 @@ export type CampaignContentStatus =
   | "generating"
   | "complete"
   | "failed";
+
+export interface CampaignCreatorInput {
+  name: string;
+  goal: CampaignGoal;
+  topic: string;
+  platforms: CampaignPlatform[];
+  duration: CampaignDuration;
+  frequencyConfig: Record<string, number>;
+}
+
+export interface CampaignGeneratorOutput {
+  strategySummary: string;
+  contentPillars: ContentPillar[];
+  contentPlan: {
+    platform: CampaignPlatform;
+    contentType: ContentType;
+    pillar: string;
+    title: string;
+    scheduledDay: number;
+  }[];
+}
 
 // --- Campaign Strategy ---
 
@@ -338,15 +399,202 @@ export interface CampaignCalendar {
 }
 
 // ----------------------------------------------------------------------------
+// Connected Account / Publish Types
+// ----------------------------------------------------------------------------
+
+export type SocialPlatform =
+  | "reddit"
+  | "instagram"
+  | "tiktok"
+  | "twitter"
+  | "youtube"
+  | "threads"
+  | "linkedin";
+
+export type PublishStatus = "scheduled" | "publishing" | "published" | "failed";
+
+export interface ConnectedAccount {
+  id: string;
+  userId: string;
+  platform: SocialPlatform;
+  accountName: string | null;
+  accountId: string | null;
+  profileImageUrl: string | null;
+  isActive: boolean;
+  tokenExpiresAt: Date | null;
+  scopes: string[] | null;
+  createdAt: Date;
+}
+
+export interface PublishRequest {
+  contentId: string;
+  scheduledFor?: Date;
+}
+
+export interface PublishResult {
+  contentId: string;
+  status: PublishStatus;
+  externalPostId?: string;
+  externalPostUrl?: string;
+  error?: string;
+}
+
+export interface OAuthState {
+  platform: SocialPlatform;
+  userId: string;
+  redirectUri: string;
+}
+
+// ----------------------------------------------------------------------------
+// Analytics Types
+// ----------------------------------------------------------------------------
+
+export interface PlatformMetrics {
+  platform: string;
+  reach: number;
+  impressions: number;
+  engagements: number;
+  engagementRate: number;
+}
+
+export interface PillarMetrics {
+  pillar: string;
+  totalReach: number;
+  totalEngagements: number;
+  avgEngagementRate: number;
+  contentCount: number;
+}
+
+export interface ContentRanking {
+  contentId: string;
+  title: string | null;
+  platform: string;
+  pillar: string | null;
+  reach: number;
+  engagements: number;
+  engagementRate: number;
+}
+
+export interface CampaignAnalyticsData {
+  totalReach: number;
+  totalEngagements: number;
+  totalImpressions: number;
+  engagementRate: number;
+  followerGrowth: number;
+  platformBreakdown: PlatformMetrics[];
+  pillarBreakdown: PillarMetrics[];
+  contentRankings: ContentRanking[];
+  aiInsights: string[];
+  aiRecommendations: string[];
+  snapshotDate: string;
+}
+
+export interface AnalyticsInsightsInput {
+  campaignName: string;
+  strategySummary: string;
+  platformBreakdown: PlatformMetrics[];
+  pillarBreakdown: PillarMetrics[];
+  contentRankings: ContentRanking[];
+}
+
+export interface AnalyticsInsightsResult {
+  insights: string[];
+  recommendations: string[];
+  audienceUpdates: {
+    confidenceLevel: ConfidenceLevel;
+    newPatterns: string[];
+  };
+}
+
+// ----------------------------------------------------------------------------
+// Content Enrichment Types (Image Generation, Scoring, SEO)
+// ----------------------------------------------------------------------------
+
+export interface MediaAsset {
+  type: "image" | "storyboard_frame";
+  imageUrl: string;
+  revisedPrompt: string;
+  originalDescription: string;
+  altText: string;
+  dimensions: { width: number; height: number };
+  slideNumber?: number;
+  shotNumber?: number;
+}
+
+export interface MediaSuggestions {
+  assets: MediaAsset[];
+  generatedAt: string;
+}
+
+export interface ContentScores {
+  engagementPotential: number;
+  brandVoiceAlignment: number;
+  platformFit: number;
+  overallScore: number;
+  feedback: string[];
+  suggestions: string[];
+  scoredAt: string;
+}
+
+export interface HashtagAnalysis {
+  current: string[];
+  suggested: string[];
+  trending: string[];
+  removed: string[];
+  reasoning: string;
+}
+
+export interface SeoAnalysis {
+  keywordDensity: Record<string, number>;
+  missingKeywords: string[];
+  metaDescriptionScore: number;
+  headingStructureScore: number;
+  readabilityScore: number;
+  suggestions: string[];
+}
+
+export interface PostingTimeRecommendation {
+  bestTime: string;
+  timezone: string;
+  reasoning: string;
+  alternativeTimes: string[];
+}
+
+export interface SeoOptimizationData {
+  hashtags?: HashtagAnalysis;
+  seo?: SeoAnalysis;
+  postingTime: PostingTimeRecommendation;
+  optimizedAt: string;
+}
+
+export interface ContentEnrichments {
+  media?: MediaSuggestions;
+  scores?: ContentScores;
+  seoData?: SeoOptimizationData;
+}
+
+// ----------------------------------------------------------------------------
 // Agent Types
 // ----------------------------------------------------------------------------
+
+export type {
+  CohesionCheckResult,
+  CohesionFlag,
+  CohesionDimension,
+  CohesionRecommendation,
+} from "@/lib/validations/campaign";
 
 export type AgentType =
   | "audience_analysis"
   | "content_generation"
   | "campaign_strategy"
   | "campaign_calendar"
-  | "campaign_content";
+  | "campaign_content"
+  | "content_piece_generation"
+  | "analytics_insights"
+  | "image_generation"
+  | "content_scoring"
+  | "seo_optimization";
 
 export type AgentStatus = "success" | "failed" | "partial";
 

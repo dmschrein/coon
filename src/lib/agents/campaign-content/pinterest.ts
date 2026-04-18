@@ -34,7 +34,7 @@ ${strategy.contentPillars.map((p) => `- ${p.theme}: ${p.description}`).join("\n"
 
 ## Product Context
 - Product: ${quiz.elevatorPitch}
-- Differentiators: ${quiz.differentiators.join(", ")}
+- Primary Goal: ${quiz.primaryGoal}
 
 ## Pinterest-Specific Requirements
 - Pinterest is a visual search engine — keywords matter more than hashtags

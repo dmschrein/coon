@@ -39,7 +39,7 @@ ${strategy.contentPillars.map((p) => `- ${p.theme}: ${p.description} (Topics: ${
 ## Product Context
 - Product: ${quiz.elevatorPitch}
 - Problem Solved: ${quiz.problemSolved}
-- Differentiators: ${quiz.differentiators.join(", ")}
+- Primary Goal: ${quiz.primaryGoal}
 
 ## Blog Post Requirements
 - Length: 1500-2500 words

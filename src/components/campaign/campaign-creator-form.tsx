@@ -1,0 +1,140 @@
+"use client";
+
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  campaignCreatorSchema,
+  type CampaignCreatorFormData,
+} from "@/lib/validations/campaign";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { GoalSelector } from "./goal-selector";
+import { DurationSelector } from "./duration-selector";
+import { PlatformFrequencyConfig } from "./platform-frequency-config";
+import { Loader2, Sparkles } from "lucide-react";
+import { useConnectedAccounts } from "@/hooks/use-connected-accounts";
+
+interface CampaignCreatorFormProps {
+  onSubmit: (data: CampaignCreatorFormData) => void;
+  isSubmitting: boolean;
+}
+
+export function CampaignCreatorForm({
+  onSubmit,
+  isSubmitting,
+}: CampaignCreatorFormProps) {
+  const {
+    register,
+    handleSubmit,
+    control,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<CampaignCreatorFormData>({
+    resolver: zodResolver(campaignCreatorSchema),
+    defaultValues: {
+      name: "",
+      goal: "build-awareness",
+      topic: "",
+      platforms: [],
+      duration: "1-month",
+      frequencyConfig: {},
+    },
+  });
+
+  const platforms = watch("platforms");
+  const frequencyConfig = watch("frequencyConfig");
+  const { data: connectedAccounts } = useConnectedAccounts();
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      <div className="space-y-2">
+        <Label htmlFor="name">Campaign Name</Label>
+        <Input
+          id="name"
+          placeholder="e.g., Healthy Recipe Collection, Product Launch Week"
+          {...register("name")}
+        />
+        {errors.name && (
+          <p className="text-destructive text-sm">{errors.name.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label>Campaign Goal</Label>
+        <Controller
+          name="goal"
+          control={control}
+          render={({ field }) => (
+            <GoalSelector value={field.value} onChange={field.onChange} />
+          )}
+        />
+        {errors.goal && (
+          <p className="text-destructive text-sm">{errors.goal.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="topic">Campaign Topic</Label>
+        <Textarea
+          id="topic"
+          placeholder="Describe what this campaign is about. e.g., 'Share healthy recipes that busy professionals can make in under 30 minutes, positioning me as a wellness expert before my recipe book launches.'"
+          {...register("topic")}
+          rows={3}
+        />
+        {errors.topic && (
+          <p className="text-destructive text-sm">{errors.topic.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label>Platforms & Frequency</Label>
+        <p className="text-muted-foreground text-sm">
+          Select platforms and set how often to post per week
+        </p>
+        <PlatformFrequencyConfig
+          selectedPlatforms={platforms}
+          onPlatformsChange={(p) => setValue("platforms", p)}
+          frequencyConfig={frequencyConfig}
+          onFrequencyChange={(c) => setValue("frequencyConfig", c)}
+          connectedAccounts={connectedAccounts}
+        />
+        {errors.platforms && (
+          <p className="text-destructive text-sm">{errors.platforms.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label>Duration</Label>
+        <Controller
+          name="duration"
+          control={control}
+          render={({ field }) => (
+            <DurationSelector value={field.value} onChange={field.onChange} />
+          )}
+        />
+      </div>
+
+      <Button
+        type="submit"
+        disabled={isSubmitting}
+        size="lg"
+        className="w-full"
+      >
+        {isSubmitting ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Generating Campaign...
+          </>
+        ) : (
+          <>
+            <Sparkles className="mr-2 h-4 w-4" />
+            Generate Campaign
+          </>
+        )}
+      </Button>
+    </form>
+  );
+}

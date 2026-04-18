@@ -116,4 +116,31 @@ export const audienceProfileFixture: AudienceProfile = {
     "#audiencebuilding",
     "#startupmarketing",
   ],
+  brandVoice: {
+    descriptors: ["Bold", "Empathetic", "No-BS", "Builder-first"],
+    summary:
+      "Speak like a fellow founder who's been there — direct, empowering, zero fluff.",
+  },
+  contentPillars: [
+    {
+      name: "Build in Public",
+      percentage: 35,
+      description: "Share the journey transparently to build trust and loyalty",
+    },
+    {
+      name: "Audience Growth",
+      percentage: 30,
+      description: "Tactical community-building tips and strategies",
+    },
+    {
+      name: "Product Marketing",
+      percentage: 20,
+      description: "Pre-launch strategies, playbooks, and case studies",
+    },
+    {
+      name: "Founder Mindset",
+      percentage: 15,
+      description: "Resilience, discipline, and motivation for the journey",
+    },
+  ],
 };

@@ -43,25 +43,17 @@ const mockQuizData: QuizResponse = {
   productType: "saas",
   elevatorPitch: "pitch",
   problemSolved: "problem",
-  uniqueAngle: "angle",
   currentStage: "mvp",
   idealCustomer: "devs",
   industryNiche: ["tech"],
-  customerPainPoints: ["pain"],
-  currentSolutions: ["solution"],
-  budgetRange: "medium",
-  businessModel: "b2b",
-  competitors: [],
-  competitorStrengths: [],
-  competitorWeaknesses: [],
-  differentiators: ["diff"],
-  launchTimeline: "3 months",
-  targetAudienceSize: 1000,
-  weeklyTimeCommitment: 10,
   preferredPlatforms: ["twitter"],
+  businessModel: "b2b",
+  budgetRange: "medium",
+  primaryGoal: "pre-launch",
+  launchTimeline: "2026-06-01T00:00:00.000Z",
+  weeklyTimeCommitment: 10,
   contentComfortLevel: "intermediate",
 };
-
 describe("AudienceService", () => {
   let profileRepo: {
     [K in keyof AudienceProfileRepository]: ReturnType<typeof vi.fn>;

@@ -1,16 +1,21 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   useAudienceProfile,
   useRegenerateProfile,
 } from "@/hooks/use-audience-profile";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AudienceProfileCard } from "@/components/audience/audience-profile-card";
 import { PersonaCard } from "@/components/audience/persona-card";
 import { KeywordsDisplay } from "@/components/audience/keywords-display";
-import { Loader2, RefreshCw, Sparkles, ArrowRight } from "lucide-react";
+import { ConfidenceBadge } from "@/components/audience/confidence-badge";
+import { StrategyCard } from "@/components/audience/strategy-card";
+import { InsightsTab } from "@/components/audience/insights-tab";
+import { CtaBanner } from "@/components/audience/cta-banner";
+import { Loader2, RefreshCw, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 const AUDIENCE_GENERATION_STEPS = [
@@ -85,12 +90,10 @@ function GenerationProgress({ isGenerating }: { isGenerating: boolean }) {
 
 export default function AudiencePage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const { data: profile, isLoading, error } = useAudienceProfile();
   const regenerate = useRegenerateProfile();
   const autoGenerateFired = useRef(false);
 
-  // Auto-trigger generation when arriving from quiz
   useEffect(() => {
     if (
       searchParams.get("autoGenerate") === "true" &&
@@ -148,7 +151,6 @@ export default function AudiencePage() {
     );
   }
 
-  // Generating state (auto-triggered or manual)
   if (regenerate.isPending) {
     return <GenerationProgress isGenerating />;
   }
@@ -188,72 +190,85 @@ export default function AudiencePage() {
     );
   }
 
+  const hasInsights = profile.analyticsData !== null;
+
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Audience Analysis</h1>
-          <p className="text-muted-foreground">
-            Your AI-generated target audience profile
-          </p>
-        </div>
-        <Button
-          onClick={handleRegenerate}
-          disabled={regenerate.isPending}
-          variant="outline"
-          size="sm"
-        >
-          {regenerate.isPending ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Regenerating...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Regenerate
-            </>
-          )}
-        </Button>
-      </div>
-
-      {/* Profile Overview */}
-      <AudienceProfileCard profile={profile.profileData} />
-
-      {/* Personas */}
       <div>
-        <h2 className="mb-4 text-2xl font-bold">Audience Personas</h2>
-        <div className="grid gap-6 md:grid-cols-2">
-          {profile.profileData.primaryPersonas.map((persona, idx) => (
-            <PersonaCard key={idx} persona={persona} index={idx} />
-          ))}
-        </div>
+        <h1 className="text-3xl font-bold">Audience Analysis</h1>
+        <p className="text-muted-foreground">
+          Your AI-generated target audience profile
+        </p>
       </div>
 
-      {/* Keywords & Hashtags */}
-      <KeywordsDisplay
-        keywords={[
-          ...profile.profileData.keywords,
-          ...profile.profileData.hashtags,
-        ]}
-      />
-
-      {/* Next step CTA */}
-      <div className="bg-muted/40 flex items-center justify-between gap-4 rounded-lg border p-6">
-        <div>
-          <p className="font-semibold">Your audience is ready.</p>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Generate content tailored to these personas — ready to post across
-            your platforms.
-          </p>
+      {profile.profileData.brandVoice && profile.profileData.contentPillars ? (
+        <StrategyCard
+          profile={profile.profileData}
+          confidenceLevel={profile.confidenceLevel}
+          onRegenerate={handleRegenerate}
+          isRegenerating={regenerate.isPending}
+        />
+      ) : (
+        <div className="flex items-center justify-between">
+          <ConfidenceBadge level={profile.confidenceLevel} />
+          <Button
+            onClick={handleRegenerate}
+            disabled={regenerate.isPending}
+            variant="outline"
+            size="sm"
+          >
+            {regenerate.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Regenerating...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Regenerate
+              </>
+            )}
+          </Button>
         </div>
-        <Button
-          onClick={() => router.push("/dashboard/content?autoGenerate=true")}
-        >
-          Generate Content
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
+      )}
+
+      <Tabs defaultValue="overview">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="personas">Personas</TabsTrigger>
+          <TabsTrigger value="keywords">Keywords</TabsTrigger>
+          {hasInsights && <TabsTrigger value="insights">Insights</TabsTrigger>}
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          <AudienceProfileCard profile={profile.profileData} />
+        </TabsContent>
+
+        <TabsContent value="personas" className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            {profile.profileData.primaryPersonas.map((persona, idx) => (
+              <PersonaCard key={idx} persona={persona} index={idx} />
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="keywords" className="space-y-6">
+          <KeywordsDisplay
+            keywords={[
+              ...profile.profileData.keywords,
+              ...profile.profileData.hashtags,
+            ]}
+          />
+        </TabsContent>
+
+        {hasInsights && (
+          <TabsContent value="insights" className="space-y-6">
+            <InsightsTab />
+          </TabsContent>
+        )}
+      </Tabs>
+
+      <CtaBanner />
     </div>
   );
 }

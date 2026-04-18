@@ -36,7 +36,8 @@ function buildStrategyPrompt(
 
 ## Product Context
 - Product: ${quiz.elevatorPitch}
-- Differentiators: ${quiz.differentiators.join(", ")}
+- Problem Solved: ${quiz.problemSolved}
+- Primary Goal: ${quiz.primaryGoal}
 
 ## Constraints
 - Target platforms: ${quiz.preferredPlatforms.join(", ")}
@@ -199,7 +200,10 @@ export async function generateContent(
 }> {
   console.log("🚀 Starting generateContent flow...");
   const count = getContentCount(quiz.preferredPlatforms);
-  console.log(`📊 Will generate ${count} content pieces for platforms:`, quiz.preferredPlatforms);
+  console.log(
+    `📊 Will generate ${count} content pieces for platforms:`,
+    quiz.preferredPlatforms
+  );
 
   // Step 1: Generate strategy
   console.log("📋 Step 1: Generating strategy...");

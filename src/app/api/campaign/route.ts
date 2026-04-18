@@ -3,11 +3,12 @@ import { auth } from "@clerk/nextjs/server";
 import { getContainer } from "@/lib/core/di/container";
 import { ServiceError } from "@/lib/core/services";
 import type { CampaignPlatform } from "@/types";
+import { campaignCreatorSchema } from "@/lib/validations/campaign";
 import { z } from "zod";
 
 export const maxDuration = 120;
 
-const createCampaignSchema = z.object({
+const legacyCreateSchema = z.object({
   selectedPlatforms: z.array(z.string()).min(1),
 });
 
@@ -54,13 +55,30 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { selectedPlatforms } = createCampaignSchema.parse(body);
-
     const { campaignService } = getContainer();
-    const campaign = await campaignService.createCampaign(
-      userId,
-      selectedPlatforms as CampaignPlatform[]
-    );
+
+    // Support both new creator flow and legacy flow
+    const creatorResult = campaignCreatorSchema.safeParse(body);
+    let campaign;
+
+    if (creatorResult.success) {
+      const { name, goal, topic, platforms, duration, frequencyConfig } =
+        creatorResult.data;
+      campaign = await campaignService.createDraftCampaign(userId, {
+        name,
+        goal: goal as import("@/types").CampaignGoal,
+        topic,
+        platforms: platforms as CampaignPlatform[],
+        duration: duration as import("@/types").CampaignDuration,
+        frequencyConfig,
+      });
+    } else {
+      const { selectedPlatforms } = legacyCreateSchema.parse(body);
+      campaign = await campaignService.createCampaign(
+        userId,
+        selectedPlatforms as CampaignPlatform[]
+      );
+    }
 
     return NextResponse.json({ data: campaign, error: null });
   } catch (error) {

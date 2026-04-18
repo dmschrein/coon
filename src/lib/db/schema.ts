@@ -7,6 +7,7 @@ import {
   integer,
   jsonb,
   uuid,
+  index,
 } from "drizzle-orm/pg-core";
 
 // ─── Users ───────────────────────────────────────────────────────────────────
@@ -38,6 +39,8 @@ export const audienceProfiles = pgTable("audience_profiles", {
     .references(() => users.id, { onDelete: "cascade" }),
   quizResponseId: uuid("quiz_response_id").references(() => quizResponses.id),
   profileData: jsonb("profile_data").notNull(),
+  confidenceLevel: text("confidence_level").default("quiz_based"),
+  analyticsData: jsonb("analytics_data"),
   isActive: boolean("is_active").default(true),
   generatedAt: timestamp("generated_at").defaultNow(),
 });
@@ -64,43 +67,78 @@ export const contentItems = pgTable("content_items", {
 });
 
 // ─── Campaigns ──────────────────────────────────────────────────────────────
-export const campaigns = pgTable("campaigns", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  audienceProfileId: uuid("audience_profile_id").references(
-    () => audienceProfiles.id
-  ),
-  quizResponseId: uuid("quiz_response_id").references(() => quizResponses.id),
-  name: text("name"),
-  status: text("status").notNull().default("strategy_pending"),
-  strategyData: jsonb("strategy_data"),
-  calendarData: jsonb("calendar_data"),
-  selectedPlatforms: text("selected_platforms").array(),
-  completedPlatforms: text("completed_platforms").array().default([]),
-  totalTokensUsed: integer("total_tokens_used").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+export const campaigns = pgTable(
+  "campaigns",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    audienceProfileId: uuid("audience_profile_id").references(
+      () => audienceProfiles.id
+    ),
+    quizResponseId: uuid("quiz_response_id").references(() => quizResponses.id),
+    name: text("name"),
+    goal: text("goal"),
+    topic: text("topic"),
+    duration: text("duration"),
+    frequencyConfig: jsonb("frequency_config"),
+    status: text("status").notNull().default("draft"),
+    strategyData: jsonb("strategy_data"),
+    strategySummary: text("strategy_summary"),
+    contentPillars: jsonb("content_pillars"),
+    calendarData: jsonb("calendar_data"),
+    selectedPlatforms: text("selected_platforms").array(),
+    completedPlatforms: text("completed_platforms").array().default([]),
+    totalTokensUsed: integer("total_tokens_used").default(0),
+    cohesionResult: jsonb("cohesion_result"),
+    cohesionContentHash: text("cohesion_content_hash"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [index("campaigns_user_status_idx").on(table.userId, table.status)]
+);
 
 // ─── Campaign Content ───────────────────────────────────────────────────────
-export const campaignContent = pgTable("campaign_content", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  campaignId: uuid("campaign_id")
-    .notNull()
-    .references(() => campaigns.id, { onDelete: "cascade" }),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  platform: text("platform").notNull(),
-  status: text("status").notNull().default("pending"),
-  contentData: jsonb("content_data"),
-  tokensUsed: integer("tokens_used"),
-  errorMessage: text("error_message"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+export const campaignContent = pgTable(
+  "campaign_content",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    campaignId: uuid("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    platform: text("platform").notNull(),
+    pillar: text("pillar"),
+    title: text("title"),
+    body: text("body"),
+    hashtags: text("hashtags").array(),
+    mediaSuggestions: jsonb("media_suggestions"),
+    targetCommunity: text("target_community"),
+    scheduledFor: timestamp("scheduled_for"),
+    postedAt: timestamp("posted_at"),
+    aiConfidenceScore: integer("ai_confidence_score"),
+    externalPostId: text("external_post_id"),
+    externalPostUrl: text("external_post_url"),
+    approvalStatus: text("approval_status").default("pending_review"),
+    status: text("status").notNull().default("pending"),
+    contentData: jsonb("content_data"),
+    tokensUsed: integer("tokens_used"),
+    errorMessage: text("error_message"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    index("campaign_content_campaign_idx").on(table.campaignId),
+    index("campaign_content_campaign_status_idx").on(
+      table.campaignId,
+      table.status
+    ),
+    index("campaign_content_scheduled_idx").on(table.scheduledFor),
+  ]
+);
 
 // ─── Campaign Calendar Entries ──────────────────────────────────────────────
 export const campaignCalendarEntries = pgTable("campaign_calendar_entries", {
@@ -125,6 +163,72 @@ export const campaignCalendarEntries = pgTable("campaign_calendar_entries", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// ─── Connected Accounts ─────────────────────────────────────────────────────
+export const connectedAccounts = pgTable("connected_accounts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  platform: text("platform").notNull(),
+  accessTokenEncrypted: text("access_token_encrypted").notNull(),
+  refreshTokenEncrypted: text("refresh_token_encrypted"),
+  tokenExpiresAt: timestamp("token_expires_at"),
+  accountName: text("account_name"),
+  accountId: text("account_id"),
+  profileImageUrl: text("profile_image_url"),
+  isActive: boolean("is_active").default(true),
+  scopes: text("scopes").array(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// ─── Campaign Analytics ─────────────────────────────────────────────────────
+export const campaignAnalytics = pgTable("campaign_analytics", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  campaignId: uuid("campaign_id")
+    .notNull()
+    .references(() => campaigns.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  totalReach: integer("total_reach").default(0),
+  totalEngagements: integer("total_engagements").default(0),
+  totalImpressions: integer("total_impressions").default(0),
+  engagementRate: text("engagement_rate"),
+  followerGrowth: integer("follower_growth").default(0),
+  platformBreakdown: jsonb("platform_breakdown"),
+  pillarBreakdown: jsonb("pillar_breakdown"),
+  aiInsights: jsonb("ai_insights"),
+  aiRecommendations: jsonb("ai_recommendations"),
+  snapshotDate: timestamp("snapshot_date").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ─── Content Analytics ──────────────────────────────────────────────────────
+export const contentAnalytics = pgTable("content_analytics", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  campaignContentId: uuid("campaign_content_id")
+    .notNull()
+    .references(() => campaignContent.id, { onDelete: "cascade" }),
+  campaignId: uuid("campaign_id")
+    .notNull()
+    .references(() => campaigns.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  platform: text("platform").notNull(),
+  reach: integer("reach").default(0),
+  impressions: integer("impressions").default(0),
+  likes: integer("likes").default(0),
+  comments: integer("comments").default(0),
+  shares: integer("shares").default(0),
+  clicks: integer("clicks").default(0),
+  saves: integer("saves").default(0),
+  engagementRate: text("engagement_rate"),
+  rawMetrics: jsonb("raw_metrics"),
+  fetchedAt: timestamp("fetched_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
 // ─── Agent Runs ──────────────────────────────────────────────────────────────
 export const agentRuns = pgTable("agent_runs", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -147,6 +251,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   contentItems: many(contentItems),
   agentRuns: many(agentRuns),
   campaigns: many(campaigns),
+  connectedAccounts: many(connectedAccounts),
 }));
 
 export const quizResponsesRelations = relations(
@@ -208,6 +313,7 @@ export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
   }),
   content: many(campaignContent),
   calendarEntries: many(campaignCalendarEntries),
+  analytics: many(campaignAnalytics),
 }));
 
 export const campaignContentRelations = relations(
@@ -219,6 +325,48 @@ export const campaignContentRelations = relations(
     }),
     user: one(users, {
       fields: [campaignContent.userId],
+      references: [users.id],
+    }),
+  })
+);
+
+export const connectedAccountsRelations = relations(
+  connectedAccounts,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [connectedAccounts.userId],
+      references: [users.id],
+    }),
+  })
+);
+
+export const campaignAnalyticsRelations = relations(
+  campaignAnalytics,
+  ({ one }) => ({
+    campaign: one(campaigns, {
+      fields: [campaignAnalytics.campaignId],
+      references: [campaigns.id],
+    }),
+    user: one(users, {
+      fields: [campaignAnalytics.userId],
+      references: [users.id],
+    }),
+  })
+);
+
+export const contentAnalyticsRelations = relations(
+  contentAnalytics,
+  ({ one }) => ({
+    campaignContent: one(campaignContent, {
+      fields: [contentAnalytics.campaignContentId],
+      references: [campaignContent.id],
+    }),
+    campaign: one(campaigns, {
+      fields: [contentAnalytics.campaignId],
+      references: [campaigns.id],
+    }),
+    user: one(users, {
+      fields: [contentAnalytics.userId],
       references: [users.id],
     }),
   })

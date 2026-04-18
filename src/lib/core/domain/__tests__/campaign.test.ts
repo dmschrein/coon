@@ -64,11 +64,11 @@ const mockCalendar: CampaignCalendar = {
 
 describe("Campaign", () => {
   describe("create()", () => {
-    it("creates a campaign in strategy_pending state", () => {
+    it("creates a campaign in draft state", () => {
       const campaign = createTestCampaign();
       expect(campaign.id).toBe("campaign-1");
       expect(campaign.userId).toBe("user-1");
-      expect(campaign.status).toBe("strategy_pending");
+      expect(campaign.status).toBe("draft");
       expect(campaign.name).toBeNull();
       expect(campaign.strategy).toBeNull();
       expect(campaign.calendar).toBeNull();

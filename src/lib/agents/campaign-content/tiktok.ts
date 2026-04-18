@@ -37,7 +37,7 @@ ${strategy.contentPillars.map((p) => `- ${p.theme}: ${p.description}`).join("\n"
 ## Product Context
 - Product: ${quiz.elevatorPitch}
 - Problem Solved: ${quiz.problemSolved}
-- Differentiators: ${quiz.differentiators.join(", ")}
+- Primary Goal: ${quiz.primaryGoal}
 
 ## TikTok-Specific Requirements
 - The HOOK (first 3 seconds) is everything — make it impossible to scroll past

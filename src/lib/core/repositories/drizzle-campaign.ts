@@ -11,6 +11,9 @@ import type {
   CampaignCalendar,
   CampaignStrategy,
   CampaignStatus,
+  CampaignGoal,
+  CampaignDuration,
+  ContentPillar,
 } from "@/types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -32,7 +35,15 @@ export class DrizzleCampaignRepository implements CampaignRepository {
       row.totalTokensUsed ?? 0,
       row.audienceProfileId,
       row.quizResponseId,
-      row.createdAt ?? new Date()
+      row.createdAt ?? new Date(),
+      (row.goal as CampaignGoal) ?? null,
+      row.topic ?? null,
+      (row.duration as CampaignDuration) ?? null,
+      (row.frequencyConfig as Record<string, number>) ?? null,
+      row.strategySummary ?? null,
+      (row.contentPillars as ContentPillar[]) ?? null,
+      row.cohesionResult ?? null,
+      row.cohesionContentHash ?? null
     );
   }
 
@@ -66,6 +77,8 @@ export class DrizzleCampaignRepository implements CampaignRepository {
         calendarData: campaign.calendar,
         completedPlatforms: campaign.completedPlatforms,
         totalTokensUsed: campaign.totalTokensUsed,
+        strategySummary: campaign.strategySummary,
+        contentPillars: campaign.contentPillars,
         updatedAt: new Date(),
       })
       .where(eq(campaigns.id, campaign.id));
@@ -82,6 +95,10 @@ export class DrizzleCampaignRepository implements CampaignRepository {
     status: string;
     strategyData: CampaignStrategy | null;
     totalTokensUsed: number;
+    goal?: CampaignGoal;
+    topic?: string;
+    duration?: CampaignDuration;
+    frequencyConfig?: Record<string, number>;
   }): Promise<Campaign> {
     const [row] = await this.db
       .insert(campaigns)
@@ -94,10 +111,40 @@ export class DrizzleCampaignRepository implements CampaignRepository {
         strategyData: params.strategyData,
         selectedPlatforms: params.selectedPlatforms,
         totalTokensUsed: params.totalTokensUsed,
+        goal: params.goal,
+        topic: params.topic,
+        duration: params.duration,
+        frequencyConfig: params.frequencyConfig,
       })
       .returning();
 
     return this.toDomain(row);
+  }
+
+  async updatePlan(
+    id: string,
+    strategySummary: string,
+    contentPillars: ContentPillar[],
+    tokensUsed: number
+  ): Promise<void> {
+    const [existing] = await this.db
+      .select()
+      .from(campaigns)
+      .where(eq(campaigns.id, id))
+      .limit(1);
+
+    if (!existing) return;
+
+    await this.db
+      .update(campaigns)
+      .set({
+        strategySummary,
+        contentPillars,
+        status: "strategy_complete",
+        totalTokensUsed: (existing.totalTokensUsed ?? 0) + tokensUsed,
+        updatedAt: new Date(),
+      })
+      .where(eq(campaigns.id, id));
   }
 
   async updateStrategy(
@@ -178,5 +225,54 @@ export class DrizzleCampaignRepository implements CampaignRepository {
         updatedAt: new Date(),
       })
       .where(eq(campaigns.id, id));
+  }
+
+  async updateFields(
+    id: string,
+    data: {
+      name?: string;
+      goal?: string;
+      topic?: string;
+      duration?: string;
+      selectedPlatforms?: string[];
+      frequencyConfig?: Record<string, number>;
+    }
+  ): Promise<Campaign | null> {
+    const updateData: Record<string, unknown> = { updatedAt: new Date() };
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.goal !== undefined) updateData.goal = data.goal;
+    if (data.topic !== undefined) updateData.topic = data.topic;
+    if (data.duration !== undefined) updateData.duration = data.duration;
+    if (data.selectedPlatforms !== undefined)
+      updateData.selectedPlatforms = data.selectedPlatforms;
+    if (data.frequencyConfig !== undefined)
+      updateData.frequencyConfig = data.frequencyConfig;
+
+    const [row] = await this.db
+      .update(campaigns)
+      .set(updateData)
+      .where(eq(campaigns.id, id))
+      .returning();
+
+    return row ? this.toDomain(row) : null;
+  }
+
+  async updateCohesionResult(
+    id: string,
+    result: unknown,
+    contentHash: string
+  ): Promise<void> {
+    await this.db
+      .update(campaigns)
+      .set({
+        cohesionResult: result,
+        cohesionContentHash: contentHash,
+        updatedAt: new Date(),
+      })
+      .where(eq(campaigns.id, id));
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.db.delete(campaigns).where(eq(campaigns.id, id));
   }
 }

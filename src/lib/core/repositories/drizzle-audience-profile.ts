@@ -6,7 +6,7 @@ import { eq, and, desc } from "drizzle-orm";
 import { audienceProfiles } from "@/lib/db/schema";
 import { AudienceProfileEntity } from "../domain/audience-profile";
 import type { AudienceProfileRepository } from "./interfaces";
-import type { AudienceProfile } from "@/types";
+import type { AudienceProfile, ConfidenceLevel } from "@/types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DrizzleDb = any;
@@ -22,6 +22,8 @@ export class DrizzleAudienceProfileRepository implements AudienceProfileReposito
       row.userId,
       row.quizResponseId,
       row.profileData as AudienceProfile,
+      (row.confidenceLevel as ConfidenceLevel) ?? "quiz_based",
+      (row.analyticsData as Record<string, unknown>) ?? null,
       row.isActive ?? true,
       row.generatedAt ?? new Date()
     );

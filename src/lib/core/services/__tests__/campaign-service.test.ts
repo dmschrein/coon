@@ -48,22 +48,15 @@ const mockQuizData: QuizResponse = {
   productType: "saas",
   elevatorPitch: "pitch",
   problemSolved: "problem",
-  uniqueAngle: "angle",
   currentStage: "mvp",
   idealCustomer: "devs",
   industryNiche: ["tech"],
-  customerPainPoints: ["pain"],
-  currentSolutions: ["solution"],
-  budgetRange: "medium",
-  businessModel: "b2b",
-  competitors: [],
-  competitorStrengths: [],
-  competitorWeaknesses: [],
-  differentiators: ["diff"],
-  launchTimeline: "3 months",
-  targetAudienceSize: 1000,
-  weeklyTimeCommitment: 10,
   preferredPlatforms: ["twitter"],
+  businessModel: "b2b",
+  budgetRange: "medium",
+  primaryGoal: "pre-launch",
+  launchTimeline: "2026-06-01T00:00:00.000Z",
+  weeklyTimeCommitment: 10,
   contentComfortLevel: "intermediate",
 };
 
@@ -130,10 +123,14 @@ describe("CampaignService", () => {
       findByUserId: vi.fn(),
       save: vi.fn(),
       create: vi.fn(),
+      updatePlan: vi.fn(),
       updateStrategy: vi.fn(),
       updateCalendar: vi.fn(),
       updateStatus: vi.fn(),
       updateCompletedPlatforms: vi.fn(),
+      updateFields: vi.fn(),
+      updateCohesionResult: vi.fn(),
+      delete: vi.fn(),
     };
     profileRepo = {
       findActiveByUserId: vi.fn(),
@@ -144,9 +141,20 @@ describe("CampaignService", () => {
     quizRepo = { findLatestByUserId: vi.fn() };
     contentRepo = {
       findByCampaignId: vi.fn(),
+      findById: vi.fn(),
       createMany: vi.fn(),
       updateStatus: vi.fn(),
       updateContent: vi.fn(),
+      updateApprovalStatus: vi.fn(),
+      bulkUpdateApprovalStatus: vi.fn(),
+      updateBody: vi.fn(),
+      updateEnrichments: vi.fn(),
+      updateContentPiece: vi.fn(),
+      delete: vi.fn(),
+      updateSchedule: vi.fn(),
+      bulkUpdateSchedule: vi.fn(),
+      updateHashtags: vi.fn(),
+      updateTargetCommunity: vi.fn(),
     };
     calendarEntryRepo = {
       findByCampaignId: vi.fn(),
@@ -160,6 +168,8 @@ describe("CampaignService", () => {
       getNextBatch: vi.fn(),
     };
 
+    const campaignGeneratorAgent = { generateCampaignPlan: vi.fn() };
+
     service = new CampaignService(
       campaignRepo as unknown as CampaignRepository,
       profileRepo as unknown as AudienceProfileRepository,
@@ -172,7 +182,9 @@ describe("CampaignService", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       calendarAgent as any,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      contentAgent as any
+      contentAgent as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      campaignGeneratorAgent as any
     );
   });
 

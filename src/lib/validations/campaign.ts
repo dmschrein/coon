@@ -4,6 +4,38 @@ import { z } from "zod";
 // Campaign Validation Schemas
 // ============================================================================
 
+// --- Campaign Creator ---
+
+export const campaignGoalValues = [
+  "build-awareness",
+  "drive-engagement",
+  "generate-leads",
+  "promote-product",
+  "educate",
+] as const;
+
+export const campaignDurationValues = [
+  "1-week",
+  "2-weeks",
+  "1-month",
+  "ongoing",
+] as const;
+
+export const campaignCreatorSchema = z.object({
+  name: z.string().min(1, "Campaign name is required").max(100),
+  goal: z.enum(campaignGoalValues),
+  topic: z.string().min(1, "Topic is required").max(500),
+  platforms: z.array(z.string()).min(1, "Select at least one platform"),
+  duration: z.enum(campaignDurationValues),
+  frequencyConfig: z.record(z.string(), z.number().int().min(1).max(14)),
+});
+
+export type CampaignCreatorFormData = z.infer<typeof campaignCreatorSchema>;
+
+export const campaignUpdateSchema = campaignCreatorSchema.partial();
+
+export type CampaignUpdateData = z.infer<typeof campaignUpdateSchema>;
+
 // --- Campaign Platforms ---
 
 export const campaignPlatformValues = [
@@ -240,3 +272,41 @@ export const campaignCalendarSchema = z.object({
     })
   ),
 });
+
+// ----------------------------------------------------------------------------
+// Cohesion Check Schemas
+// ----------------------------------------------------------------------------
+
+export const cohesionFlagSchema = z.object({
+  dimension: z.enum(["messaging", "tone", "factual", "strategic"]),
+  content_ids: z.array(z.string()),
+  issue: z.string(),
+  fix: z.string(),
+});
+
+export const cohesionDimensionSchema = z.object({
+  score: z.number().min(0).max(100),
+  flags: z.array(cohesionFlagSchema),
+});
+
+export const cohesionRecommendationSchema = z.object({
+  text: z.string(),
+  content_ids: z.array(z.string()),
+  priority: z.enum(["high", "medium", "low"]),
+});
+
+export const cohesionCheckResultSchema = z.object({
+  overall_score: z.number().min(0).max(100),
+  messaging: cohesionDimensionSchema,
+  tone: cohesionDimensionSchema,
+  factual: cohesionDimensionSchema,
+  strategic: cohesionDimensionSchema,
+  recommendations: z.array(cohesionRecommendationSchema),
+});
+
+export type CohesionCheckResult = z.infer<typeof cohesionCheckResultSchema>;
+export type CohesionFlag = z.infer<typeof cohesionFlagSchema>;
+export type CohesionDimension = z.infer<typeof cohesionDimensionSchema>;
+export type CohesionRecommendation = z.infer<
+  typeof cohesionRecommendationSchema
+>;

@@ -12,10 +12,16 @@ import type {
   CampaignPlatform,
   CampaignCalendar,
   CampaignStrategy,
+  CampaignGoal,
+  CampaignDuration,
+  ContentPillar,
+  ContentApprovalStatus,
   QuizResponse,
   AudienceProfile,
   AgentType,
   AgentStatus,
+  SocialPlatform,
+  ConnectedAccount,
 } from "@/types";
 
 // ─── Campaign Repository ─────────────────────────────────────────────────────
@@ -33,7 +39,17 @@ export interface CampaignRepository {
     status: string;
     strategyData: CampaignStrategy | null;
     totalTokensUsed: number;
+    goal?: CampaignGoal;
+    topic?: string;
+    duration?: CampaignDuration;
+    frequencyConfig?: Record<string, number>;
   }): Promise<Campaign>;
+  updatePlan(
+    id: string,
+    strategySummary: string,
+    contentPillars: ContentPillar[],
+    tokensUsed: number
+  ): Promise<void>;
   updateStrategy(
     id: string,
     strategy: CampaignStrategy,
@@ -51,6 +67,23 @@ export interface CampaignRepository {
     completedPlatforms: CampaignPlatform[],
     tokensUsed: number
   ): Promise<void>;
+  updateFields(
+    id: string,
+    data: {
+      name?: string;
+      goal?: string;
+      topic?: string;
+      duration?: string;
+      selectedPlatforms?: string[];
+      frequencyConfig?: Record<string, number>;
+    }
+  ): Promise<Campaign | null>;
+  updateCohesionResult(
+    id: string,
+    result: unknown,
+    contentHash: string
+  ): Promise<void>;
+  delete(id: string): Promise<void>;
 }
 
 // ─── Audience Profile Repository ──────────────────────────────────────────────
@@ -70,11 +103,15 @@ export interface AudienceProfileRepository {
 
 export interface CampaignContentRepository {
   findByCampaignId(campaignId: string): Promise<CampaignContentEntity[]>;
+  findById(id: string): Promise<CampaignContentEntity | null>;
   createMany(
     items: {
       campaignId: string;
       userId: string;
       platform: CampaignPlatform;
+      pillar?: string;
+      title?: string;
+      scheduledFor?: Date;
     }[]
   ): Promise<void>;
   updateStatus(
@@ -87,6 +124,33 @@ export interface CampaignContentRepository {
     contentData: unknown,
     tokensUsed: number
   ): Promise<void>;
+  updateApprovalStatus(
+    id: string,
+    approvalStatus: ContentApprovalStatus
+  ): Promise<void>;
+  bulkUpdateApprovalStatus(
+    ids: string[],
+    approvalStatus: ContentApprovalStatus
+  ): Promise<void>;
+  updateBody(id: string, body: string): Promise<void>;
+  updateEnrichments(id: string, enrichments: unknown): Promise<void>;
+  updateContentPiece(
+    id: string,
+    data: {
+      body: string;
+      hashtags: string[];
+      mediaSuggestions: unknown;
+      aiConfidenceScore: number;
+      targetCommunity: string;
+      contentData: unknown;
+      tokensUsed: number;
+    }
+  ): Promise<void>;
+  delete(id: string): Promise<void>;
+  updateSchedule(id: string, scheduledFor: Date): Promise<void>;
+  bulkUpdateSchedule(ids: string[], scheduledFor: Date): Promise<void>;
+  updateHashtags(id: string, hashtags: string[]): Promise<void>;
+  updateTargetCommunity(id: string, targetCommunity: string): Promise<void>;
 }
 
 // ─── Quiz Response Repository ─────────────────────────────────────────────────
@@ -149,6 +213,47 @@ export interface AgentRunRepository {
   }): Promise<AgentRunMetrics>;
 }
 
+// ─── Connected Account Repository ────────────────────────────────────────────
+
+export interface ConnectedAccountWithTokens extends ConnectedAccount {
+  accessTokenEncrypted: string;
+  refreshTokenEncrypted: string | null;
+}
+
+export interface ConnectedAccountRepository {
+  findByUserId(userId: string): Promise<ConnectedAccount[]>;
+  findByUserAndPlatform(
+    userId: string,
+    platform: SocialPlatform
+  ): Promise<ConnectedAccount | null>;
+  findById(id: string): Promise<ConnectedAccount | null>;
+  findByIdWithTokens(id: string): Promise<ConnectedAccountWithTokens | null>;
+  findByUserAndPlatformWithTokens(
+    userId: string,
+    platform: SocialPlatform
+  ): Promise<ConnectedAccountWithTokens | null>;
+  findExpiringTokens(withinDays: number): Promise<ConnectedAccountWithTokens[]>;
+  create(params: {
+    userId: string;
+    platform: SocialPlatform;
+    accessTokenEncrypted: string;
+    refreshTokenEncrypted?: string;
+    tokenExpiresAt?: Date;
+    accountName?: string;
+    accountId?: string;
+    profileImageUrl?: string;
+    scopes?: string[];
+  }): Promise<ConnectedAccount>;
+  updateTokens(
+    id: string,
+    accessTokenEncrypted: string,
+    refreshTokenEncrypted?: string,
+    tokenExpiresAt?: Date
+  ): Promise<void>;
+  deactivate(id: string): Promise<void>;
+  delete(id: string): Promise<void>;
+}
+
 export interface AgentRunMetrics {
   totalRuns: number;
   successCount: number;
@@ -166,4 +271,75 @@ export interface AgentRunMetrics {
       totalTokensUsed: number;
     }
   >;
+}
+
+// ─── Analytics Repository ────────────────────────────────────────────────────
+
+export interface CampaignAnalyticsSnapshot {
+  id: string;
+  campaignId: string;
+  totalReach: number;
+  totalEngagements: number;
+  totalImpressions: number;
+  engagementRate: string | null;
+  followerGrowth: number;
+  platformBreakdown: unknown;
+  pillarBreakdown: unknown;
+  aiInsights: unknown;
+  aiRecommendations: unknown;
+  snapshotDate: Date;
+}
+
+export interface ContentAnalyticsRow {
+  id: string;
+  campaignContentId: string;
+  campaignId: string;
+  platform: string;
+  reach: number;
+  impressions: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  clicks: number;
+  saves: number;
+  engagementRate: string | null;
+  fetchedAt: Date;
+}
+
+export interface AnalyticsRepository {
+  getLatestCampaignSnapshot(
+    campaignId: string,
+    userId: string
+  ): Promise<CampaignAnalyticsSnapshot | null>;
+  saveCampaignSnapshot(params: {
+    campaignId: string;
+    userId: string;
+    totalReach: number;
+    totalEngagements: number;
+    totalImpressions: number;
+    engagementRate: string;
+    followerGrowth: number;
+    platformBreakdown: unknown;
+    pillarBreakdown: unknown;
+    aiInsights: unknown;
+    aiRecommendations: unknown;
+  }): Promise<CampaignAnalyticsSnapshot>;
+  getContentAnalytics(
+    campaignId: string,
+    userId: string
+  ): Promise<ContentAnalyticsRow[]>;
+  saveContentAnalytics(params: {
+    campaignContentId: string;
+    campaignId: string;
+    userId: string;
+    platform: string;
+    reach: number;
+    impressions: number;
+    likes: number;
+    comments: number;
+    shares: number;
+    clicks: number;
+    saves: number;
+    engagementRate: string;
+  }): Promise<void>;
 }

@@ -5,7 +5,11 @@
  * Zero external dependencies.
  */
 
-import type { AudienceProfile as AudienceProfileData, Persona } from "@/types";
+import type {
+  AudienceProfile as AudienceProfileData,
+  ConfidenceLevel,
+  Persona,
+} from "@/types";
 
 export class AudienceProfileEntity {
   constructor(
@@ -13,6 +17,8 @@ export class AudienceProfileEntity {
     public readonly userId: string,
     public readonly quizResponseId: string | null,
     public profileData: AudienceProfileData,
+    public confidenceLevel: ConfidenceLevel,
+    public analyticsData: Record<string, unknown> | null,
     public isActive: boolean,
     public readonly generatedAt: Date
   ) {}
@@ -57,6 +63,14 @@ export class AudienceProfileEntity {
     return this.profileData.primaryPersonas.flatMap((p) => p.painPoints);
   }
 
+  getConfidenceLevel(): ConfidenceLevel {
+    return this.confidenceLevel;
+  }
+
+  hasAnalyticsData(): boolean {
+    return this.analyticsData !== null;
+  }
+
   static create(params: {
     id: string;
     userId: string;
@@ -68,6 +82,8 @@ export class AudienceProfileEntity {
       params.userId,
       params.quizResponseId,
       params.profileData,
+      "quiz_based",
+      null,
       true,
       new Date()
     );

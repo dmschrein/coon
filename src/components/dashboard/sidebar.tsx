@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Users, Sparkles, Megaphone } from "lucide-react";
+import { LayoutDashboard, Users, Megaphone, Settings } from "lucide-react";
 
 const navigation = [
   {
@@ -17,14 +17,14 @@ const navigation = [
     icon: Users,
   },
   {
-    name: "Content",
-    href: "/dashboard/content",
-    icon: Sparkles,
-  },
-  {
     name: "Campaigns",
     href: "/dashboard/campaign",
     icon: Megaphone,
+  },
+  {
+    name: "Settings",
+    href: "/dashboard/settings",
+    icon: Settings,
   },
 ];
 
