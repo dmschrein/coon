@@ -12,6 +12,10 @@ export type {
   AgentRunMetrics,
   ConnectedAccountRepository,
   AnalyticsRepository,
+  EngagementRepository,
+  PostEngagementRow,
+  PlatformMemberRepository,
+  PlatformMemberRow,
 } from "./interfaces";
 
 export { DrizzleCampaignRepository } from "./drizzle-campaign";
@@ -22,3 +26,5 @@ export { DrizzleCalendarEntryRepository } from "./drizzle-calendar-entry";
 export { DrizzleAgentRunRepository } from "./drizzle-agent-run";
 export { DrizzleConnectedAccountRepository } from "./drizzle-connected-account";
 export { DrizzleAnalyticsRepository } from "./drizzle-analytics";
+export { DrizzleEngagementRepository } from "./drizzle-engagement";
+export { DrizzlePlatformMemberRepository } from "./drizzle-platform-member";

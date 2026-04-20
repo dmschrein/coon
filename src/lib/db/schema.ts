@@ -229,6 +229,47 @@ export const contentAnalytics = pgTable("content_analytics", {
   fetchedAt: timestamp("fetched_at").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
 });
+// ─── Post Engagement ────────────────────────────────────────────────────────
+export const postEngagement = pgTable(
+  "post_engagement",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    campaignContentId: uuid("campaign_content_id")
+      .notNull()
+      .references(() => campaignContent.id, { onDelete: "cascade" }),
+    platform: text("platform").notNull(),
+    platformPostId: text("platform_post_id").notNull(),
+    likes: integer("likes").default(0),
+    comments: integer("comments").default(0),
+    shares: integer("shares").default(0),
+    reach: integer("reach").default(0),
+    impressions: integer("impressions").default(0),
+    engagementRate: text("engagement_rate"),
+    recordedAt: timestamp("recorded_at").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [index("post_engagement_content_idx").on(table.campaignContentId)]
+);
+
+// ─── Platform Members ───────────────────────────────────────────────────────
+export const platformMembers = pgTable(
+  "platform_members",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    platform: text("platform").notNull(),
+    platformUserId: text("platform_user_id").notNull(),
+    username: text("username").notNull(),
+    displayName: text("display_name"),
+    firstSeenAt: timestamp("first_seen_at").defaultNow(),
+    engagementCount: integer("engagement_count").default(0),
+    lastSeenAt: timestamp("last_seen_at").defaultNow(),
+  },
+  (table) => [index("platform_members_user_idx").on(table.userId)]
+);
+
 // ─── Agent Runs ──────────────────────────────────────────────────────────────
 export const agentRuns = pgTable("agent_runs", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -382,6 +423,23 @@ export const campaignCalendarEntriesRelations = relations(
     content: one(campaignContent, {
       fields: [campaignCalendarEntries.campaignContentId],
       references: [campaignContent.id],
+    }),
+  })
+);
+
+export const postEngagementRelations = relations(postEngagement, ({ one }) => ({
+  campaignContent: one(campaignContent, {
+    fields: [postEngagement.campaignContentId],
+    references: [campaignContent.id],
+  }),
+}));
+
+export const platformMembersRelations = relations(
+  platformMembers,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [platformMembers.userId],
+      references: [users.id],
     }),
   })
 );
