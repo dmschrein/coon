@@ -18,6 +18,30 @@ export interface PostResult {
   externalPostUrl: string;
 }
 
+export interface PlatformEngagement {
+  likes: number;
+  comments: number;
+  shares: number;
+  reach: number;
+  impressions: number;
+  engagementRate: string | null;
+  recordedAt: Date;
+}
+
+export class AuthExpiredError extends Error {
+  constructor(message = "Access token has expired") {
+    super(message);
+    this.name = "AuthExpiredError";
+  }
+}
+
+export class RateLimitError extends Error {
+  constructor(message = "Rate limit exceeded") {
+    super(message);
+    this.name = "RateLimitError";
+  }
+}
+
 export interface SocialPlatformAdapter {
   platform: SocialPlatform;
   post(accessToken: string, payload: PostPayload): Promise<PostResult>;
@@ -44,4 +68,8 @@ export interface SocialPlatformAdapter {
     refreshToken?: string;
     expiresAt?: Date;
   }>;
+  fetchEngagement?(
+    postId: string,
+    accessToken: string
+  ): Promise<PlatformEngagement>;
 }

@@ -5,7 +5,12 @@
  * Simulates the full OAuth flow with fake tokens and user data.
  */
 
-import type { SocialPlatformAdapter, PostPayload, PostResult } from "./types";
+import type {
+  SocialPlatformAdapter,
+  PostPayload,
+  PostResult,
+  PlatformEngagement,
+} from "./types";
 import type { SocialPlatform } from "@/types";
 
 const MOCK_PROFILES: Record<
@@ -77,4 +82,39 @@ export class MockAdapter implements SocialPlatformAdapter {
       externalPostUrl: `https://${this.platform}.com/mock/post/${Date.now()}`,
     };
   }
+
+  async fetchEngagement(
+    postId: string,
+    _accessToken: string
+  ): Promise<PlatformEngagement> {
+    // Deterministic synthetic data seeded by postId
+    const seed = hashCode(postId);
+    const likes = Math.abs(seed % 500);
+    const comments = Math.abs((seed >> 4) % 100);
+    const shares = Math.abs((seed >> 8) % 50);
+    const reach = Math.abs((seed >> 12) % 5000) + 100;
+    const impressions = reach + Math.abs((seed >> 16) % 3000);
+    const total = likes + comments + shares;
+    const engagementRate =
+      impressions > 0 ? ((total / impressions) * 100).toFixed(2) : null;
+
+    return {
+      likes,
+      comments,
+      shares,
+      reach,
+      impressions,
+      engagementRate,
+      recordedAt: new Date(),
+    };
+  }
+}
+
+function hashCode(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return hash;
 }

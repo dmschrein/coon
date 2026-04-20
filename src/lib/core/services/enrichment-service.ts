@@ -6,6 +6,8 @@
 import type {
   CampaignContentRepository,
   CampaignRepository,
+  EngagementRepository,
+  PostEngagementRow,
 } from "../repositories/interfaces";
 import type {
   CampaignPlatform,
@@ -13,7 +15,12 @@ import type {
   ContentScores,
   MediaSuggestions,
   SeoOptimizationData,
+  SocialPlatform,
 } from "@/types";
+import type {
+  SocialPlatformAdapter,
+  PlatformEngagement,
+} from "@/lib/services/social/types";
 
 interface MediaEnrichmentAgent {
   enrichContentWithMedia(
@@ -50,13 +57,65 @@ interface SeoOptimizationAgent {
 }
 
 export class EnrichmentService {
+  private engagementRepo: EngagementRepository | null;
+  private getAdapter:
+    | ((platform: SocialPlatform) => SocialPlatformAdapter | null)
+    | null;
+
   constructor(
     private contentRepo: CampaignContentRepository,
     private mediaAgent: MediaEnrichmentAgent,
     private scoringAgent: ContentScoringAgent,
     private campaignRepo: CampaignRepository,
-    private seoAgent: SeoOptimizationAgent
-  ) {}
+    private seoAgent: SeoOptimizationAgent,
+    engagementRepo?: EngagementRepository,
+    getAdapter?: (platform: SocialPlatform) => SocialPlatformAdapter | null
+  ) {
+    this.engagementRepo = engagementRepo ?? null;
+    this.getAdapter = getAdapter ?? null;
+  }
+
+  // ─── Engagement Ingestion ────────────────────────────────────────────────────
+
+  async fetchAndStoreEngagement(
+    contentId: string,
+    platform: SocialPlatform,
+    postId: string,
+    accessToken: string
+  ): Promise<PostEngagementRow> {
+    if (!this.engagementRepo) {
+      throw new Error("Engagement repository not configured");
+    }
+    if (!this.getAdapter) {
+      throw new Error("Social adapter resolver not configured");
+    }
+
+    const adapter = this.getAdapter(platform);
+    if (!adapter) {
+      throw new Error(`No adapter configured for platform: ${platform}`);
+    }
+    if (!adapter.fetchEngagement) {
+      throw new Error(`${platform} adapter does not support fetchEngagement`);
+    }
+
+    const engagement: PlatformEngagement = await adapter.fetchEngagement(
+      postId,
+      accessToken
+    );
+
+    return this.engagementRepo.upsertEngagement({
+      campaignContentId: contentId,
+      platform,
+      platformPostId: postId,
+      likes: engagement.likes,
+      comments: engagement.comments,
+      shares: engagement.shares,
+      reach: engagement.reach,
+      impressions: engagement.impressions,
+      engagementRate: engagement.engagementRate ?? undefined,
+      recordedAt: engagement.recordedAt,
+    });
+  }
 
   // ─── Media Generation ───────────────────────────────────────────────────────
 

@@ -141,7 +141,9 @@ class Container {
       { enrichContentWithMedia, isVisualPlatform },
       { scoreContent },
       this.campaignRepo,
-      { optimizeContent }
+      { optimizeContent },
+      this.engagementRepo,
+      getAdapter
     );
   }
 }
