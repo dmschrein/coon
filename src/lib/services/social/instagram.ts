@@ -4,7 +4,13 @@
  * Uses Meta's Instagram Graph API (requires Facebook Business account).
  */
 
-import type { SocialPlatformAdapter, PostPayload, PostResult } from "./types";
+import type {
+  SocialPlatformAdapter,
+  PostPayload,
+  PostResult,
+  PlatformEngagement,
+} from "./types";
+import { AuthExpiredError, RateLimitError } from "./types";
 
 const INSTAGRAM_APP_ID = process.env.INSTAGRAM_APP_ID ?? "";
 const INSTAGRAM_APP_SECRET = process.env.INSTAGRAM_APP_SECRET ?? "";
@@ -162,6 +168,53 @@ export class InstagramAdapter implements SocialPlatformAdapter {
     return {
       externalPostId: published.id,
       externalPostUrl: `https://www.instagram.com/p/${published.id}`,
+    };
+  }
+
+  async fetchEngagement(
+    postId: string,
+    accessToken: string
+  ): Promise<PlatformEngagement> {
+    const metrics = "impressions,reach,likes,comments,shares,saved";
+    const response = await fetch(
+      `https://graph.instagram.com/${postId}/insights?metric=${metrics}&access_token=${accessToken}`
+    );
+
+    if (response.status === 401) {
+      throw new AuthExpiredError();
+    }
+    if (response.status === 429) {
+      throw new RateLimitError();
+    }
+    if (!response.ok) {
+      throw new Error(`Instagram engagement fetch failed: ${response.status}`);
+    }
+
+    const json = await response.json();
+    const data = json.data as { name: string; values: { value: number }[] }[];
+
+    const getValue = (name: string): number => {
+      const metric = data.find((m) => m.name === name);
+      return metric?.values?.[0]?.value ?? 0;
+    };
+
+    const likes = getValue("likes");
+    const comments = getValue("comments");
+    const shares = getValue("shares");
+    const reach = getValue("reach");
+    const impressions = getValue("impressions");
+    const total = likes + comments + shares;
+    const engagementRate =
+      impressions > 0 ? ((total / impressions) * 100).toFixed(2) : null;
+
+    return {
+      likes,
+      comments,
+      shares,
+      reach,
+      impressions,
+      engagementRate,
+      recordedAt: new Date(),
     };
   }
 }

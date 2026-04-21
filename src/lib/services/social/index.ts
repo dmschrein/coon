@@ -5,7 +5,13 @@
  * so the full OAuth flow can be tested locally.
  */
 
-export type { SocialPlatformAdapter, PostPayload, PostResult } from "./types";
+export type {
+  SocialPlatformAdapter,
+  PostPayload,
+  PostResult,
+  PlatformEngagement,
+} from "./types";
+export { AuthExpiredError, RateLimitError } from "./types";
 export { RedditAdapter } from "./reddit";
 export { InstagramAdapter } from "./instagram";
 export { MockAdapter } from "./mock";

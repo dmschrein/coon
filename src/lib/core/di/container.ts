@@ -15,6 +15,8 @@ import {
   DrizzleAgentRunRepository,
   DrizzleConnectedAccountRepository,
   DrizzleAnalyticsRepository,
+  DrizzleEngagementRepository,
+  DrizzlePlatformMemberRepository,
 } from "../repositories";
 import { AudienceService } from "../services/audience-service";
 import { CampaignService } from "../services/campaign-service";
@@ -59,6 +61,8 @@ class Container {
   readonly agentRunRepo: DrizzleAgentRunRepository;
   readonly connectedAccountRepo: DrizzleConnectedAccountRepository;
   readonly analyticsRepo: DrizzleAnalyticsRepository;
+  readonly engagementRepo: DrizzleEngagementRepository;
+  readonly platformMemberRepo: DrizzlePlatformMemberRepository;
 
   // Plugins
   readonly pluginRunner: PluginRunner;
@@ -82,6 +86,8 @@ class Container {
     this.agentRunRepo = new DrizzleAgentRunRepository(database);
     this.connectedAccountRepo = new DrizzleConnectedAccountRepository(database);
     this.analyticsRepo = new DrizzleAnalyticsRepository(database);
+    this.engagementRepo = new DrizzleEngagementRepository(database);
+    this.platformMemberRepo = new DrizzlePlatformMemberRepository(database);
 
     // Initialize plugins
     this.pluginRunner = new PluginRunner();
@@ -135,7 +141,9 @@ class Container {
       { enrichContentWithMedia, isVisualPlatform },
       { scoreContent },
       this.campaignRepo,
-      { optimizeContent }
+      { optimizeContent },
+      this.engagementRepo,
+      getAdapter
     );
   }
 }

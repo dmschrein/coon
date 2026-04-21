@@ -273,6 +273,66 @@ export interface AgentRunMetrics {
   >;
 }
 
+// ─── Engagement Repository ───────────────────────────────────────────────────
+
+export interface PostEngagementRow {
+  id: string;
+  campaignContentId: string;
+  platform: string;
+  platformPostId: string;
+  likes: number;
+  comments: number;
+  shares: number;
+  reach: number;
+  impressions: number;
+  engagementRate: string | null;
+  recordedAt: Date;
+  createdAt: Date;
+}
+
+export interface EngagementRepository {
+  upsertEngagement(params: {
+    campaignContentId: string;
+    platform: string;
+    platformPostId: string;
+    likes: number;
+    comments: number;
+    shares: number;
+    reach: number;
+    impressions: number;
+    engagementRate?: string;
+    recordedAt: Date;
+  }): Promise<PostEngagementRow>;
+  getEngagementByContentId(
+    campaignContentId: string
+  ): Promise<PostEngagementRow[]>;
+}
+
+// ─── Platform Member Repository ─────────────────────────────────────────────
+
+export interface PlatformMemberRow {
+  id: string;
+  userId: string;
+  platform: string;
+  platformUserId: string;
+  username: string;
+  displayName: string | null;
+  firstSeenAt: Date;
+  engagementCount: number;
+  lastSeenAt: Date;
+}
+
+export interface PlatformMemberRepository {
+  upsertPlatformMember(params: {
+    userId: string;
+    platform: string;
+    platformUserId: string;
+    username: string;
+    displayName?: string;
+  }): Promise<PlatformMemberRow>;
+  getMembersByUserId(userId: string): Promise<PlatformMemberRow[]>;
+}
+
 // ─── Analytics Repository ────────────────────────────────────────────────────
 
 export interface CampaignAnalyticsSnapshot {
