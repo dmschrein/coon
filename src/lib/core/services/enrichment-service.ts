@@ -17,10 +17,7 @@ import type {
   SeoOptimizationData,
   SocialPlatform,
 } from "@/types";
-import type {
-  SocialPlatformAdapter,
-  PlatformEngagement,
-} from "@/lib/services/social/types";
+import type { SocialPlatformAdapter } from "@/lib/services/social/types";
 
 interface MediaEnrichmentAgent {
   enrichContentWithMedia(
@@ -98,10 +95,11 @@ export class EnrichmentService {
       throw new Error(`${platform} adapter does not support fetchEngagement`);
     }
 
-    const engagement: PlatformEngagement = await adapter.fetchEngagement(
-      postId,
-      accessToken
-    );
+    const engagement = await adapter.fetchEngagement(postId, accessToken);
+
+    if (!engagement) {
+      throw new Error("Post not found or has been deleted");
+    }
 
     return this.engagementRepo.upsertEngagement({
       campaignContentId: contentId,

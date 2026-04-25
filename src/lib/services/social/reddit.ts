@@ -2,7 +2,13 @@
  * Reddit Platform Adapter - OAuth + posting via Reddit API.
  */
 
-import type { SocialPlatformAdapter, PostPayload, PostResult } from "./types";
+import type {
+  SocialPlatformAdapter,
+  PostPayload,
+  PostResult,
+  PlatformEngagement,
+} from "./types";
+import { AuthExpiredError, RateLimitError } from "./types";
 
 const REDDIT_CLIENT_ID = process.env.REDDIT_CLIENT_ID ?? "";
 const REDDIT_CLIENT_SECRET = process.env.REDDIT_CLIENT_SECRET ?? "";
@@ -141,6 +147,58 @@ export class RedditAdapter implements SocialPlatformAdapter {
     return {
       externalPostId: postData?.id ?? "",
       externalPostUrl: postData?.url ?? "",
+    };
+  }
+
+  async fetchEngagement(
+    postId: string,
+    accessToken: string
+  ): Promise<PlatformEngagement | null> {
+    const response = await fetch(
+      `https://oauth.reddit.com/api/info?id=t3_${postId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "User-Agent": REDDIT_USER_AGENT,
+        },
+      }
+    );
+
+    if (response.status === 401) {
+      throw new AuthExpiredError();
+    }
+    if (response.status === 429) {
+      throw new RateLimitError();
+    }
+    if (!response.ok) {
+      throw new Error(`Reddit engagement fetch failed: ${response.status}`);
+    }
+
+    const json = await response.json();
+    const children = json?.data?.children;
+
+    if (!children || children.length === 0) {
+      return null;
+    }
+
+    const post = children[0].data;
+
+    if (post.removed_by_category) {
+      return null;
+    }
+
+    const likes = post.ups ?? 0;
+    const comments = post.num_comments ?? 0;
+    const shares = post.num_crossposts ?? 0;
+
+    return {
+      likes,
+      comments,
+      shares,
+      reach: 0,
+      impressions: 0,
+      engagementRate: null,
+      recordedAt: new Date(),
     };
   }
 }

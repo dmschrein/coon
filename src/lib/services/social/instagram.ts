@@ -174,7 +174,7 @@ export class InstagramAdapter implements SocialPlatformAdapter {
   async fetchEngagement(
     postId: string,
     accessToken: string
-  ): Promise<PlatformEngagement> {
+  ): Promise<PlatformEngagement | null> {
     const metrics = "impressions,reach,likes,comments,shares,saved";
     const response = await fetch(
       `https://graph.instagram.com/${postId}/insights?metric=${metrics}&access_token=${accessToken}`
