@@ -71,5 +71,5 @@ export interface SocialPlatformAdapter {
   fetchEngagement?(
     postId: string,
     accessToken: string
-  ): Promise<PlatformEngagement>;
+  ): Promise<PlatformEngagement | null>;
 }

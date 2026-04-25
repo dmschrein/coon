@@ -86,7 +86,7 @@ export class MockAdapter implements SocialPlatformAdapter {
   async fetchEngagement(
     postId: string,
     _accessToken: string
-  ): Promise<PlatformEngagement> {
+  ): Promise<PlatformEngagement | null> {
     // Deterministic synthetic data seeded by postId
     const seed = hashCode(postId);
     const likes = Math.abs(seed % 500);
