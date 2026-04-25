@@ -11,15 +11,25 @@ export type {
   PostResult,
   PlatformEngagement,
 } from "./types";
-export { AuthExpiredError, RateLimitError } from "./types";
+export { AuthExpiredError, RateLimitError, NotImplementedError } from "./types";
 export { RedditAdapter } from "./reddit";
 export { InstagramAdapter } from "./instagram";
+export { TwitterAdapter } from "./twitter";
+export { LinkedInAdapter } from "./linkedin";
+export { TikTokAdapter } from "./tiktok";
+export { YouTubeAdapter } from "./youtube";
+export { ThreadsAdapter } from "./threads";
 export { MockAdapter } from "./mock";
 
 import type { SocialPlatformAdapter } from "./types";
 import type { SocialPlatform } from "@/types";
 import { RedditAdapter } from "./reddit";
 import { InstagramAdapter } from "./instagram";
+import { TwitterAdapter } from "./twitter";
+import { LinkedInAdapter } from "./linkedin";
+import { TikTokAdapter } from "./tiktok";
+import { YouTubeAdapter } from "./youtube";
+import { ThreadsAdapter } from "./threads";
 import { MockAdapter } from "./mock";
 
 function createAdapters(): Partial<
@@ -40,6 +50,11 @@ function createAdapters(): Partial<
       : isDev
         ? new MockAdapter("instagram")
         : undefined,
+    twitter: isDev ? new MockAdapter("twitter") : new TwitterAdapter(),
+    linkedin: isDev ? new MockAdapter("linkedin") : new LinkedInAdapter(),
+    tiktok: isDev ? new MockAdapter("tiktok") : new TikTokAdapter(),
+    youtube: isDev ? new MockAdapter("youtube") : new YouTubeAdapter(),
+    threads: isDev ? new MockAdapter("threads") : new ThreadsAdapter(),
   };
 }
 
@@ -49,4 +64,10 @@ export function getAdapter(
   platform: SocialPlatform
 ): SocialPlatformAdapter | null {
   return adapters[platform] ?? null;
+}
+
+export function getPlatformService(
+  platform: SocialPlatform
+): SocialPlatformAdapter | null {
+  return getAdapter(platform);
 }

@@ -27,6 +27,41 @@ const MOCK_PROFILES: Record<
     profileImageUrl:
       "https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png",
   },
+  twitter: {
+    accountName: "mock_twitter_user",
+    profileImageUrl:
+      "https://abs.twimg.com/sticky/default_profile_images/default_profile.png",
+  },
+  linkedin: {
+    accountName: "Mock LinkedIn User",
+    profileImageUrl:
+      "https://static.licdn.com/aero-v1/sc/h/9c8pery4andzj6oyvkq97.png",
+  },
+  tiktok: {
+    accountName: "mock_tiktok_user",
+    profileImageUrl:
+      "https://sf16-sg.tiktokcdn.com/obj/eden-sg/default_avatar.png",
+  },
+  youtube: {
+    accountName: "MockYouTubeChannel",
+    profileImageUrl: "https://yt3.ggpht.com/default_avatar.png",
+  },
+  threads: {
+    accountName: "mock_threads_user",
+    profileImageUrl:
+      "https://static.cdninstagram.com/rsrc.php/v3/y4/r/default_profile.png",
+  },
+};
+
+/** Target engagement rates per platform (percentage) */
+const PLATFORM_ENGAGEMENT_RATES: Record<string, number> = {
+  instagram: 3.5,
+  twitter: 0.5,
+  linkedin: 2.0,
+  tiktok: 5.0,
+  youtube: 1.0,
+  reddit: 1.2,
+  threads: 1.5,
 };
 
 export class MockAdapter implements SocialPlatformAdapter {
@@ -89,12 +124,19 @@ export class MockAdapter implements SocialPlatformAdapter {
   ): Promise<PlatformEngagement | null> {
     // Deterministic synthetic data seeded by postId
     const seed = hashCode(postId);
+    const targetRate = PLATFORM_ENGAGEMENT_RATES[this.platform] ?? 1.0;
+
     const likes = Math.abs(seed % 500);
     const comments = Math.abs((seed >> 4) % 100);
     const shares = Math.abs((seed >> 8) % 50);
-    const reach = Math.abs((seed >> 12) % 5000) + 100;
-    const impressions = reach + Math.abs((seed >> 16) % 3000);
     const total = likes + comments + shares;
+
+    // Derive impressions from total and target rate so engagementRate ≈ platform norm
+    const impressions =
+      total > 0 ? Math.round((total / targetRate) * 100) : 1000;
+    const reach = Math.round(
+      impressions * (0.6 + Math.abs((seed >> 12) % 30) / 100)
+    );
     const engagementRate =
       impressions > 0 ? ((total / impressions) * 100).toFixed(2) : null;
 
