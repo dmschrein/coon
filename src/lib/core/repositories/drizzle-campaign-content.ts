@@ -2,7 +2,7 @@
  * Drizzle Campaign Content Repository - Data access for platform content.
  */
 
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, and, or, isNull, isNotNull, lt } from "drizzle-orm";
 import { campaignContent } from "@/lib/db/schema";
 import { CampaignContentEntity } from "../domain/content";
 import type { CampaignContentRepository } from "./interfaces";
@@ -36,7 +36,9 @@ export class DrizzleCampaignContentRepository implements CampaignContentReposito
       row.pillar ?? null,
       row.body ?? null,
       row.scheduledFor ?? null,
-      row.mediaSuggestions ?? null
+      row.mediaSuggestions ?? null,
+      row.externalPostId ?? null,
+      row.externalPostUrl ?? null
     );
   }
 
@@ -227,5 +229,51 @@ export class DrizzleCampaignContentRepository implements CampaignContentReposito
       .update(campaignContent)
       .set({ targetCommunity, updatedAt: new Date() })
       .where(eq(campaignContent.id, id));
+  }
+
+  async updateLastEngagementFetch(id: string, timestamp: Date): Promise<void> {
+    await this.db
+      .update(campaignContent)
+      .set({ lastEngagementFetch: timestamp, updatedAt: new Date() })
+      .where(eq(campaignContent.id, id));
+  }
+
+  async findStalePublished(staleThresholdHours: number): Promise<
+    {
+      id: string;
+      campaignId: string;
+      userId: string;
+      platform: string;
+      externalPostId: string;
+    }[]
+  > {
+    const threshold = new Date(Date.now() - staleThresholdHours * 3600_000);
+
+    const rows = await this.db
+      .select({
+        id: campaignContent.id,
+        campaignId: campaignContent.campaignId,
+        userId: campaignContent.userId,
+        platform: campaignContent.platform,
+        externalPostId: campaignContent.externalPostId,
+      })
+      .from(campaignContent)
+      .where(
+        and(
+          isNotNull(campaignContent.externalPostId),
+          or(
+            isNull(campaignContent.lastEngagementFetch),
+            lt(campaignContent.lastEngagementFetch, threshold)
+          )
+        )
+      );
+
+    return rows.map((row) => ({
+      id: row.id,
+      campaignId: row.campaignId,
+      userId: row.userId,
+      platform: row.platform,
+      externalPostId: row.externalPostId!,
+    }));
   }
 }

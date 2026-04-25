@@ -27,7 +27,9 @@ export class CampaignContentEntity {
     public pillar: string | null = null,
     public body: string | null = null,
     public scheduledFor: Date | null = null,
-    public enrichments: unknown | null = null
+    public enrichments: unknown | null = null,
+    public externalPostId: string | null = null,
+    public externalPostUrl: string | null = null
   ) {}
 
   hasMedia(): boolean {
@@ -120,6 +122,7 @@ export class CampaignContentEntity {
       "pending_review",
       params.title ?? null,
       params.pillar ?? null,
+      null,
       null,
       null,
       null

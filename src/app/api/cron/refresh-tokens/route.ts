@@ -1,5 +1,7 @@
 /**
- * Cron Token Refresh - Background job to refresh expiring OAuth tokens.
+ * Cron Token Refresh + Engagement Refresh - Background jobs for:
+ * 1. Refreshing expiring OAuth tokens
+ * 2. Fetching stale engagement data for published content
  *
  * GET /api/cron/refresh-tokens
  * Secured via CRON_SECRET header. Designed for Vercel Cron or external scheduler.
@@ -73,8 +75,72 @@ export async function GET(req: Request) {
       }
     }
 
+    // ─── Engagement Refresh ──────────────────────────────────────────────
+    const engagementResults: {
+      id: string;
+      platform: string;
+      status: string;
+    }[] = [];
+
+    try {
+      const { contentRepo, enrichmentService } = getContainer();
+      const staleContent = await contentRepo.findStalePublished(2);
+
+      for (const item of staleContent) {
+        try {
+          const account =
+            await connectedAccountRepo.findByUserAndPlatformWithTokens(
+              item.userId,
+              item.platform as SocialPlatform
+            );
+          if (!account) {
+            engagementResults.push({
+              id: item.id,
+              platform: item.platform,
+              status: "skipped_no_account",
+            });
+            continue;
+          }
+
+          const accessToken = decrypt(account.accessTokenEncrypted);
+          await enrichmentService.fetchAndStoreEngagement(
+            item.id,
+            item.platform as SocialPlatform,
+            item.externalPostId,
+            accessToken
+          );
+          await contentRepo.updateLastEngagementFetch(item.id, new Date());
+
+          engagementResults.push({
+            id: item.id,
+            platform: item.platform,
+            status: "fetched",
+          });
+        } catch (error) {
+          console.error(
+            `Engagement fetch failed for content ${item.id}:`,
+            error
+          );
+          engagementResults.push({
+            id: item.id,
+            platform: item.platform,
+            status: "failed",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Engagement refresh error:", error);
+    }
+
     return NextResponse.json({
-      data: { processed: results.length, results },
+      data: {
+        processed: results.length,
+        results,
+        engagementRefresh: {
+          processed: engagementResults.length,
+          results: engagementResults,
+        },
+      },
       error: null,
     });
   } catch (error) {
