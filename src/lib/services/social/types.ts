@@ -42,6 +42,13 @@ export class RateLimitError extends Error {
   }
 }
 
+export class NotImplementedError extends Error {
+  constructor(platform: string, method: string) {
+    super(`${method} is not yet implemented for ${platform}`);
+    this.name = "NotImplementedError";
+  }
+}
+
 export interface SocialPlatformAdapter {
   platform: SocialPlatform;
   post(accessToken: string, payload: PostPayload): Promise<PostResult>;
