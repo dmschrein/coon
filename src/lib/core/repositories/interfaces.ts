@@ -151,6 +151,16 @@ export interface CampaignContentRepository {
   bulkUpdateSchedule(ids: string[], scheduledFor: Date): Promise<void>;
   updateHashtags(id: string, hashtags: string[]): Promise<void>;
   updateTargetCommunity(id: string, targetCommunity: string): Promise<void>;
+  updateLastEngagementFetch(id: string, timestamp: Date): Promise<void>;
+  findStalePublished(staleThresholdHours: number): Promise<
+    {
+      id: string;
+      campaignId: string;
+      userId: string;
+      platform: string;
+      externalPostId: string;
+    }[]
+  >;
 }
 
 // ─── Quiz Response Repository ─────────────────────────────────────────────────

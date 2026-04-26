@@ -122,6 +122,7 @@ export const campaignContent = pgTable(
     aiConfidenceScore: integer("ai_confidence_score"),
     externalPostId: text("external_post_id"),
     externalPostUrl: text("external_post_url"),
+    lastEngagementFetch: timestamp("last_engagement_fetch"),
     approvalStatus: text("approval_status").default("pending_review"),
     status: text("status").notNull().default("pending"),
     contentData: jsonb("content_data"),
