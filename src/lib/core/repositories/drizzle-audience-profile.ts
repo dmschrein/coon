@@ -86,4 +86,19 @@ export class DrizzleAudienceProfileRepository implements AudienceProfileReposito
         )
       );
   }
+
+  async updateProfileData(
+    id: string,
+    profileData: AudienceProfile,
+    confidenceLevel: ConfidenceLevel
+  ): Promise<AudienceProfileEntity> {
+    const [row] = await this.db
+      .update(audienceProfiles)
+      .set({ profileData, confidenceLevel })
+      .where(eq(audienceProfiles.id, id))
+      .returning();
+
+    if (!row) throw new Error(`Profile ${id} not found`);
+    return this.toDomain(row);
+  }
 }

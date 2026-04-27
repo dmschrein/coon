@@ -18,6 +18,7 @@ import type {
   ContentApprovalStatus,
   QuizResponse,
   AudienceProfile,
+  ConfidenceLevel,
   AgentType,
   AgentStatus,
   SocialPlatform,
@@ -97,6 +98,11 @@ export interface AudienceProfileRepository {
     profileData: AudienceProfile;
   }): Promise<AudienceProfileEntity>;
   deactivateAllForUser(userId: string): Promise<void>;
+  updateProfileData(
+    id: string,
+    profileData: AudienceProfile,
+    confidenceLevel: ConfidenceLevel
+  ): Promise<AudienceProfileEntity>;
 }
 
 // ─── Campaign Content Repository ──────────────────────────────────────────────

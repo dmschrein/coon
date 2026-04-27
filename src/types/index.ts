@@ -594,9 +594,48 @@ export type AgentType =
   | "analytics_insights"
   | "image_generation"
   | "content_scoring"
-  | "seo_optimization";
+  | "seo_optimization"
+  | "feedback_loop";
 
 export type AgentStatus = "success" | "failed" | "partial";
+
+// ----------------------------------------------------------------------------
+// Feedback Loop Types
+// ----------------------------------------------------------------------------
+
+/** Engagement data enriched with content context for the feedback agent */
+export interface PostEngagementWithContext {
+  contentId: string;
+  platform: CampaignPlatform;
+  pillar: string | null;
+  title: string | null;
+  likes: number;
+  comments: number;
+  shares: number;
+  reach: number;
+  impressions: number;
+  engagementRate: number;
+  scheduledFor: Date | null;
+}
+
+export interface FeedbackLoopInput {
+  engagementData: PostEngagementWithContext[];
+  currentAudienceProfile: AudienceProfile;
+  contentPillars: string[];
+}
+
+export interface AudienceProfileChange {
+  field: string;
+  oldValue: unknown;
+  newValue: unknown;
+  reason: string;
+}
+
+export interface FeedbackLoopOutput {
+  changes: AudienceProfileChange[];
+  summary: string;
+  confidence: number;
+}
 
 // ----------------------------------------------------------------------------
 // API Response Type
