@@ -1,18 +1,29 @@
 "use client";
 
-import { use } from "react";
+import { use, useMemo } from "react";
 import {
   useCampaignAnalytics,
   useGenerateInsights,
 } from "@/hooks/use-analytics";
-import { useCampaign } from "@/hooks/use-campaign";
+import { useCampaign, useCampaignContent } from "@/hooks/use-campaign";
+import { useEngagement, useRefreshEngagement } from "@/hooks/use-engagement";
 import { Scorecard } from "@/components/analytics/scorecard";
 import { PlatformBreakdown } from "@/components/analytics/platform-breakdown";
 import { ContentRankings } from "@/components/analytics/content-rankings";
 import { PillarPerformance } from "@/components/analytics/pillar-performance";
 import { AiRecommendations } from "@/components/analytics/ai-recommendations";
+import {
+  EngagementChart,
+  type EngagementChartDatum,
+} from "@/components/analytics/engagement-chart";
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowLeft, Sparkles, BarChart3 } from "lucide-react";
+import {
+  Loader2,
+  ArrowLeft,
+  Sparkles,
+  BarChart3,
+  RefreshCw,
+} from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -26,6 +37,13 @@ export default function AnalyticsPage({
   const { data: analytics, isLoading: analyticsLoading } =
     useCampaignAnalytics(id);
   const generateInsights = useGenerateInsights(id);
+  const {
+    data: engagement,
+    isLoading: engagementLoading,
+    dataUpdatedAt,
+  } = useEngagement(id);
+  const { data: contentList } = useCampaignContent(id);
+  const refreshEngagement = useRefreshEngagement(id);
 
   const handleGenerate = async () => {
     try {
@@ -35,6 +53,42 @@ export default function AnalyticsPage({
       toast.error("Failed to generate insights");
     }
   };
+
+  const handleRefreshEngagement = async () => {
+    try {
+      const result = await refreshEngagement.mutateAsync();
+      toast.success(`Refreshed engagement for ${result.queued} posts`);
+    } catch {
+      toast.error("Failed to refresh engagement data");
+    }
+  };
+
+  const chartData = useMemo((): EngagementChartDatum[] => {
+    if (!engagement || engagement.length === 0) return [];
+
+    const contentMap = new Map<
+      string,
+      { title: string | null; aiScore: number | null }
+    >();
+    if (Array.isArray(contentList)) {
+      for (const c of contentList) {
+        contentMap.set(c.id, {
+          title: c.title ?? null,
+          aiScore: c.aiConfidenceScore ?? null,
+        });
+      }
+    }
+
+    return engagement.map((e, i) => {
+      const content = contentMap.get(e.contentId);
+      const label = content?.title?.slice(0, 20) ?? `${e.platform} #${i + 1}`;
+      return {
+        label,
+        engagementRate: e.engagementRate ? parseFloat(e.engagementRate) : 0,
+        aiScore: content?.aiScore ?? null,
+      };
+    });
+  }, [engagement, contentList]);
 
   if (campaignLoading || analyticsLoading) {
     return (
@@ -125,6 +179,28 @@ export default function AnalyticsPage({
         engagementRate={analytics.engagementRate}
         followerGrowth={analytics.followerGrowth}
       />
+
+      <div>
+        <div className="mb-2 flex items-center justify-between">
+          <div className="text-muted-foreground text-xs">
+            {dataUpdatedAt
+              ? `Data fetched ${new Date(dataUpdatedAt).toLocaleString()}`
+              : "No engagement data fetched yet"}
+          </div>
+          <Button
+            onClick={handleRefreshEngagement}
+            disabled={refreshEngagement.isPending}
+            variant="ghost"
+            size="sm"
+          >
+            <RefreshCw
+              className={`mr-1 h-3 w-3 ${refreshEngagement.isPending ? "animate-spin" : ""}`}
+            />
+            Refresh Data
+          </Button>
+        </div>
+        <EngagementChart data={chartData} isLoading={engagementLoading} />
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         <PlatformBreakdown data={analytics.platformBreakdown} />
