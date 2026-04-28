@@ -1,7 +1,13 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { AudienceProfile, ConfidenceLevel, ApiResponse } from "@/types";
+import type {
+  AudienceProfile,
+  AudienceProfileChange,
+  ConfidenceLevel,
+  FeedbackLoopOutput,
+  ApiResponse,
+} from "@/types";
 
 export function useAudienceProfile() {
   return useQuery({
@@ -27,6 +33,39 @@ export function useRegenerateProfile() {
     mutationFn: async () => {
       const res = await fetch("/api/audience-profile/regenerate", {
         method: "POST",
+      });
+      const json: ApiResponse<{ id: string; profileData: AudienceProfile }> =
+        await res.json();
+      if (json.error) throw new Error(json.error.message);
+      return json.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["audience-profile"] });
+    },
+  });
+}
+
+export function useRefineProfile() {
+  return useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/audience-profile/refine", {
+        method: "POST",
+      });
+      const json: ApiResponse<FeedbackLoopOutput> = await res.json();
+      if (json.error) throw new Error(json.error.message);
+      return json.data;
+    },
+  });
+}
+
+export function useApplyRefinements() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (changes: AudienceProfileChange[]) => {
+      const res = await fetch("/api/audience-profile/refine/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ changes }),
       });
       const json: ApiResponse<{ id: string; profileData: AudienceProfile }> =
         await res.json();
