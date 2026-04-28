@@ -419,3 +419,51 @@ export interface AnalyticsRepository {
     engagementRate: string;
   }): Promise<void>;
 }
+
+// ─── Inbox ──────────────────────────────────────────────────────────────────
+
+export interface InboxItemRow {
+  id: string;
+  userId: string;
+  campaignId: string | null;
+  contentId: string | null;
+  platform: string;
+  authorHandle: string;
+  authorDisplayName: string | null;
+  messageText: string;
+  messageType: string;
+  status: string;
+  platformMessageId: string;
+  receivedAt: Date;
+  createdAt: Date | null;
+}
+
+export interface InboxRepository {
+  createItem(params: {
+    userId: string;
+    campaignId?: string | null;
+    contentId?: string | null;
+    platform: string;
+    authorHandle: string;
+    authorDisplayName?: string;
+    messageText: string;
+    messageType: string;
+    platformMessageId: string;
+    receivedAt: Date;
+  }): Promise<InboxItemRow>;
+
+  listItems(params: {
+    userId: string;
+    status?: string;
+    platform?: string;
+    campaignId?: string;
+    page: number;
+    limit: number;
+  }): Promise<{ items: InboxItemRow[]; total: number }>;
+
+  getItem(id: string): Promise<InboxItemRow | null>;
+
+  updateStatus(id: string, status: string): Promise<InboxItemRow>;
+
+  countUnread(userId: string): Promise<number>;
+}

@@ -17,6 +17,7 @@ import {
   DrizzleAnalyticsRepository,
   DrizzleEngagementRepository,
   DrizzlePlatformMemberRepository,
+  DrizzleInboxRepository,
 } from "../repositories";
 import { AudienceService } from "../services/audience-service";
 import { CampaignService } from "../services/campaign-service";
@@ -64,6 +65,7 @@ class Container {
   readonly analyticsRepo: DrizzleAnalyticsRepository;
   readonly engagementRepo: DrizzleEngagementRepository;
   readonly platformMemberRepo: DrizzlePlatformMemberRepository;
+  readonly inboxRepo: DrizzleInboxRepository;
 
   // Plugins
   readonly pluginRunner: PluginRunner;
@@ -89,6 +91,7 @@ class Container {
     this.analyticsRepo = new DrizzleAnalyticsRepository(database);
     this.engagementRepo = new DrizzleEngagementRepository(database);
     this.platformMemberRepo = new DrizzlePlatformMemberRepository(database);
+    this.inboxRepo = new DrizzleInboxRepository(database);
 
     // Initialize plugins
     this.pluginRunner = new PluginRunner();

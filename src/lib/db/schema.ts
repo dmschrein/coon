@@ -444,3 +444,43 @@ export const platformMembersRelations = relations(
     }),
   })
 );
+
+// ─── Inbox Items ──────────────────────────────────────────────────────────────
+export const inboxItems = pgTable(
+  "inbox_items",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    campaignId: uuid("campaign_id").references(() => campaigns.id),
+    contentId: uuid("content_id").references(() => campaignContent.id),
+    platform: text("platform").notNull(),
+    authorHandle: text("author_handle").notNull(),
+    authorDisplayName: text("author_display_name"),
+    messageText: text("message_text").notNull(),
+    messageType: text("message_type").notNull(), // comment | reply | mention | dm
+    status: text("status").notNull().default("unread"), // unread | read | replied
+    platformMessageId: text("platform_message_id").notNull(),
+    receivedAt: timestamp("received_at").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [
+    index("inbox_items_user_status_idx").on(table.userId, table.status),
+  ]
+);
+
+export const inboxItemsRelations = relations(inboxItems, ({ one }) => ({
+  user: one(users, {
+    fields: [inboxItems.userId],
+    references: [users.id],
+  }),
+  campaign: one(campaigns, {
+    fields: [inboxItems.campaignId],
+    references: [campaigns.id],
+  }),
+  content: one(campaignContent, {
+    fields: [inboxItems.contentId],
+    references: [campaignContent.id],
+  }),
+}));
