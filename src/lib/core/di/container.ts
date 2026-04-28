@@ -39,6 +39,7 @@ import {
 import { generateCampaignPlan } from "@/lib/agents/campaign-generator";
 import { generateContentPiece } from "@/lib/agents/content-piece-generator";
 import { checkCampaignCohesion } from "@/lib/agents/cohesion-checker";
+import { analyzeFeedbackLoop } from "@/lib/agents/feedback-loop";
 import { generateAnalyticsInsights } from "@/lib/agents/analytics-insights";
 import {
   enrichContentWithMedia,
@@ -102,7 +103,13 @@ class Container {
       this.quizRepo,
       this.agentRunRepo,
       { analyzeAudience },
-      this.pluginRunner
+      this.pluginRunner,
+      {
+        engagementRepo: this.engagementRepo,
+        contentRepo: this.contentRepo,
+        campaignRepo: this.campaignRepo,
+        feedbackAgent: { analyzeFeedbackLoop },
+      }
     );
 
     this.campaignService = new CampaignService(
