@@ -46,3 +46,17 @@ export const inboxListQuerySchema = z.object({
 });
 
 export type InboxListQuery = z.infer<typeof inboxListQuerySchema>;
+
+// --- Reply Draft ---
+
+export const replyDraftItemSchema = z.object({
+  text: z.string().min(1),
+  tone: z.string().min(1),
+  rationale: z.string().min(1),
+});
+
+export const replyDraftOutputSchema = z.object({
+  drafts: z.array(replyDraftItemSchema).min(2).max(3),
+});
+
+export type ReplyDraftOutput = z.infer<typeof replyDraftOutputSchema>;

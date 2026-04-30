@@ -106,6 +106,26 @@ export function useUpdateInboxStatus() {
   });
 }
 
+export interface ReplyDraft {
+  text: string;
+  tone: string;
+  rationale: string;
+}
+
+export function useDraftReply() {
+  return useMutation<{ drafts: ReplyDraft[] }, Error, { inboxItemId: string }>({
+    mutationFn: async ({ inboxItemId }) => {
+      const res = await fetch(`/api/inbox/${inboxItemId}/draft-reply`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("Failed to draft reply");
+      const json = await res.json();
+      if (json.error) throw new Error(json.error.message);
+      return json.data;
+    },
+  });
+}
+
 export function useUnreadCount() {
   return useQuery<number>({
     queryKey: ["inbox-unread"],

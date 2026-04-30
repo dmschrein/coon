@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -7,8 +8,10 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Inbox } from "lucide-react";
+import { Inbox, MessageSquareReply } from "lucide-react";
+import { ReplyComposer } from "./reply-composer";
 import type { InboxItem } from "@/hooks/use-inbox";
 
 interface ThreadViewProps {
@@ -32,6 +35,7 @@ function formatDate(dateStr: string): string {
 }
 
 export function ThreadView({ item }: ThreadViewProps) {
+  const [showComposer, setShowComposer] = useState(false);
   if (!item) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 rounded-lg border">
@@ -73,13 +77,36 @@ export function ThreadView({ item }: ThreadViewProps) {
 
       <Separator />
 
-      <CardFooter className="gap-2 pt-4">
-        <Badge variant={variant} className={statusClassName}>
-          {item.status}
-        </Badge>
-        <span className="text-muted-foreground text-xs">
-          Received {formatDate(item.receivedAt)}
-        </span>
+      <CardFooter className="flex-col items-stretch gap-3 pt-4">
+        <div className="flex items-center gap-2">
+          <Badge variant={variant} className={statusClassName}>
+            {item.status}
+          </Badge>
+          <span className="text-muted-foreground text-xs">
+            Received {formatDate(item.receivedAt)}
+          </span>
+          {item.status !== "replied" && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="ml-auto"
+              onClick={() => setShowComposer((prev) => !prev)}
+            >
+              <MessageSquareReply className="mr-1.5 h-3.5 w-3.5" />
+              {showComposer ? "Hide Reply" : "Draft Reply"}
+            </Button>
+          )}
+        </div>
+
+        {showComposer && (
+          <>
+            <Separator />
+            <ReplyComposer
+              item={item}
+              onReplied={() => setShowComposer(false)}
+            />
+          </>
+        )}
       </CardFooter>
     </Card>
   );
