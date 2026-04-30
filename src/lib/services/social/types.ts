@@ -18,6 +18,12 @@ export interface PostResult {
   externalPostUrl: string;
 }
 
+export interface CommentAuthor {
+  platformUserId: string;
+  username: string;
+  displayName?: string;
+}
+
 export interface PlatformEngagement {
   likes: number;
   comments: number;
@@ -26,6 +32,7 @@ export interface PlatformEngagement {
   impressions: number;
   engagementRate: string | null;
   recordedAt: Date;
+  commentAuthors?: CommentAuthor[];
 }
 
 export class AuthExpiredError extends Error {

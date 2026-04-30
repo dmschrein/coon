@@ -153,7 +153,8 @@ class Container {
       this.campaignRepo,
       { optimizeContent },
       this.engagementRepo,
-      getAdapter
+      getAdapter,
+      this.platformMemberRepo
     );
   }
 }

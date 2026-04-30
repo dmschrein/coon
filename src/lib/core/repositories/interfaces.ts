@@ -336,6 +336,9 @@ export interface PlatformMemberRow {
   firstSeenAt: Date;
   engagementCount: number;
   lastSeenAt: Date;
+  status: string;
+  tags: string[];
+  notes: string | null;
 }
 
 export interface PlatformMemberRepository {
@@ -347,6 +350,27 @@ export interface PlatformMemberRepository {
     displayName?: string;
   }): Promise<PlatformMemberRow>;
   getMembersByUserId(userId: string): Promise<PlatformMemberRow[]>;
+  listMembers(
+    userId: string,
+    filters: {
+      status?: string;
+      platform?: string;
+      minEngagement?: number;
+      page: number;
+      limit: number;
+    }
+  ): Promise<{ items: PlatformMemberRow[]; total: number }>;
+  getMember(id: string): Promise<PlatformMemberRow | null>;
+  updateMember(
+    id: string,
+    patch: {
+      status?: string;
+      tags?: string[];
+      notes?: string | null;
+      displayName?: string | null;
+    }
+  ): Promise<PlatformMemberRow | null>;
+  deleteMember(id: string): Promise<void>;
 }
 
 // ─── Analytics Repository ────────────────────────────────────────────────────

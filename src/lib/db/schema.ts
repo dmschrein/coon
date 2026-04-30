@@ -267,6 +267,9 @@ export const platformMembers = pgTable(
     firstSeenAt: timestamp("first_seen_at").defaultNow(),
     engagementCount: integer("engagement_count").default(0),
     lastSeenAt: timestamp("last_seen_at").defaultNow(),
+    status: text("status").default("prospect"),
+    tags: text("tags").array().default([]),
+    notes: text("notes"),
   },
   (table) => [index("platform_members_user_idx").on(table.userId)]
 );

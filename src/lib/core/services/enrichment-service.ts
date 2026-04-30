@@ -7,6 +7,7 @@ import type {
   CampaignContentRepository,
   CampaignRepository,
   EngagementRepository,
+  PlatformMemberRepository,
   PostEngagementRow,
 } from "../repositories/interfaces";
 import type {
@@ -55,6 +56,7 @@ interface SeoOptimizationAgent {
 
 export class EnrichmentService {
   private engagementRepo: EngagementRepository | null;
+  private platformMemberRepo: PlatformMemberRepository | null;
   private getAdapter:
     | ((platform: SocialPlatform) => SocialPlatformAdapter | null)
     | null;
@@ -66,10 +68,12 @@ export class EnrichmentService {
     private campaignRepo: CampaignRepository,
     private seoAgent: SeoOptimizationAgent,
     engagementRepo?: EngagementRepository,
-    getAdapter?: (platform: SocialPlatform) => SocialPlatformAdapter | null
+    getAdapter?: (platform: SocialPlatform) => SocialPlatformAdapter | null,
+    platformMemberRepo?: PlatformMemberRepository
   ) {
     this.engagementRepo = engagementRepo ?? null;
     this.getAdapter = getAdapter ?? null;
+    this.platformMemberRepo = platformMemberRepo ?? null;
   }
 
   // ─── Engagement Ingestion ────────────────────────────────────────────────────
@@ -101,7 +105,7 @@ export class EnrichmentService {
       throw new Error("Post not found or has been deleted");
     }
 
-    return this.engagementRepo.upsertEngagement({
+    const stored = await this.engagementRepo.upsertEngagement({
       campaignContentId: contentId,
       platform,
       platformPostId: postId,
@@ -113,6 +117,25 @@ export class EnrichmentService {
       engagementRate: engagement.engagementRate ?? undefined,
       recordedAt: engagement.recordedAt,
     });
+
+    if (this.platformMemberRepo && engagement.commentAuthors?.length) {
+      const content = await this.contentRepo.findById(contentId);
+      if (content) {
+        await Promise.allSettled(
+          engagement.commentAuthors.map((author) =>
+            this.platformMemberRepo!.upsertPlatformMember({
+              userId: content.userId,
+              platform,
+              platformUserId: author.platformUserId,
+              username: author.username,
+              displayName: author.displayName,
+            })
+          )
+        );
+      }
+    }
+
+    return stored;
   }
 
   // ─── Media Generation ───────────────────────────────────────────────────────
