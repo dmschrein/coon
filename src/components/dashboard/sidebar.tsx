@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   Users,
+  UserCheck,
   Megaphone,
   Inbox,
   Settings,
@@ -28,6 +29,11 @@ const navigation = [
     name: "Campaigns",
     href: "/dashboard/campaign",
     icon: Megaphone,
+  },
+  {
+    name: "Members",
+    href: "/dashboard/members",
+    icon: UserCheck,
   },
   {
     name: "Inbox",
