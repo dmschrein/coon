@@ -8,6 +8,7 @@ import {
   jsonb,
   uuid,
   index,
+  unique,
 } from "drizzle-orm/pg-core";
 
 // ─── Users ───────────────────────────────────────────────────────────────────
@@ -267,11 +268,18 @@ export const platformMembers = pgTable(
     firstSeenAt: timestamp("first_seen_at").defaultNow(),
     engagementCount: integer("engagement_count").default(0),
     lastSeenAt: timestamp("last_seen_at").defaultNow(),
-    status: text("status").default("prospect"),
+    status: text("status").notNull().default("prospect"),
     tags: text("tags").array().default([]),
     notes: text("notes"),
   },
-  (table) => [index("platform_members_user_idx").on(table.userId)]
+  (table) => [
+    index("platform_members_user_idx").on(table.userId),
+    unique("platform_members_user_platform_userid_unique").on(
+      table.userId,
+      table.platform,
+      table.platformUserId
+    ),
+  ]
 );
 
 // ─── Agent Runs ──────────────────────────────────────────────────────────────

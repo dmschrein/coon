@@ -2,12 +2,14 @@
  * Drizzle Platform Member Repository - Data access for community members.
  */
 
-import { eq, and, gte, sql, type SQL } from "drizzle-orm";
+import { eq, and, gte, sql, desc, type SQL } from "drizzle-orm";
 import { platformMembers } from "@/lib/db/schema";
 import type { PlatformMemberRepository, PlatformMemberRow } from "./interfaces";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DrizzleDb = any;
+
+const UNIQUE_VIOLATION = "23505";
 
 export class DrizzlePlatformMemberRepository implements PlatformMemberRepository {
   constructor(private db: DrizzleDb) {}
@@ -23,7 +25,7 @@ export class DrizzlePlatformMemberRepository implements PlatformMemberRepository
       firstSeenAt: row.firstSeenAt ?? new Date(),
       engagementCount: row.engagementCount ?? 0,
       lastSeenAt: row.lastSeenAt ?? new Date(),
-      status: row.status ?? "prospect",
+      status: row.status,
       tags: row.tags ?? [],
       notes: row.notes,
     };
@@ -36,34 +38,8 @@ export class DrizzlePlatformMemberRepository implements PlatformMemberRepository
     username: string;
     displayName?: string;
   }): Promise<PlatformMemberRow> {
-    const [existing] = await this.db
-      .select()
-      .from(platformMembers)
-      .where(
-        and(
-          eq(platformMembers.userId, params.userId),
-          eq(platformMembers.platform, params.platform),
-          eq(platformMembers.platformUserId, params.platformUserId)
-        )
-      )
-      .limit(1);
-
-    if (existing) {
-      const [updated] = await this.db
-        .update(platformMembers)
-        .set({
-          username: params.username,
-          displayName: params.displayName ?? existing.displayName,
-          engagementCount: (existing.engagementCount ?? 0) + 1,
-          lastSeenAt: new Date(),
-        })
-        .where(eq(platformMembers.id, existing.id))
-        .returning();
-
-      return this.toRow(updated);
-    }
-
-    const [created] = await this.db
+    const now = new Date();
+    const [row] = await this.db
       .insert(platformMembers)
       .values({
         userId: params.userId,
@@ -71,10 +47,57 @@ export class DrizzlePlatformMemberRepository implements PlatformMemberRepository
         platformUserId: params.platformUserId,
         username: params.username,
         displayName: params.displayName,
+        engagementCount: 1,
+        lastSeenAt: now,
+      })
+      .onConflictDoUpdate({
+        target: [
+          platformMembers.userId,
+          platformMembers.platform,
+          platformMembers.platformUserId,
+        ],
+        set: {
+          username: params.username,
+          displayName: sql`COALESCE(${params.displayName ?? null}, ${platformMembers.displayName})`,
+          engagementCount: sql`${platformMembers.engagementCount} + 1`,
+          lastSeenAt: now,
+        },
       })
       .returning();
 
-    return this.toRow(created);
+    return this.toRow(row);
+  }
+
+  async createMember(params: {
+    userId: string;
+    platform: string;
+    platformUserId: string;
+    username: string;
+    displayName?: string;
+  }): Promise<PlatformMemberRow | null> {
+    try {
+      const [row] = await this.db
+        .insert(platformMembers)
+        .values({
+          userId: params.userId,
+          platform: params.platform,
+          platformUserId: params.platformUserId,
+          username: params.username,
+          displayName: params.displayName,
+        })
+        .returning();
+      return this.toRow(row);
+    } catch (err: unknown) {
+      if (
+        err &&
+        typeof err === "object" &&
+        "code" in err &&
+        (err as { code?: string }).code === UNIQUE_VIOLATION
+      ) {
+        return null;
+      }
+      throw err;
+    }
   }
 
   async getMembersByUserId(userId: string): Promise<PlatformMemberRow[]> {
@@ -119,6 +142,7 @@ export class DrizzlePlatformMemberRepository implements PlatformMemberRepository
       .select()
       .from(platformMembers)
       .where(where)
+      .orderBy(desc(platformMembers.lastSeenAt), platformMembers.id)
       .limit(filters.limit)
       .offset(offset);
 

@@ -349,6 +349,13 @@ export interface PlatformMemberRepository {
     username: string;
     displayName?: string;
   }): Promise<PlatformMemberRow>;
+  createMember(params: {
+    userId: string;
+    platform: string;
+    platformUserId: string;
+    username: string;
+    displayName?: string;
+  }): Promise<PlatformMemberRow | null>;
   getMembersByUserId(userId: string): Promise<PlatformMemberRow[]>;
   listMembers(
     userId: string,

@@ -7,12 +7,12 @@ vi.mock("@clerk/nextjs/server", () => ({
 }));
 
 const mockListMembers = vi.fn();
-const mockUpsert = vi.fn();
+const mockCreateMember = vi.fn();
 vi.mock("@/lib/core/di/container", () => ({
   getContainer: () => ({
     platformMemberRepo: {
       listMembers: (...args: unknown[]) => mockListMembers(...args),
-      upsertPlatformMember: (...args: unknown[]) => mockUpsert(...args),
+      createMember: (...args: unknown[]) => mockCreateMember(...args),
     },
   }),
 }));
@@ -150,7 +150,7 @@ describe("POST /api/members", () => {
 
   it("creates member with valid body", async () => {
     mockAuth.mockResolvedValue({ userId: "user_123" });
-    mockUpsert.mockResolvedValue(mockMember);
+    mockCreateMember.mockResolvedValue(mockMember);
 
     const response = await POST(
       createPostRequest({
@@ -164,13 +164,30 @@ describe("POST /api/members", () => {
 
     expect(response.status).toBe(201);
     expect(data.data.id).toBe("member-1");
-    expect(mockUpsert).toHaveBeenCalledWith({
+    expect(mockCreateMember).toHaveBeenCalledWith({
       userId: "user_123",
       platform: "instagram",
       platformUserId: "ig_user_1",
       username: "alice",
       displayName: "Alice",
     });
+  });
+
+  it("returns 409 when member already exists", async () => {
+    mockAuth.mockResolvedValue({ userId: "user_123" });
+    mockCreateMember.mockResolvedValue(null);
+
+    const response = await POST(
+      createPostRequest({
+        platform: "instagram",
+        platformUserId: "ig_user_1",
+        username: "alice",
+      })
+    );
+    const data = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(data.error.code).toBe("CONFLICT");
   });
 
   it("returns 400 on invalid body", async () => {

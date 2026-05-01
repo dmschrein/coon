@@ -92,13 +92,26 @@ export async function POST(req: Request) {
     const parsed = createMemberSchema.parse(body);
 
     const { platformMemberRepo } = getContainer();
-    const member = await platformMemberRepo.upsertPlatformMember({
+    const member = await platformMemberRepo.createMember({
       userId,
       platform: parsed.platform,
       platformUserId: parsed.platformUserId,
       username: parsed.username,
       displayName: parsed.displayName,
     });
+
+    if (!member) {
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            message: "Member already exists for this platform handle",
+            code: "CONFLICT",
+          },
+        },
+        { status: 409 }
+      );
+    }
 
     return NextResponse.json({ data: member, error: null }, { status: 201 });
   } catch (error) {

@@ -170,6 +170,22 @@ describe("PATCH /api/members/[id]", () => {
     expect(response.status).toBe(400);
     expect(data.error.code).toBe("VALIDATION_ERROR");
   });
+
+  it("clears notes when notes is explicitly null", async () => {
+    mockAuth.mockResolvedValue({ userId: "user_123" });
+    mockGetMember.mockResolvedValue({ ...mockMember, notes: "old note" });
+    mockUpdateMember.mockResolvedValue({ ...mockMember, notes: null });
+
+    const response = await PATCH(
+      patchRequest({ notes: null }),
+      paramsFor("member-1")
+    );
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.data.notes).toBeNull();
+    expect(mockUpdateMember).toHaveBeenCalledWith("member-1", { notes: null });
+  });
 });
 
 describe("DELETE /api/members/[id]", () => {
