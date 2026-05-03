@@ -18,6 +18,7 @@ import {
   DrizzleEngagementRepository,
   DrizzlePlatformMemberRepository,
   DrizzleInboxRepository,
+  DrizzleNotificationRepository,
 } from "../repositories";
 import { AudienceService } from "../services/audience-service";
 import { CampaignService } from "../services/campaign-service";
@@ -66,6 +67,7 @@ class Container {
   readonly engagementRepo: DrizzleEngagementRepository;
   readonly platformMemberRepo: DrizzlePlatformMemberRepository;
   readonly inboxRepo: DrizzleInboxRepository;
+  readonly notificationRepo: DrizzleNotificationRepository;
 
   // Plugins
   readonly pluginRunner: PluginRunner;
@@ -92,6 +94,7 @@ class Container {
     this.engagementRepo = new DrizzleEngagementRepository(database);
     this.platformMemberRepo = new DrizzlePlatformMemberRepository(database);
     this.inboxRepo = new DrizzleInboxRepository(database);
+    this.notificationRepo = new DrizzleNotificationRepository(database);
 
     // Initialize plugins
     this.pluginRunner = new PluginRunner();
@@ -154,7 +157,8 @@ class Container {
       { optimizeContent },
       this.engagementRepo,
       getAdapter,
-      this.platformMemberRepo
+      this.platformMemberRepo,
+      this.notificationRepo
     );
   }
 }

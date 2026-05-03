@@ -18,6 +18,8 @@ export type {
   PlatformMemberRow,
   InboxRepository,
   InboxItemRow,
+  NotificationRepository,
+  NotificationRow,
 } from "./interfaces";
 
 export { DrizzleCampaignRepository } from "./drizzle-campaign";
@@ -31,3 +33,4 @@ export { DrizzleAnalyticsRepository } from "./drizzle-analytics";
 export { DrizzleEngagementRepository } from "./drizzle-engagement";
 export { DrizzlePlatformMemberRepository } from "./drizzle-platform-member";
 export { DrizzleInboxRepository } from "./drizzle-inbox";
+export { DrizzleNotificationRepository } from "./drizzle-notification";

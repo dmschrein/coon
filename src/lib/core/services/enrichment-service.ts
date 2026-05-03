@@ -9,7 +9,10 @@ import type {
   EngagementRepository,
   PlatformMemberRepository,
   PostEngagementRow,
+  NotificationRepository,
+  PlatformMemberRow,
 } from "../repositories/interfaces";
+import { notifyTrendingPost, notifyNewAdvocates } from "./engagement-notifier";
 import type {
   CampaignPlatform,
   ContentEnrichments,
@@ -57,6 +60,7 @@ interface SeoOptimizationAgent {
 export class EnrichmentService {
   private engagementRepo: EngagementRepository | null;
   private platformMemberRepo: PlatformMemberRepository | null;
+  private notificationRepo: NotificationRepository | null;
   private getAdapter:
     | ((platform: SocialPlatform) => SocialPlatformAdapter | null)
     | null;
@@ -69,11 +73,13 @@ export class EnrichmentService {
     private seoAgent: SeoOptimizationAgent,
     engagementRepo?: EngagementRepository,
     getAdapter?: (platform: SocialPlatform) => SocialPlatformAdapter | null,
-    platformMemberRepo?: PlatformMemberRepository
+    platformMemberRepo?: PlatformMemberRepository,
+    notificationRepo?: NotificationRepository
   ) {
     this.engagementRepo = engagementRepo ?? null;
     this.getAdapter = getAdapter ?? null;
     this.platformMemberRepo = platformMemberRepo ?? null;
+    this.notificationRepo = notificationRepo ?? null;
   }
 
   // ─── Engagement Ingestion ────────────────────────────────────────────────────
@@ -118,20 +124,49 @@ export class EnrichmentService {
       recordedAt: engagement.recordedAt,
     });
 
-    if (this.platformMemberRepo && engagement.commentAuthors?.length) {
-      const content = await this.contentRepo.findById(contentId);
-      if (content) {
-        await Promise.allSettled(
-          engagement.commentAuthors.map((author) =>
-            this.platformMemberRepo!.upsertPlatformMember({
-              userId: content.userId,
-              platform,
-              platformUserId: author.platformUserId,
-              username: author.username,
-              displayName: author.displayName,
-            })
-          )
+    const content = await this.contentRepo.findById(contentId);
+
+    const upsertedMembers: PlatformMemberRow[] = [];
+    if (
+      this.platformMemberRepo &&
+      engagement.commentAuthors?.length &&
+      content
+    ) {
+      const settled = await Promise.allSettled(
+        engagement.commentAuthors.map((author) =>
+          this.platformMemberRepo!.upsertPlatformMember({
+            userId: content.userId,
+            platform,
+            platformUserId: author.platformUserId,
+            username: author.username,
+            displayName: author.displayName,
+          })
+        )
+      );
+      for (const result of settled) {
+        if (result.status === "fulfilled") upsertedMembers.push(result.value);
+      }
+    }
+
+    if (this.notificationRepo && this.engagementRepo && content) {
+      // Notification side-effects must never break ingestion.
+      try {
+        await notifyTrendingPost(
+          {
+            notificationRepo: this.notificationRepo,
+            engagementRepo: this.engagementRepo,
+            contentRepo: this.contentRepo,
+          },
+          content,
+          stored
         );
+        await notifyNewAdvocates(
+          this.notificationRepo,
+          content.userId,
+          upsertedMembers
+        );
+      } catch (err) {
+        console.error("Failed to create engagement notifications:", err);
       }
     }
 

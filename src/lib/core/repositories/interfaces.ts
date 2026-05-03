@@ -322,6 +322,9 @@ export interface EngagementRepository {
   getEngagementByContentId(
     campaignContentId: string
   ): Promise<PostEngagementRow[]>;
+  getAverageEngagementRate(
+    campaignContentIds: string[]
+  ): Promise<number | null>;
 }
 
 // ─── Platform Member Repository ─────────────────────────────────────────────
@@ -495,6 +498,41 @@ export interface InboxRepository {
   getItem(id: string): Promise<InboxItemRow | null>;
 
   updateStatus(id: string, status: string): Promise<InboxItemRow>;
+
+  countUnread(userId: string): Promise<number>;
+}
+
+// ─── Notifications ──────────────────────────────────────────────────────────
+
+export interface NotificationRow {
+  id: string;
+  userId: string;
+  type: string;
+  title: string;
+  body: string;
+  link: string | null;
+  read: boolean;
+  createdAt: Date;
+}
+
+export interface NotificationRepository {
+  createNotification(params: {
+    userId: string;
+    type: string;
+    title: string;
+    body: string;
+    link?: string | null;
+  }): Promise<NotificationRow>;
+
+  listNotifications(userId: string, limit: number): Promise<NotificationRow[]>;
+
+  findExistingByLink(params: {
+    userId: string;
+    type: string;
+    link: string;
+  }): Promise<NotificationRow | null>;
+
+  markAllRead(userId: string): Promise<void>;
 
   countUnread(userId: string): Promise<number>;
 }

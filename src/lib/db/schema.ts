@@ -495,3 +495,28 @@ export const inboxItemsRelations = relations(inboxItems, ({ one }) => ({
     references: [campaignContent.id],
   }),
 }));
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type").notNull(), // 'post_trending' | 'new_advocate'
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    link: text("link"),
+    read: boolean("read").notNull().default(false),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [index("notifications_user_read_idx").on(table.userId, table.read)]
+);
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
+}));
