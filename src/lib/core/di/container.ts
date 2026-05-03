@@ -18,6 +18,7 @@ import {
   DrizzleEngagementRepository,
   DrizzlePlatformMemberRepository,
   DrizzleInboxRepository,
+  DrizzleBlockedSenderRepository,
   DrizzleNotificationRepository,
 } from "../repositories";
 import { AudienceService } from "../services/audience-service";
@@ -25,6 +26,7 @@ import { CampaignService } from "../services/campaign-service";
 import { PublishService } from "../services/publish-service";
 import { AnalyticsService } from "../services/analytics-service";
 import { EnrichmentService } from "../services/enrichment-service";
+import { InboxService } from "../services/inbox-service";
 import { getAdapter } from "@/lib/services/social";
 import {
   PluginRunner,
@@ -49,6 +51,7 @@ import {
 } from "@/lib/agents/media-enrichment";
 import { scoreContent } from "@/lib/agents/content-scoring";
 import { optimizeContent } from "@/lib/agents/seo-optimization";
+import { checkModeration } from "@/lib/agents/moderation-checker";
 
 // ─── Singleton Instances ──────────────────────────────────────────────────────
 
@@ -67,6 +70,7 @@ class Container {
   readonly engagementRepo: DrizzleEngagementRepository;
   readonly platformMemberRepo: DrizzlePlatformMemberRepository;
   readonly inboxRepo: DrizzleInboxRepository;
+  readonly blockedSenderRepo: DrizzleBlockedSenderRepository;
   readonly notificationRepo: DrizzleNotificationRepository;
 
   // Plugins
@@ -80,6 +84,7 @@ class Container {
   readonly publishService: PublishService;
   readonly analyticsService: AnalyticsService;
   readonly enrichmentService: EnrichmentService;
+  readonly inboxService: InboxService;
 
   constructor(database: typeof db) {
     // Initialize repositories
@@ -94,6 +99,7 @@ class Container {
     this.engagementRepo = new DrizzleEngagementRepository(database);
     this.platformMemberRepo = new DrizzlePlatformMemberRepository(database);
     this.inboxRepo = new DrizzleInboxRepository(database);
+    this.blockedSenderRepo = new DrizzleBlockedSenderRepository(database);
     this.notificationRepo = new DrizzleNotificationRepository(database);
 
     // Initialize plugins
@@ -159,6 +165,12 @@ class Container {
       getAdapter,
       this.platformMemberRepo,
       this.notificationRepo
+    );
+
+    this.inboxService = new InboxService(
+      this.inboxRepo,
+      this.blockedSenderRepo,
+      { checkModeration }
     );
   }
 }

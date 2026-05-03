@@ -41,11 +41,57 @@ export const inboxListQuerySchema = z.object({
   status: z.enum(inboxStatusValues).optional(),
   platform: z.string().optional(),
   campaignId: z.string().uuid("Invalid campaign ID").optional(),
+  flagged: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => (v === undefined ? undefined : v === "true")),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
 export type InboxListQuery = z.infer<typeof inboxListQuerySchema>;
+
+// --- Moderation ---
+
+export const moderationCategoryValues = [
+  "spam",
+  "toxicity",
+  "off-topic",
+  "self-promotion",
+] as const;
+
+export const moderationActionValues = [
+  "approve",
+  "hide",
+  "block_sender",
+] as const;
+
+export const moderationCheckerInputSchema = z.object({
+  messageText: z.string().min(1, "Message text is required"),
+  authorHandle: z.string().min(1, "Author handle is required"),
+  platform: z.string().min(1, "Platform is required"),
+});
+
+export type ModerationCheckerInput = z.infer<
+  typeof moderationCheckerInputSchema
+>;
+
+export const moderationCheckerOutputSchema = z.object({
+  flagged: z.boolean(),
+  reason: z.string().optional(),
+  confidence: z.number().min(0).max(1),
+  category: z.enum(moderationCategoryValues).optional(),
+});
+
+export type ModerationCheckerOutput = z.infer<
+  typeof moderationCheckerOutputSchema
+>;
+
+export const moderationActionSchema = z.object({
+  action: z.enum(moderationActionValues),
+});
+
+export type ModerationAction = z.infer<typeof moderationActionSchema>;
 
 // --- Reply Draft ---
 

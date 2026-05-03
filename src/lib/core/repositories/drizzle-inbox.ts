@@ -26,6 +26,9 @@ export class DrizzleInboxRepository implements InboxRepository {
       status: row.status,
       platformMessageId: row.platformMessageId,
       receivedAt: row.receivedAt,
+      flagged: row.flagged,
+      flagReason: row.flagReason ?? null,
+      flagCategory: row.flagCategory ?? null,
       createdAt: row.createdAt ?? null,
     };
   }
@@ -41,6 +44,9 @@ export class DrizzleInboxRepository implements InboxRepository {
     messageType: string;
     platformMessageId: string;
     receivedAt: Date;
+    flagged?: boolean;
+    flagReason?: string | null;
+    flagCategory?: string | null;
   }): Promise<InboxItemRow> {
     const [row] = await this.db
       .insert(inboxItems)
@@ -55,6 +61,9 @@ export class DrizzleInboxRepository implements InboxRepository {
         messageType: params.messageType,
         platformMessageId: params.platformMessageId,
         receivedAt: params.receivedAt,
+        flagged: params.flagged ?? false,
+        flagReason: params.flagReason ?? null,
+        flagCategory: params.flagCategory ?? null,
       })
       .returning();
 
@@ -66,6 +75,7 @@ export class DrizzleInboxRepository implements InboxRepository {
     status?: string;
     platform?: string;
     campaignId?: string;
+    flagged?: boolean;
     page: number;
     limit: number;
   }): Promise<{ items: InboxItemRow[]; total: number }> {
@@ -79,6 +89,9 @@ export class DrizzleInboxRepository implements InboxRepository {
     }
     if (params.campaignId) {
       conditions.push(eq(inboxItems.campaignId, params.campaignId));
+    }
+    if (params.flagged !== undefined) {
+      conditions.push(eq(inboxItems.flagged, params.flagged));
     }
 
     const where = and(...conditions);
@@ -120,6 +133,39 @@ export class DrizzleInboxRepository implements InboxRepository {
       .returning();
 
     return this.toRow(row);
+  }
+
+  async setFlagged(id: string, flagged: boolean): Promise<InboxItemRow> {
+    const [row] = await this.db
+      .update(inboxItems)
+      .set({
+        flagged,
+        ...(flagged ? {} : { flagReason: null, flagCategory: null }),
+      })
+      .where(eq(inboxItems.id, id))
+      .returning();
+
+    return this.toRow(row);
+  }
+
+  async markAllFromAuthorRead(
+    userId: string,
+    platform: string,
+    authorHandle: string
+  ): Promise<number> {
+    const rows = await this.db
+      .update(inboxItems)
+      .set({ status: "read", flagged: false })
+      .where(
+        and(
+          eq(inboxItems.userId, userId),
+          eq(inboxItems.platform, platform),
+          eq(inboxItems.authorHandle, authorHandle)
+        )
+      )
+      .returning({ id: inboxItems.id });
+
+    return rows.length;
   }
 
   async countUnread(userId: string): Promise<number> {

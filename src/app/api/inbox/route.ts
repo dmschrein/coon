@@ -21,6 +21,7 @@ export async function GET(req: Request) {
       status: url.searchParams.get("status") ?? undefined,
       platform: url.searchParams.get("platform") ?? undefined,
       campaignId: url.searchParams.get("campaignId") ?? undefined,
+      flagged: url.searchParams.get("flagged") ?? undefined,
       page: url.searchParams.get("page") ?? undefined,
       limit: url.searchParams.get("limit") ?? undefined,
     });

@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InboxFilterBar } from "@/components/inbox/inbox-filter-bar";
 import { InboxList } from "@/components/inbox/inbox-list";
 import { ThreadView } from "@/components/inbox/thread-view";
@@ -13,6 +15,9 @@ import {
 } from "@/hooks/use-inbox";
 
 export default function InboxPage() {
+  const searchParams = useSearchParams();
+  const defaultTab = searchParams.get("tab") ?? "inbox";
+
   const [selectedItem, setSelectedItem] = useState<InboxItem | null>(null);
   const [filters, setFilters] = useState<{
     status: string | null;
@@ -24,11 +29,15 @@ export default function InboxPage() {
     queryFilters.status = filters.status as InboxFilters["status"];
   if (filters.platform) queryFilters.platform = filters.platform;
 
-  const { data, isLoading } = useInboxList(queryFilters);
+  const { data: inboxData, isLoading: isInboxLoading } =
+    useInboxList(queryFilters);
+  const { data: flaggedData, isLoading: isFlaggedLoading } = useInboxList({
+    flagged: true,
+  });
   const updateStatus = useUpdateInboxStatus();
 
-  const platforms = data?.items
-    ? [...new Set(data.items.map((item) => item.platform))]
+  const platforms = inboxData?.items
+    ? [...new Set(inboxData.items.map((item) => item.platform))]
     : [];
 
   const handleSelect = useCallback(
@@ -41,6 +50,8 @@ export default function InboxPage() {
     [updateStatus]
   );
 
+  const flaggedCount = flaggedData?.total ?? 0;
+
   return (
     <div className="space-y-4">
       <div>
@@ -50,31 +61,63 @@ export default function InboxPage() {
         </p>
       </div>
 
-      <InboxFilterBar
-        activeStatus={filters.status}
-        activePlatform={filters.platform}
-        platforms={platforms}
-        onStatusChange={(status) => setFilters((prev) => ({ ...prev, status }))}
-        onPlatformChange={(platform) =>
-          setFilters((prev) => ({ ...prev, platform }))
-        }
-      />
+      <Tabs defaultValue={defaultTab}>
+        <TabsList>
+          <TabsTrigger value="inbox">Inbox</TabsTrigger>
+          <TabsTrigger value="moderation">
+            Moderation Queue
+            {flaggedCount > 0 ? ` (${flaggedCount})` : ""}
+          </TabsTrigger>
+        </TabsList>
 
-      <div className="flex gap-4" style={{ height: "calc(100vh - 240px)" }}>
-        <div className="w-1/3 overflow-hidden rounded-lg border">
-          <ScrollArea className="h-full">
-            <InboxList
-              items={data?.items ?? []}
-              selectedId={selectedItem?.id ?? null}
-              onSelect={handleSelect}
-              isLoading={isLoading}
-            />
-          </ScrollArea>
-        </div>
-        <div className="flex-1 overflow-hidden">
-          <ThreadView item={selectedItem} />
-        </div>
-      </div>
+        <TabsContent value="inbox" className="mt-4 space-y-4">
+          <InboxFilterBar
+            activeStatus={filters.status}
+            activePlatform={filters.platform}
+            platforms={platforms}
+            onStatusChange={(status) =>
+              setFilters((prev) => ({ ...prev, status }))
+            }
+            onPlatformChange={(platform) =>
+              setFilters((prev) => ({ ...prev, platform }))
+            }
+          />
+
+          <div className="flex gap-4" style={{ height: "calc(100vh - 280px)" }}>
+            <div className="w-1/3 overflow-hidden rounded-lg border">
+              <ScrollArea className="h-full">
+                <InboxList
+                  items={inboxData?.items ?? []}
+                  selectedId={selectedItem?.id ?? null}
+                  onSelect={handleSelect}
+                  isLoading={isInboxLoading}
+                />
+              </ScrollArea>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <ThreadView item={selectedItem} />
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="moderation" className="mt-4">
+          <div className="flex gap-4" style={{ height: "calc(100vh - 240px)" }}>
+            <div className="w-1/3 overflow-hidden rounded-lg border">
+              <ScrollArea className="h-full">
+                <InboxList
+                  items={flaggedData?.items ?? []}
+                  selectedId={selectedItem?.id ?? null}
+                  onSelect={handleSelect}
+                  isLoading={isFlaggedLoading}
+                />
+              </ScrollArea>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <ThreadView item={selectedItem} />
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

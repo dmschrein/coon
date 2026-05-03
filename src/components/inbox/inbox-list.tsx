@@ -97,6 +97,15 @@ export function InboxList({
                 <Badge variant="secondary" className="shrink-0 text-xs">
                   {item.platform}
                 </Badge>
+                {item.flagged && (
+                  <Badge
+                    variant="destructive"
+                    className="shrink-0 text-xs capitalize"
+                    title={item.flagReason ?? undefined}
+                  >
+                    {item.flagCategory ?? "Flagged"}
+                  </Badge>
+                )}
                 <span className="text-muted-foreground ml-auto shrink-0 text-xs">
                   {timeAgo(item.receivedAt)}
                 </span>

@@ -474,10 +474,14 @@ export const inboxItems = pgTable(
     status: text("status").notNull().default("unread"), // unread | read | replied
     platformMessageId: text("platform_message_id").notNull(),
     receivedAt: timestamp("received_at").notNull(),
+    flagged: boolean("flagged").notNull().default(false),
+    flagReason: text("flag_reason"),
+    flagCategory: text("flag_category"), // spam | toxicity | off-topic | self-promotion
     createdAt: timestamp("created_at").defaultNow(),
   },
   (table) => [
     index("inbox_items_user_status_idx").on(table.userId, table.status),
+    index("inbox_items_user_flagged_idx").on(table.userId, table.flagged),
   ]
 );
 
@@ -493,6 +497,34 @@ export const inboxItemsRelations = relations(inboxItems, ({ one }) => ({
   content: one(campaignContent, {
     fields: [inboxItems.contentId],
     references: [campaignContent.id],
+  }),
+}));
+
+// ─── Blocked Senders ─────────────────────────────────────────────────────────
+export const blockedSenders = pgTable(
+  "blocked_senders",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    platform: text("platform").notNull(),
+    handle: text("handle").notNull(),
+    blockedAt: timestamp("blocked_at").notNull().defaultNow(),
+  },
+  (table) => [
+    unique("blocked_senders_user_platform_handle_unique").on(
+      table.userId,
+      table.platform,
+      table.handle
+    ),
+  ]
+);
+
+export const blockedSendersRelations = relations(blockedSenders, ({ one }) => ({
+  user: one(users, {
+    fields: [blockedSenders.userId],
+    references: [users.id],
   }),
 }));
 

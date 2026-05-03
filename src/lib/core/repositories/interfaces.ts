@@ -469,6 +469,9 @@ export interface InboxItemRow {
   status: string;
   platformMessageId: string;
   receivedAt: Date;
+  flagged: boolean;
+  flagReason: string | null;
+  flagCategory: string | null;
   createdAt: Date | null;
 }
 
@@ -484,6 +487,9 @@ export interface InboxRepository {
     messageType: string;
     platformMessageId: string;
     receivedAt: Date;
+    flagged?: boolean;
+    flagReason?: string | null;
+    flagCategory?: string | null;
   }): Promise<InboxItemRow>;
 
   listItems(params: {
@@ -491,6 +497,7 @@ export interface InboxRepository {
     status?: string;
     platform?: string;
     campaignId?: string;
+    flagged?: boolean;
     page: number;
     limit: number;
   }): Promise<{ items: InboxItemRow[]; total: number }>;
@@ -499,7 +506,35 @@ export interface InboxRepository {
 
   updateStatus(id: string, status: string): Promise<InboxItemRow>;
 
+  setFlagged(id: string, flagged: boolean): Promise<InboxItemRow>;
+
+  markAllFromAuthorRead(
+    userId: string,
+    platform: string,
+    authorHandle: string
+  ): Promise<number>;
+
   countUnread(userId: string): Promise<number>;
+}
+
+// ─── Blocked Senders ────────────────────────────────────────────────────────
+
+export interface BlockedSenderRow {
+  id: string;
+  userId: string;
+  platform: string;
+  handle: string;
+  blockedAt: Date;
+}
+
+export interface BlockedSenderRepository {
+  block(params: {
+    userId: string;
+    platform: string;
+    handle: string;
+  }): Promise<BlockedSenderRow>;
+
+  listForUser(userId: string): Promise<BlockedSenderRow[]>;
 }
 
 // ─── Notifications ──────────────────────────────────────────────────────────

@@ -1,5 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { inboxStatusValues } from "@/lib/validations/inbox";
+import type {
+  inboxStatusValues,
+  moderationCategoryValues,
+  moderationActionValues,
+} from "@/lib/validations/inbox";
 
 // Client-side type (dates serialized as strings over JSON)
 export interface InboxItem {
@@ -15,6 +19,9 @@ export interface InboxItem {
   status: "unread" | "read" | "replied";
   platformMessageId: string;
   receivedAt: string;
+  flagged: boolean;
+  flagReason: string | null;
+  flagCategory: (typeof moderationCategoryValues)[number] | null;
   createdAt: string | null;
 }
 
@@ -22,9 +29,12 @@ export interface InboxFilters {
   status?: (typeof inboxStatusValues)[number];
   platform?: string;
   campaignId?: string;
+  flagged?: boolean;
   page?: number;
   limit?: number;
 }
+
+export type ModerationActionName = (typeof moderationActionValues)[number];
 
 interface InboxListResponse {
   items: InboxItem[];
@@ -41,6 +51,8 @@ export function useInboxList(filters: InboxFilters = {}) {
       if (filters.status) params.set("status", filters.status);
       if (filters.platform) params.set("platform", filters.platform);
       if (filters.campaignId) params.set("campaignId", filters.campaignId);
+      if (filters.flagged !== undefined)
+        params.set("flagged", String(filters.flagged));
       if (filters.page) params.set("page", String(filters.page));
       if (filters.limit) params.set("limit", String(filters.limit));
 
@@ -122,6 +134,36 @@ export function useDraftReply() {
       const json = await res.json();
       if (json.error) throw new Error(json.error.message);
       return json.data;
+    },
+  });
+}
+
+export function useModerationAction() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    {
+      itemId: string;
+      action: ModerationActionName;
+      affectedItems: number;
+    },
+    Error,
+    { id: string; action: ModerationActionName }
+  >({
+    mutationFn: async ({ id, action }) => {
+      const res = await fetch(`/api/inbox/${id}/moderate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      if (!res.ok) throw new Error("Failed to moderate inbox item");
+      const json = await res.json();
+      if (json.error) throw new Error(json.error.message);
+      return json.data;
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["inbox"] });
+      queryClient.invalidateQueries({ queryKey: ["inbox-unread"] });
     },
   });
 }
