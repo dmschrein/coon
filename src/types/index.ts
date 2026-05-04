@@ -595,7 +595,8 @@ export type AgentType =
   | "image_generation"
   | "content_scoring"
   | "seo_optimization"
-  | "feedback_loop";
+  | "feedback_loop"
+  | "conversation_seeds";
 
 export type AgentStatus = "success" | "failed" | "partial";
 
