@@ -18,6 +18,7 @@ const VALID_PLATFORMS: SocialPlatform[] = [
   "youtube",
   "threads",
   "linkedin",
+  "discord",
 ];
 
 export async function POST(

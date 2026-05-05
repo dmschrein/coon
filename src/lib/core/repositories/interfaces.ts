@@ -259,6 +259,7 @@ export interface ConnectedAccountRepository {
     accountId?: string;
     profileImageUrl?: string;
     scopes?: string[];
+    metadata?: Record<string, unknown>;
   }): Promise<ConnectedAccount>;
   updateTokens(
     id: string,

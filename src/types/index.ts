@@ -409,7 +409,8 @@ export type SocialPlatform =
   | "twitter"
   | "youtube"
   | "threads"
-  | "linkedin";
+  | "linkedin"
+  | "discord";
 
 export type PublishStatus = "scheduled" | "publishing" | "published" | "failed";
 

@@ -180,6 +180,7 @@ export const connectedAccounts = pgTable("connected_accounts", {
   profileImageUrl: text("profile_image_url"),
   isActive: boolean("is_active").default(true),
   scopes: text("scopes").array(),
+  metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

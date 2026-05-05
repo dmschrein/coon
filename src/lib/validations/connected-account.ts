@@ -12,6 +12,7 @@ export const socialPlatformValues = [
   "youtube",
   "threads",
   "linkedin",
+  "discord",
 ] as const;
 
 export const socialPlatformSchema = z.enum(socialPlatformValues);
