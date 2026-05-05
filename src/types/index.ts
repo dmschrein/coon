@@ -189,6 +189,24 @@ export type ReviewBoardColumn =
   | "scheduled"
   | "posted";
 
+export interface ReviewBoardItem {
+  id: string;
+  platform: CampaignPlatform;
+  title: string | null;
+  pillar: string | null;
+  body: string | null;
+  scheduledFor: Date | null;
+  approvalStatus: ContentApprovalStatus;
+  boardColumn: ReviewBoardColumn;
+  contentType?: string | null;
+  aiConfidenceScore?: number | null;
+  hasMedia?: boolean;
+  overallScore?: number;
+  eventTitle?: string | null;
+  eventDatetime?: Date | null;
+  eventRsvpUrl?: string | null;
+}
+
 export type ContentFormatType =
   | "post"
   | "carousel"
@@ -597,7 +615,8 @@ export type AgentType =
   | "content_scoring"
   | "seo_optimization"
   | "feedback_loop"
-  | "conversation_seeds";
+  | "conversation_seeds"
+  | "event_content";
 
 export type AgentStatus = "success" | "failed" | "partial";
 

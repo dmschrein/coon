@@ -16,6 +16,7 @@ import type {
   CampaignDuration,
   ContentPillar,
   ContentApprovalStatus,
+  CampaignContentStatus,
   QuizResponse,
   AudienceProfile,
   ConfidenceLevel,
@@ -117,9 +118,15 @@ export interface CampaignContentRepository {
       platform: CampaignPlatform;
       pillar?: string;
       title?: string;
+      body?: string;
       scheduledFor?: Date;
+      status?: CampaignContentStatus;
+      contentType?: string;
+      eventTitle?: string;
+      eventDatetime?: Date;
+      eventRsvpUrl?: string;
     }[]
-  ): Promise<void>;
+  ): Promise<string[]>;
   updateStatus(
     id: string,
     status: string,

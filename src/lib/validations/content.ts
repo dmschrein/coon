@@ -5,7 +5,7 @@ import { z } from "zod";
 // ============================================================================
 
 // Shared enum values
-const platformValues = [
+export const platformValues = [
   "twitter",
   "linkedin",
   "reddit",

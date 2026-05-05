@@ -16,27 +16,12 @@ import { KanbanColumn } from "./kanban-column";
 import { ContentCard } from "./content-card";
 import type {
   ContentApprovalStatus,
-  CampaignPlatform,
   ReviewBoardColumn,
+  ReviewBoardItem,
 } from "@/types";
 
-interface ContentItem {
-  id: string;
-  platform: CampaignPlatform;
-  title: string | null;
-  pillar: string | null;
-  body: string | null;
-  scheduledFor: Date | null;
-  approvalStatus: ContentApprovalStatus;
-  boardColumn: ReviewBoardColumn;
-  contentType?: string | null;
-  aiConfidenceScore?: number | null;
-  hasMedia?: boolean;
-  overallScore?: number;
-}
-
 interface KanbanBoardProps {
-  items: ContentItem[];
+  items: ReviewBoardItem[];
   onStatusChange: (id: string, status: ContentApprovalStatus) => void;
   onCardClick: (id: string) => void;
   onDragToSchedule: (id: string) => void;

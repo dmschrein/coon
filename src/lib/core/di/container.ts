@@ -29,6 +29,7 @@ import { AnalyticsService } from "../services/analytics-service";
 import { EnrichmentService } from "../services/enrichment-service";
 import { InboxService } from "../services/inbox-service";
 import { RitualService } from "../services/ritual-service";
+import { EventService } from "../services/event-service";
 import { getAdapter } from "@/lib/services/social";
 import {
   PluginRunner,
@@ -54,6 +55,7 @@ import {
 import { scoreContent } from "@/lib/agents/content-scoring";
 import { optimizeContent } from "@/lib/agents/seo-optimization";
 import { checkModeration } from "@/lib/agents/moderation-checker";
+import { generateEventContent } from "@/lib/agents/campaign-content/event";
 
 // ─── Singleton Instances ──────────────────────────────────────────────────────
 
@@ -89,6 +91,7 @@ class Container {
   readonly enrichmentService: EnrichmentService;
   readonly inboxService: InboxService;
   readonly ritualService: RitualService;
+  readonly eventService: EventService;
 
   constructor(database: typeof db) {
     // Initialize repositories
@@ -182,6 +185,14 @@ class Container {
       this.ritualRepo,
       this.calendarEntryRepo,
       this.campaignRepo
+    );
+
+    this.eventService = new EventService(
+      this.campaignRepo,
+      this.contentRepo,
+      this.profileRepo,
+      this.agentRunRepo,
+      { generateEventContent }
     );
   }
 }
