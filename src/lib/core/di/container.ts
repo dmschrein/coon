@@ -20,6 +20,7 @@ import {
   DrizzleInboxRepository,
   DrizzleBlockedSenderRepository,
   DrizzleNotificationRepository,
+  DrizzleRitualTemplateRepository,
 } from "../repositories";
 import { AudienceService } from "../services/audience-service";
 import { CampaignService } from "../services/campaign-service";
@@ -27,6 +28,7 @@ import { PublishService } from "../services/publish-service";
 import { AnalyticsService } from "../services/analytics-service";
 import { EnrichmentService } from "../services/enrichment-service";
 import { InboxService } from "../services/inbox-service";
+import { RitualService } from "../services/ritual-service";
 import { getAdapter } from "@/lib/services/social";
 import {
   PluginRunner,
@@ -72,6 +74,7 @@ class Container {
   readonly inboxRepo: DrizzleInboxRepository;
   readonly blockedSenderRepo: DrizzleBlockedSenderRepository;
   readonly notificationRepo: DrizzleNotificationRepository;
+  readonly ritualRepo: DrizzleRitualTemplateRepository;
 
   // Plugins
   readonly pluginRunner: PluginRunner;
@@ -85,6 +88,7 @@ class Container {
   readonly analyticsService: AnalyticsService;
   readonly enrichmentService: EnrichmentService;
   readonly inboxService: InboxService;
+  readonly ritualService: RitualService;
 
   constructor(database: typeof db) {
     // Initialize repositories
@@ -101,6 +105,7 @@ class Container {
     this.inboxRepo = new DrizzleInboxRepository(database);
     this.blockedSenderRepo = new DrizzleBlockedSenderRepository(database);
     this.notificationRepo = new DrizzleNotificationRepository(database);
+    this.ritualRepo = new DrizzleRitualTemplateRepository(database);
 
     // Initialize plugins
     this.pluginRunner = new PluginRunner();
@@ -171,6 +176,12 @@ class Container {
       this.inboxRepo,
       this.blockedSenderRepo,
       { checkModeration }
+    );
+
+    this.ritualService = new RitualService(
+      this.ritualRepo,
+      this.calendarEntryRepo,
+      this.campaignRepo
     );
   }
 }

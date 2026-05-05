@@ -10,6 +10,7 @@ import {
   Megaphone,
   Inbox,
   Settings,
+  Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useUnreadCount } from "@/hooks/use-inbox";
@@ -29,6 +30,11 @@ const navigation = [
     name: "Campaigns",
     href: "/dashboard/campaign",
     icon: Megaphone,
+  },
+  {
+    name: "Engagement",
+    href: "/dashboard/engagement",
+    icon: Sparkles,
   },
   {
     name: "Members",

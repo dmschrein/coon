@@ -205,8 +205,40 @@ export interface CalendarEntryRepository {
       postingTime?: string;
       pillar?: string;
       notes?: string;
+      scheduledDate?: Date;
+      ritualTemplateId?: string;
     }[]
   ): Promise<void>;
+  deleteFutureByRitual(
+    ritualTemplateId: string,
+    userId: string,
+    fromDate: Date
+  ): Promise<number>;
+}
+
+// ─── Ritual Template Repository ──────────────────────────────────────────────
+
+export type RitualRecurrence = "weekly" | "biweekly" | "monthly";
+
+export interface RitualTemplateRow {
+  id: string;
+  userId: string | null;
+  name: string;
+  description: string | null;
+  platform: string;
+  promptTemplate: string;
+  recurrence: RitualRecurrence;
+  dayOfWeek: number | null;
+  isActive: boolean;
+  sourceTemplateId: string | null;
+  createdAt: Date;
+}
+
+export interface RitualTemplateRepository {
+  listForUser(userId: string): Promise<RitualTemplateRow[]>;
+  findById(id: string): Promise<RitualTemplateRow | null>;
+  cloneForUser(builtInId: string, userId: string): Promise<RitualTemplateRow>;
+  setActive(id: string, userId: string, isActive: boolean): Promise<void>;
 }
 
 // ─── Agent Run Repository ─────────────────────────────────────────────────────

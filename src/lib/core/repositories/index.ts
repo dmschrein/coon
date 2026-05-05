@@ -22,6 +22,9 @@ export type {
   BlockedSenderRow,
   NotificationRepository,
   NotificationRow,
+  RitualTemplateRepository,
+  RitualTemplateRow,
+  RitualRecurrence,
 } from "./interfaces";
 
 export { DrizzleCampaignRepository } from "./drizzle-campaign";
@@ -37,3 +40,4 @@ export { DrizzlePlatformMemberRepository } from "./drizzle-platform-member";
 export { DrizzleInboxRepository } from "./drizzle-inbox";
 export { DrizzleBlockedSenderRepository } from "./drizzle-blocked-sender";
 export { DrizzleNotificationRepository } from "./drizzle-notification";
+export { DrizzleRitualTemplateRepository } from "./drizzle-ritual-template";

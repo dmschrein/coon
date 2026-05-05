@@ -143,27 +143,54 @@ export const campaignContent = pgTable(
 );
 
 // ─── Campaign Calendar Entries ──────────────────────────────────────────────
-export const campaignCalendarEntries = pgTable("campaign_calendar_entries", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  campaignId: uuid("campaign_id")
-    .notNull()
-    .references(() => campaigns.id, { onDelete: "cascade" }),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  dayNumber: integer("day_number").notNull(),
-  scheduledDate: timestamp("scheduled_date"),
-  platform: text("platform").notNull(),
-  contentType: text("content_type").notNull(),
-  title: text("title").notNull(),
-  postingTime: text("posting_time"),
-  pillar: text("pillar"),
-  notes: text("notes"),
-  campaignContentId: uuid("campaign_content_id").references(
-    () => campaignContent.id
-  ),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+export const campaignCalendarEntries = pgTable(
+  "campaign_calendar_entries",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    campaignId: uuid("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    dayNumber: integer("day_number").notNull(),
+    scheduledDate: timestamp("scheduled_date"),
+    platform: text("platform").notNull(),
+    contentType: text("content_type").notNull(),
+    title: text("title").notNull(),
+    postingTime: text("posting_time"),
+    pillar: text("pillar"),
+    notes: text("notes"),
+    campaignContentId: uuid("campaign_content_id").references(
+      () => campaignContent.id
+    ),
+    ritualTemplateId: uuid("ritual_template_id"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [index("calendar_entries_ritual_idx").on(table.ritualTemplateId)]
+);
+
+// ─── Ritual Templates ────────────────────────────────────────────────────────
+export const ritualTemplates = pgTable(
+  "ritual_templates",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    platform: text("platform").notNull(),
+    promptTemplate: text("prompt_template").notNull(),
+    recurrence: text("recurrence").notNull(),
+    dayOfWeek: integer("day_of_week"),
+    isActive: boolean("is_active").notNull().default(false),
+    sourceTemplateId: uuid("source_template_id"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("ritual_templates_user_idx").on(table.userId),
+    index("ritual_templates_user_active_idx").on(table.userId, table.isActive),
+  ]
+);
 
 // ─── Connected Accounts ─────────────────────────────────────────────────────
 export const connectedAccounts = pgTable("connected_accounts", {
@@ -437,6 +464,10 @@ export const campaignCalendarEntriesRelations = relations(
       fields: [campaignCalendarEntries.campaignContentId],
       references: [campaignContent.id],
     }),
+    ritualTemplate: one(ritualTemplates, {
+      fields: [campaignCalendarEntries.ritualTemplateId],
+      references: [ritualTemplates.id],
+    }),
   })
 );
 
@@ -553,3 +584,14 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+export const ritualTemplatesRelations = relations(
+  ritualTemplates,
+  ({ one, many }) => ({
+    user: one(users, {
+      fields: [ritualTemplates.userId],
+      references: [users.id],
+    }),
+    calendarEntries: many(campaignCalendarEntries),
+  })
+);

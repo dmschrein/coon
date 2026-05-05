@@ -159,6 +159,7 @@ describe("CampaignService", () => {
     calendarEntryRepo = {
       findByCampaignId: vi.fn(),
       createMany: vi.fn(),
+      deleteFutureByRitual: vi.fn(),
     };
     agentRunRepo = { log: vi.fn(), getMetrics: vi.fn() };
     strategyAgent = { generateCampaignStrategy: vi.fn() };
