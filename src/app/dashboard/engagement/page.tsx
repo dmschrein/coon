@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { getContainer } from "@/lib/core/di/container";
-import { RitualLibrary } from "@/components/engagement/ritual-library";
+import { EngagementTabs } from "@/components/engagement/engagement-tabs";
 import type { RitualTemplateClient } from "@/hooks/use-rituals";
 
 export default async function EngagementPage() {
@@ -32,22 +32,14 @@ export default async function EngagementPage() {
       <div>
         <h1 className="text-3xl font-bold">Engagement</h1>
         <p className="text-muted-foreground text-sm">
-          Activate community rituals to drive consistent engagement
+          Rituals, conversation seeds, events, and a weekly health snapshot.
         </p>
       </div>
 
-      <section className="space-y-3">
-        <div>
-          <h2 className="text-xl font-semibold">Ritual Library</h2>
-          <p className="text-muted-foreground text-sm">
-            One-click templates that schedule the next 8 occurrences.
-          </p>
-        </div>
-        <RitualLibrary
-          campaignId={activeCampaign?.id ?? null}
-          initialTemplates={initialTemplates}
-        />
-      </section>
+      <EngagementTabs
+        campaignId={activeCampaign?.id ?? null}
+        initialTemplates={initialTemplates}
+      />
     </div>
   );
 }
