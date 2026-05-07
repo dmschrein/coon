@@ -21,6 +21,7 @@ import {
   DrizzleBlockedSenderRepository,
   DrizzleNotificationRepository,
   DrizzleRitualTemplateRepository,
+  DrizzleWorkflowRepository,
 } from "../repositories";
 import { AudienceService } from "../services/audience-service";
 import { CampaignService } from "../services/campaign-service";
@@ -30,6 +31,9 @@ import { EnrichmentService } from "../services/enrichment-service";
 import { InboxService } from "../services/inbox-service";
 import { RitualService } from "../services/ritual-service";
 import { EventService } from "../services/event-service";
+import { WorkflowService } from "../services/workflow-service";
+import { createOrchestration } from "@/lib/orchestration";
+import { draftOutreach } from "@/lib/agents/outreach-drafter";
 import { getAdapter } from "@/lib/services/social";
 import {
   PluginRunner,
@@ -77,6 +81,7 @@ class Container {
   readonly blockedSenderRepo: DrizzleBlockedSenderRepository;
   readonly notificationRepo: DrizzleNotificationRepository;
   readonly ritualRepo: DrizzleRitualTemplateRepository;
+  readonly workflowRepo: DrizzleWorkflowRepository;
 
   // Plugins
   readonly pluginRunner: PluginRunner;
@@ -92,6 +97,7 @@ class Container {
   readonly inboxService: InboxService;
   readonly ritualService: RitualService;
   readonly eventService: EventService;
+  readonly workflowService: WorkflowService;
 
   constructor(database: typeof db) {
     // Initialize repositories
@@ -109,6 +115,7 @@ class Container {
     this.blockedSenderRepo = new DrizzleBlockedSenderRepository(database);
     this.notificationRepo = new DrizzleNotificationRepository(database);
     this.ritualRepo = new DrizzleRitualTemplateRepository(database);
+    this.workflowRepo = new DrizzleWorkflowRepository(database);
 
     // Initialize plugins
     this.pluginRunner = new PluginRunner();
@@ -163,6 +170,20 @@ class Container {
       { generateAnalyticsInsights }
     );
 
+    const workflowOrchestration = createOrchestration();
+    this.workflowService = new WorkflowService(
+      this.workflowRepo,
+      this.inboxRepo,
+      this.notificationRepo,
+      this.platformMemberRepo,
+      this.profileRepo,
+      { draftOutreach },
+      {
+        queue: workflowOrchestration.queue,
+        circuitBreaker: workflowOrchestration.circuitBreaker,
+      }
+    );
+
     this.enrichmentService = new EnrichmentService(
       this.contentRepo,
       { enrichContentWithMedia, isVisualPlatform },
@@ -172,7 +193,8 @@ class Container {
       this.engagementRepo,
       getAdapter,
       this.platformMemberRepo,
-      this.notificationRepo
+      this.notificationRepo,
+      this.workflowService
     );
 
     this.inboxService = new InboxService(

@@ -303,6 +303,7 @@ export const platformMembers = pgTable(
     status: text("status").notNull().default("prospect"),
     tags: text("tags").array().default([]),
     notes: text("notes"),
+    lastInactiveFiredAt: timestamp("last_inactive_fired_at"),
   },
   (table) => [
     index("platform_members_user_idx").on(table.userId),
@@ -597,5 +598,39 @@ export const ritualTemplatesRelations = relations(
       references: [users.id],
     }),
     calendarEntries: many(campaignCalendarEntries),
+  })
+);
+
+// ─── Workflow Triggers ───────────────────────────────────────────────────────
+export const workflowTriggers = pgTable(
+  "workflow_triggers",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    eventType: text("event_type").notNull(), // 'new_member' | 'member_engaged_10' | 'member_inactive_14d'
+    conditions: jsonb("conditions").notNull().default({}),
+    actions: jsonb("actions").notNull(),
+    isActive: boolean("is_active").notNull().default(true),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("workflow_triggers_user_event_active_idx").on(
+      table.userId,
+      table.eventType,
+      table.isActive
+    ),
+  ]
+);
+
+export const workflowTriggersRelations = relations(
+  workflowTriggers,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [workflowTriggers.userId],
+      references: [users.id],
+    }),
   })
 );

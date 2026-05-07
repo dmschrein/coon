@@ -2,7 +2,7 @@
  * Drizzle Platform Member Repository - Data access for community members.
  */
 
-import { eq, and, gte, sql, desc, type SQL } from "drizzle-orm";
+import { eq, and, gte, lt, or, isNull, sql, desc, type SQL } from "drizzle-orm";
 import { platformMembers } from "@/lib/db/schema";
 import type { PlatformMemberRepository, PlatformMemberRow } from "./interfaces";
 
@@ -200,5 +200,31 @@ export class DrizzlePlatformMemberRepository implements PlatformMemberRepository
 
   async deleteMember(id: string): Promise<void> {
     await this.db.delete(platformMembers).where(eq(platformMembers.id, id));
+  }
+
+  async findInactiveMembers(thresholdDate: Date): Promise<PlatformMemberRow[]> {
+    const rows = await this.db
+      .select()
+      .from(platformMembers)
+      .where(
+        and(
+          lt(platformMembers.lastSeenAt, thresholdDate),
+          or(
+            isNull(platformMembers.lastInactiveFiredAt),
+            lt(platformMembers.lastInactiveFiredAt, platformMembers.lastSeenAt)
+          )
+        )
+      );
+
+    return rows.map((row: typeof platformMembers.$inferSelect) =>
+      this.toRow(row)
+    );
+  }
+
+  async markInactiveFired(memberId: string, firedAt: Date): Promise<void> {
+    await this.db
+      .update(platformMembers)
+      .set({ lastInactiveFiredAt: firedAt })
+      .where(eq(platformMembers.id, memberId));
   }
 }

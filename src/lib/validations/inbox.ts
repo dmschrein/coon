@@ -6,7 +6,13 @@ import { z } from "zod";
 
 // --- Enum Values ---
 
-export const messageTypeValues = ["comment", "reply", "mention", "dm"] as const;
+export const messageTypeValues = [
+  "comment",
+  "reply",
+  "mention",
+  "dm",
+  "draft",
+] as const;
 
 export const inboxStatusValues = ["unread", "read", "replied"] as const;
 

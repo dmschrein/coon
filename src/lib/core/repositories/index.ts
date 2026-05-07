@@ -25,6 +25,8 @@ export type {
   RitualTemplateRepository,
   RitualTemplateRow,
   RitualRecurrence,
+  WorkflowRepository,
+  WorkflowTriggerRow,
 } from "./interfaces";
 
 export { DrizzleCampaignRepository } from "./drizzle-campaign";
@@ -41,3 +43,4 @@ export { DrizzleInboxRepository } from "./drizzle-inbox";
 export { DrizzleBlockedSenderRepository } from "./drizzle-blocked-sender";
 export { DrizzleNotificationRepository } from "./drizzle-notification";
 export { DrizzleRitualTemplateRepository } from "./drizzle-ritual-template";
+export { DrizzleWorkflowRepository } from "./drizzle-workflow";

@@ -421,6 +421,8 @@ export interface PlatformMemberRepository {
     }
   ): Promise<PlatformMemberRow | null>;
   deleteMember(id: string): Promise<void>;
+  findInactiveMembers(thresholdDate: Date): Promise<PlatformMemberRow[]>;
+  markInactiveFired(memberId: string, firedAt: Date): Promise<void>;
 }
 
 // ─── Analytics Repository ────────────────────────────────────────────────────
@@ -610,4 +612,48 @@ export interface NotificationRepository {
   markAllRead(userId: string): Promise<void>;
 
   countUnread(userId: string): Promise<number>;
+}
+
+// ─── Workflow Triggers ───────────────────────────────────────────────────────
+
+import type { WorkflowAction } from "@/lib/validations/workflow";
+
+export interface WorkflowTriggerRow {
+  id: string;
+  userId: string;
+  name: string;
+  eventType: string;
+  conditions: Record<string, unknown>;
+  actions: WorkflowAction[];
+  isActive: boolean;
+  createdAt: Date;
+}
+
+export interface WorkflowRepository {
+  listActiveForUserAndEvent(
+    userId: string,
+    eventType: string
+  ): Promise<WorkflowTriggerRow[]>;
+  listForUser(userId: string): Promise<WorkflowTriggerRow[]>;
+  findById(id: string, userId: string): Promise<WorkflowTriggerRow | null>;
+  create(params: {
+    userId: string;
+    name: string;
+    eventType: string;
+    conditions: Record<string, unknown>;
+    actions: WorkflowAction[];
+    isActive: boolean;
+  }): Promise<WorkflowTriggerRow>;
+  update(
+    id: string,
+    userId: string,
+    patch: {
+      name?: string;
+      eventType?: string;
+      conditions?: Record<string, unknown>;
+      actions?: WorkflowAction[];
+      isActive?: boolean;
+    }
+  ): Promise<WorkflowTriggerRow | null>;
+  delete(id: string, userId: string): Promise<void>;
 }

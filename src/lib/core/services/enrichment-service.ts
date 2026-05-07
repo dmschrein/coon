@@ -13,6 +13,7 @@ import type {
   PlatformMemberRow,
 } from "../repositories/interfaces";
 import { notifyTrendingPost, notifyNewAdvocates } from "./engagement-notifier";
+import type { WorkflowService } from "./workflow-service";
 import type {
   CampaignPlatform,
   ContentEnrichments,
@@ -61,6 +62,7 @@ export class EnrichmentService {
   private engagementRepo: EngagementRepository | null;
   private platformMemberRepo: PlatformMemberRepository | null;
   private notificationRepo: NotificationRepository | null;
+  private workflowService: WorkflowService | null;
   private getAdapter:
     | ((platform: SocialPlatform) => SocialPlatformAdapter | null)
     | null;
@@ -74,12 +76,14 @@ export class EnrichmentService {
     engagementRepo?: EngagementRepository,
     getAdapter?: (platform: SocialPlatform) => SocialPlatformAdapter | null,
     platformMemberRepo?: PlatformMemberRepository,
-    notificationRepo?: NotificationRepository
+    notificationRepo?: NotificationRepository,
+    workflowService?: WorkflowService
   ) {
     this.engagementRepo = engagementRepo ?? null;
     this.getAdapter = getAdapter ?? null;
     this.platformMemberRepo = platformMemberRepo ?? null;
     this.notificationRepo = notificationRepo ?? null;
+    this.workflowService = workflowService ?? null;
   }
 
   // ─── Engagement Ingestion ────────────────────────────────────────────────────
@@ -133,15 +137,37 @@ export class EnrichmentService {
       content
     ) {
       const settled = await Promise.allSettled(
-        engagement.commentAuthors.map((author) =>
-          this.platformMemberRepo!.upsertPlatformMember({
+        engagement.commentAuthors.map(async (author) => {
+          const member = await this.platformMemberRepo!.upsertPlatformMember({
             userId: content.userId,
             platform,
             platformUserId: author.platformUserId,
             username: author.username,
             displayName: author.displayName,
-          })
-        )
+          });
+
+          if (this.workflowService) {
+            const eventType =
+              member.engagementCount === 1
+                ? "new_member"
+                : member.engagementCount === 10
+                  ? "member_engaged_10"
+                  : null;
+            if (eventType) {
+              this.workflowService
+                .evaluateTriggersForEvent(content.userId, eventType, {
+                  member,
+                  communityName: content.title ?? "your community",
+                  triggerReason: eventType,
+                  campaignId: content.campaignId ?? null,
+                  contentId: content.id,
+                })
+                .catch((err) => console.error("Workflow eval failed:", err));
+            }
+          }
+
+          return member;
+        })
       );
       for (const result of settled) {
         if (result.status === "fulfilled") upsertedMembers.push(result.value);

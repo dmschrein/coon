@@ -70,6 +70,8 @@ function createMockPlatformMemberRepo(): MockRepo<PlatformMemberRepository> {
     getMember: vi.fn(),
     updateMember: vi.fn(),
     deleteMember: vi.fn(),
+    findInactiveMembers: vi.fn(),
+    markInactiveFired: vi.fn(),
   };
 }
 
