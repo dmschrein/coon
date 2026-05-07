@@ -8,6 +8,7 @@ import {
   jsonb,
   uuid,
   index,
+  unique,
 } from "drizzle-orm/pg-core";
 
 // ─── Users ───────────────────────────────────────────────────────────────────
@@ -128,6 +129,10 @@ export const campaignContent = pgTable(
     contentData: jsonb("content_data"),
     tokensUsed: integer("tokens_used"),
     errorMessage: text("error_message"),
+    contentType: text("content_type").default("post"),
+    eventTitle: text("event_title"),
+    eventDatetime: timestamp("event_datetime"),
+    eventRsvpUrl: text("event_rsvp_url"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },
@@ -142,27 +147,54 @@ export const campaignContent = pgTable(
 );
 
 // ─── Campaign Calendar Entries ──────────────────────────────────────────────
-export const campaignCalendarEntries = pgTable("campaign_calendar_entries", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  campaignId: uuid("campaign_id")
-    .notNull()
-    .references(() => campaigns.id, { onDelete: "cascade" }),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  dayNumber: integer("day_number").notNull(),
-  scheduledDate: timestamp("scheduled_date"),
-  platform: text("platform").notNull(),
-  contentType: text("content_type").notNull(),
-  title: text("title").notNull(),
-  postingTime: text("posting_time"),
-  pillar: text("pillar"),
-  notes: text("notes"),
-  campaignContentId: uuid("campaign_content_id").references(
-    () => campaignContent.id
-  ),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+export const campaignCalendarEntries = pgTable(
+  "campaign_calendar_entries",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    campaignId: uuid("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    dayNumber: integer("day_number").notNull(),
+    scheduledDate: timestamp("scheduled_date"),
+    platform: text("platform").notNull(),
+    contentType: text("content_type").notNull(),
+    title: text("title").notNull(),
+    postingTime: text("posting_time"),
+    pillar: text("pillar"),
+    notes: text("notes"),
+    campaignContentId: uuid("campaign_content_id").references(
+      () => campaignContent.id
+    ),
+    ritualTemplateId: uuid("ritual_template_id"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [index("calendar_entries_ritual_idx").on(table.ritualTemplateId)]
+);
+
+// ─── Ritual Templates ────────────────────────────────────────────────────────
+export const ritualTemplates = pgTable(
+  "ritual_templates",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    platform: text("platform").notNull(),
+    promptTemplate: text("prompt_template").notNull(),
+    recurrence: text("recurrence").notNull(),
+    dayOfWeek: integer("day_of_week"),
+    isActive: boolean("is_active").notNull().default(false),
+    sourceTemplateId: uuid("source_template_id"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("ritual_templates_user_idx").on(table.userId),
+    index("ritual_templates_user_active_idx").on(table.userId, table.isActive),
+  ]
+);
 
 // ─── Connected Accounts ─────────────────────────────────────────────────────
 export const connectedAccounts = pgTable("connected_accounts", {
@@ -179,6 +211,7 @@ export const connectedAccounts = pgTable("connected_accounts", {
   profileImageUrl: text("profile_image_url"),
   isActive: boolean("is_active").default(true),
   scopes: text("scopes").array(),
+  metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -267,8 +300,19 @@ export const platformMembers = pgTable(
     firstSeenAt: timestamp("first_seen_at").defaultNow(),
     engagementCount: integer("engagement_count").default(0),
     lastSeenAt: timestamp("last_seen_at").defaultNow(),
+    status: text("status").notNull().default("prospect"),
+    tags: text("tags").array().default([]),
+    notes: text("notes"),
+    lastInactiveFiredAt: timestamp("last_inactive_fired_at"),
   },
-  (table) => [index("platform_members_user_idx").on(table.userId)]
+  (table) => [
+    index("platform_members_user_idx").on(table.userId),
+    unique("platform_members_user_platform_userid_unique").on(
+      table.userId,
+      table.platform,
+      table.platformUserId
+    ),
+  ]
 );
 
 // ─── Agent Runs ──────────────────────────────────────────────────────────────
@@ -425,6 +469,10 @@ export const campaignCalendarEntriesRelations = relations(
       fields: [campaignCalendarEntries.campaignContentId],
       references: [campaignContent.id],
     }),
+    ritualTemplate: one(ritualTemplates, {
+      fields: [campaignCalendarEntries.ritualTemplateId],
+      references: [ritualTemplates.id],
+    }),
   })
 );
 
@@ -440,6 +488,148 @@ export const platformMembersRelations = relations(
   ({ one }) => ({
     user: one(users, {
       fields: [platformMembers.userId],
+      references: [users.id],
+    }),
+  })
+);
+
+// ─── Inbox Items ──────────────────────────────────────────────────────────────
+export const inboxItems = pgTable(
+  "inbox_items",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    campaignId: uuid("campaign_id").references(() => campaigns.id),
+    contentId: uuid("content_id").references(() => campaignContent.id),
+    platform: text("platform").notNull(),
+    authorHandle: text("author_handle").notNull(),
+    authorDisplayName: text("author_display_name"),
+    messageText: text("message_text").notNull(),
+    messageType: text("message_type").notNull(), // comment | reply | mention | dm
+    status: text("status").notNull().default("unread"), // unread | read | replied
+    platformMessageId: text("platform_message_id").notNull(),
+    receivedAt: timestamp("received_at").notNull(),
+    flagged: boolean("flagged").notNull().default(false),
+    flagReason: text("flag_reason"),
+    flagCategory: text("flag_category"), // spam | toxicity | off-topic | self-promotion
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [
+    index("inbox_items_user_status_idx").on(table.userId, table.status),
+    index("inbox_items_user_flagged_idx").on(table.userId, table.flagged),
+  ]
+);
+
+export const inboxItemsRelations = relations(inboxItems, ({ one }) => ({
+  user: one(users, {
+    fields: [inboxItems.userId],
+    references: [users.id],
+  }),
+  campaign: one(campaigns, {
+    fields: [inboxItems.campaignId],
+    references: [campaigns.id],
+  }),
+  content: one(campaignContent, {
+    fields: [inboxItems.contentId],
+    references: [campaignContent.id],
+  }),
+}));
+
+// ─── Blocked Senders ─────────────────────────────────────────────────────────
+export const blockedSenders = pgTable(
+  "blocked_senders",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    platform: text("platform").notNull(),
+    handle: text("handle").notNull(),
+    blockedAt: timestamp("blocked_at").notNull().defaultNow(),
+  },
+  (table) => [
+    unique("blocked_senders_user_platform_handle_unique").on(
+      table.userId,
+      table.platform,
+      table.handle
+    ),
+  ]
+);
+
+export const blockedSendersRelations = relations(blockedSenders, ({ one }) => ({
+  user: one(users, {
+    fields: [blockedSenders.userId],
+    references: [users.id],
+  }),
+}));
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type").notNull(), // 'post_trending' | 'new_advocate'
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    link: text("link"),
+    read: boolean("read").notNull().default(false),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [index("notifications_user_read_idx").on(table.userId, table.read)]
+);
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
+}));
+
+export const ritualTemplatesRelations = relations(
+  ritualTemplates,
+  ({ one, many }) => ({
+    user: one(users, {
+      fields: [ritualTemplates.userId],
+      references: [users.id],
+    }),
+    calendarEntries: many(campaignCalendarEntries),
+  })
+);
+
+// ─── Workflow Triggers ───────────────────────────────────────────────────────
+export const workflowTriggers = pgTable(
+  "workflow_triggers",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    eventType: text("event_type").notNull(), // 'new_member' | 'member_engaged_10' | 'member_inactive_14d'
+    conditions: jsonb("conditions").notNull().default({}),
+    actions: jsonb("actions").notNull(),
+    isActive: boolean("is_active").notNull().default(true),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("workflow_triggers_user_event_active_idx").on(
+      table.userId,
+      table.eventType,
+      table.isActive
+    ),
+  ]
+);
+
+export const workflowTriggersRelations = relations(
+  workflowTriggers,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [workflowTriggers.userId],
       references: [users.id],
     }),
   })

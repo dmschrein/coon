@@ -8,30 +8,12 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { ContentCard } from "./content-card";
-import type {
-  ContentApprovalStatus,
-  CampaignPlatform,
-  ReviewBoardColumn,
-} from "@/types";
-
-interface ContentItem {
-  id: string;
-  platform: CampaignPlatform;
-  title: string | null;
-  pillar: string | null;
-  scheduledFor: Date | null;
-  approvalStatus: ContentApprovalStatus;
-  boardColumn: ReviewBoardColumn;
-  contentType?: string | null;
-  aiConfidenceScore?: number | null;
-  hasMedia?: boolean;
-  overallScore?: number;
-}
+import type { ReviewBoardColumn, ReviewBoardItem } from "@/types";
 
 interface KanbanColumnProps {
   status: ReviewBoardColumn;
   label: string;
-  items: ContentItem[];
+  items: ReviewBoardItem[];
   onCardClick: (id: string) => void;
 }
 

@@ -38,7 +38,11 @@ export class DrizzleCampaignContentRepository implements CampaignContentReposito
       row.scheduledFor ?? null,
       row.mediaSuggestions ?? null,
       row.externalPostId ?? null,
-      row.externalPostUrl ?? null
+      row.externalPostUrl ?? null,
+      row.contentType ?? "post",
+      row.eventTitle ?? null,
+      row.eventDatetime ?? null,
+      row.eventRsvpUrl ?? null
     );
   }
 
@@ -70,22 +74,38 @@ export class DrizzleCampaignContentRepository implements CampaignContentReposito
       platform: CampaignPlatform;
       pillar?: string;
       title?: string;
+      body?: string;
       scheduledFor?: Date;
+      status?: CampaignContentStatus;
+      contentType?: string;
+      eventTitle?: string;
+      eventDatetime?: Date;
+      eventRsvpUrl?: string;
     }[]
-  ): Promise<void> {
-    if (items.length === 0) return;
+  ): Promise<string[]> {
+    if (items.length === 0) return [];
 
-    await this.db.insert(campaignContent).values(
-      items.map((item) => ({
-        campaignId: item.campaignId,
-        userId: item.userId,
-        platform: item.platform,
-        pillar: item.pillar ?? null,
-        title: item.title ?? null,
-        scheduledFor: item.scheduledFor ?? null,
-        status: "pending" as const,
-      }))
-    );
+    const rows = await this.db
+      .insert(campaignContent)
+      .values(
+        items.map((item) => ({
+          campaignId: item.campaignId,
+          userId: item.userId,
+          platform: item.platform,
+          pillar: item.pillar ?? null,
+          title: item.title ?? null,
+          body: item.body ?? null,
+          scheduledFor: item.scheduledFor ?? null,
+          status: item.status ?? ("pending" as const),
+          contentType: item.contentType ?? "post",
+          eventTitle: item.eventTitle ?? null,
+          eventDatetime: item.eventDatetime ?? null,
+          eventRsvpUrl: item.eventRsvpUrl ?? null,
+        }))
+      )
+      .returning({ id: campaignContent.id });
+
+    return rows.map((r: { id: string }) => r.id);
   }
 
   async updateStatus(
@@ -268,12 +288,20 @@ export class DrizzleCampaignContentRepository implements CampaignContentReposito
         )
       );
 
-    return rows.map((row) => ({
-      id: row.id,
-      campaignId: row.campaignId,
-      userId: row.userId,
-      platform: row.platform,
-      externalPostId: row.externalPostId!,
-    }));
+    return rows.map(
+      (row: {
+        id: string;
+        campaignId: string;
+        userId: string;
+        platform: string;
+        externalPostId: string | null;
+      }) => ({
+        id: row.id,
+        campaignId: row.campaignId,
+        userId: row.userId,
+        platform: row.platform,
+        externalPostId: row.externalPostId!,
+      })
+    );
   }
 }

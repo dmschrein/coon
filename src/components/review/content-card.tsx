@@ -4,7 +4,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Camera } from "lucide-react";
+import { Camera, CalendarClock } from "lucide-react";
 import type {
   ContentApprovalStatus,
   CampaignPlatform,
@@ -25,7 +25,14 @@ interface ContentCardProps {
   aiConfidenceScore?: number | null;
   hasMedia?: boolean;
   overallScore?: number;
+  eventTitle?: string | null;
+  eventDatetime?: Date | null;
+  eventRsvpUrl?: string | null;
   onClick: () => void;
+}
+
+function daysUntil(date: Date): number {
+  return Math.ceil((date.getTime() - Date.now()) / 86_400_000);
 }
 
 const platformLabels: Record<string, string> = {
@@ -73,8 +80,13 @@ export function ContentCard({
   aiConfidenceScore,
   hasMedia,
   overallScore,
+  eventTitle,
+  eventDatetime,
   onClick,
 }: ContentCardProps) {
+  const isEvent = contentType === "event";
+  const eventDate = eventDatetime ? new Date(eventDatetime) : null;
+  const daysToEvent = eventDate ? daysUntil(eventDate) : null;
   const {
     attributes,
     listeners,
@@ -115,8 +127,23 @@ export function ContentCard({
             {platformLabels[platform] ?? platform}
           </Badge>
           {contentType && (
-            <Badge variant="secondary" className="text-xs capitalize">
-              {contentType}
+            <Badge
+              variant={isEvent ? "default" : "secondary"}
+              className="text-xs capitalize"
+            >
+              {isEvent ? (
+                <span className="flex items-center gap-1">
+                  <CalendarClock className="h-3 w-3" />
+                  Event
+                </span>
+              ) : (
+                contentType
+              )}
+            </Badge>
+          )}
+          {isEvent && daysToEvent != null && daysToEvent >= 0 && (
+            <Badge variant="outline" className="text-xs">
+              {daysToEvent === 0 ? "Today" : `In ${daysToEvent}d`}
             </Badge>
           )}
           {pillar && (
@@ -133,7 +160,7 @@ export function ContentCard({
 
         <div className="flex items-center gap-1">
           <p className="line-clamp-2 flex-1 text-sm font-medium">
-            {title ?? "Untitled content"}
+            {(isEvent ? eventTitle : null) ?? title ?? "Untitled content"}
           </p>
           {hasMedia && (
             <Camera className="h-3.5 w-3.5 shrink-0 text-blue-500" />
@@ -141,11 +168,15 @@ export function ContentCard({
         </div>
 
         <div className="flex items-center gap-1.5">
-          {scheduledFor && (
+          {isEvent && eventDate ? (
+            <p className="text-muted-foreground flex-1 text-xs">
+              Event: {eventDate.toLocaleString()}
+            </p>
+          ) : scheduledFor ? (
             <p className="text-muted-foreground flex-1 text-xs">
               {new Date(scheduledFor).toLocaleDateString()}
             </p>
-          )}
+          ) : null}
           {aiConfidenceScore != null && (
             <ConfidenceDot score={aiConfidenceScore} />
           )}

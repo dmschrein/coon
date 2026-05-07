@@ -16,6 +16,17 @@ export type {
   PostEngagementRow,
   PlatformMemberRepository,
   PlatformMemberRow,
+  InboxRepository,
+  InboxItemRow,
+  BlockedSenderRepository,
+  BlockedSenderRow,
+  NotificationRepository,
+  NotificationRow,
+  RitualTemplateRepository,
+  RitualTemplateRow,
+  RitualRecurrence,
+  WorkflowRepository,
+  WorkflowTriggerRow,
 } from "./interfaces";
 
 export { DrizzleCampaignRepository } from "./drizzle-campaign";
@@ -28,3 +39,8 @@ export { DrizzleConnectedAccountRepository } from "./drizzle-connected-account";
 export { DrizzleAnalyticsRepository } from "./drizzle-analytics";
 export { DrizzleEngagementRepository } from "./drizzle-engagement";
 export { DrizzlePlatformMemberRepository } from "./drizzle-platform-member";
+export { DrizzleInboxRepository } from "./drizzle-inbox";
+export { DrizzleBlockedSenderRepository } from "./drizzle-blocked-sender";
+export { DrizzleNotificationRepository } from "./drizzle-notification";
+export { DrizzleRitualTemplateRepository } from "./drizzle-ritual-template";
+export { DrizzleWorkflowRepository } from "./drizzle-workflow";

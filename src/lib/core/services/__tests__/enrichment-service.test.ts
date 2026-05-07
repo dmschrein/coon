@@ -4,6 +4,7 @@ import type {
   CampaignContentRepository,
   CampaignRepository,
   EngagementRepository,
+  PlatformMemberRepository,
   PostEngagementRow,
 } from "../../repositories/interfaces";
 import type {
@@ -57,6 +58,20 @@ function createMockEngagementRepo(): MockRepo<EngagementRepository> {
   return {
     upsertEngagement: vi.fn(),
     getEngagementByContentId: vi.fn(),
+  };
+}
+
+function createMockPlatformMemberRepo(): MockRepo<PlatformMemberRepository> {
+  return {
+    upsertPlatformMember: vi.fn(),
+    createMember: vi.fn(),
+    getMembersByUserId: vi.fn(),
+    listMembers: vi.fn(),
+    getMember: vi.fn(),
+    updateMember: vi.fn(),
+    deleteMember: vi.fn(),
+    findInactiveMembers: vi.fn(),
+    markInactiveFired: vi.fn(),
   };
 }
 
@@ -274,5 +289,130 @@ describe("EnrichmentService — fetchAndStoreEngagement", () => {
     expect(engagementRepo.upsertEngagement).toHaveBeenCalledWith(
       expect.objectContaining({ engagementRate: undefined })
     );
+  });
+});
+
+describe("EnrichmentService — commentAuthors → platform member upsert", () => {
+  let contentRepo: MockRepo<CampaignContentRepository>;
+  let campaignRepo: MockRepo<CampaignRepository>;
+  let engagementRepo: MockRepo<EngagementRepository>;
+  let memberRepo: MockRepo<PlatformMemberRepository>;
+  let mockAdapter: {
+    fetchEngagement: ReturnType<typeof vi.fn>;
+    platform: string;
+  };
+  let mockGetAdapter: ReturnType<typeof vi.fn>;
+  let service: EnrichmentService;
+
+  beforeEach(() => {
+    contentRepo = createMockContentRepo();
+    campaignRepo = createMockCampaignRepo();
+    engagementRepo = createMockEngagementRepo();
+    memberRepo = createMockPlatformMemberRepo();
+    mockAdapter = {
+      platform: "instagram",
+      fetchEngagement: vi.fn(),
+    };
+    mockGetAdapter = vi.fn().mockReturnValue(mockAdapter);
+
+    service = new EnrichmentService(
+      contentRepo as unknown as CampaignContentRepository,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { enrichContentWithMedia: vi.fn(), isVisualPlatform: vi.fn() } as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { scoreContent: vi.fn() } as any,
+      campaignRepo as unknown as CampaignRepository,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { optimizeContent: vi.fn() } as any,
+      engagementRepo as unknown as EngagementRepository,
+      mockGetAdapter,
+      memberRepo as unknown as PlatformMemberRepository
+    );
+
+    engagementRepo.upsertEngagement.mockResolvedValue(mockEngagementResult);
+    contentRepo.findById.mockResolvedValue({
+      id: "content-1",
+      userId: "user_123",
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+  });
+
+  it("upserts a platform member for each comment author", async () => {
+    mockAdapter.fetchEngagement.mockResolvedValue({
+      ...mockPlatformEngagement,
+      commentAuthors: [
+        { platformUserId: "ig_1", username: "alice", displayName: "Alice" },
+        { platformUserId: "ig_2", username: "bob" },
+      ],
+    });
+
+    await service.fetchAndStoreEngagement(
+      "content-1",
+      "instagram",
+      "post_abc",
+      "token"
+    );
+
+    expect(memberRepo.upsertPlatformMember).toHaveBeenCalledTimes(2);
+    expect(memberRepo.upsertPlatformMember).toHaveBeenCalledWith({
+      userId: "user_123",
+      platform: "instagram",
+      platformUserId: "ig_1",
+      username: "alice",
+      displayName: "Alice",
+    });
+    expect(memberRepo.upsertPlatformMember).toHaveBeenCalledWith({
+      userId: "user_123",
+      platform: "instagram",
+      platformUserId: "ig_2",
+      username: "bob",
+      displayName: undefined,
+    });
+  });
+
+  it("does not call upsertPlatformMember when commentAuthors is empty", async () => {
+    mockAdapter.fetchEngagement.mockResolvedValue({
+      ...mockPlatformEngagement,
+      commentAuthors: [],
+    });
+
+    await service.fetchAndStoreEngagement(
+      "content-1",
+      "instagram",
+      "post_abc",
+      "token"
+    );
+
+    expect(memberRepo.upsertPlatformMember).not.toHaveBeenCalled();
+  });
+
+  it("does not call upsertPlatformMember when commentAuthors is undefined", async () => {
+    mockAdapter.fetchEngagement.mockResolvedValue(mockPlatformEngagement);
+
+    await service.fetchAndStoreEngagement(
+      "content-1",
+      "instagram",
+      "post_abc",
+      "token"
+    );
+
+    expect(memberRepo.upsertPlatformMember).not.toHaveBeenCalled();
+  });
+
+  it("still returns engagement result even if a member upsert fails", async () => {
+    mockAdapter.fetchEngagement.mockResolvedValue({
+      ...mockPlatformEngagement,
+      commentAuthors: [{ platformUserId: "ig_1", username: "alice" }],
+    });
+    memberRepo.upsertPlatformMember.mockRejectedValue(new Error("db down"));
+
+    const result = await service.fetchAndStoreEngagement(
+      "content-1",
+      "instagram",
+      "post_abc",
+      "token"
+    );
+
+    expect(result).toEqual(mockEngagementResult);
   });
 });

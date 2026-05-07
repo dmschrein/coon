@@ -51,6 +51,10 @@ const MOCK_PROFILES: Record<
     profileImageUrl:
       "https://static.cdninstagram.com/rsrc.php/v3/y4/r/default_profile.png",
   },
+  discord: {
+    accountName: "MockDiscordBot",
+    profileImageUrl: "https://cdn.discordapp.com/embed/avatars/0.png",
+  },
 };
 
 /** Target engagement rates per platform (percentage) */
@@ -62,6 +66,7 @@ const PLATFORM_ENGAGEMENT_RATES: Record<string, number> = {
   youtube: 1.0,
   reddit: 1.2,
   threads: 1.5,
+  discord: 4.0,
 };
 
 export class MockAdapter implements SocialPlatformAdapter {

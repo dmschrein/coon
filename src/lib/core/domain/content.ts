@@ -29,7 +29,11 @@ export class CampaignContentEntity {
     public scheduledFor: Date | null = null,
     public enrichments: unknown | null = null,
     public externalPostId: string | null = null,
-    public externalPostUrl: string | null = null
+    public externalPostUrl: string | null = null,
+    public contentType: string | null = "post",
+    public eventTitle: string | null = null,
+    public eventDatetime: Date | null = null,
+    public eventRsvpUrl: string | null = null
   ) {}
 
   hasMedia(): boolean {
@@ -123,6 +127,11 @@ export class CampaignContentEntity {
       params.title ?? null,
       params.pillar ?? null,
       null,
+      null,
+      null,
+      null,
+      null,
+      "post",
       null,
       null,
       null

@@ -2,7 +2,7 @@
  * Drizzle Calendar Entry Repository - Data access for campaign calendar entries.
  */
 
-import { eq } from "drizzle-orm";
+import { and, eq, gte } from "drizzle-orm";
 import { campaignCalendarEntries } from "@/lib/db/schema";
 import type { CalendarEntryRepository } from "./interfaces";
 
@@ -42,6 +42,8 @@ export class DrizzleCalendarEntryRepository implements CalendarEntryRepository {
       postingTime?: string;
       pillar?: string;
       notes?: string;
+      scheduledDate?: Date;
+      ritualTemplateId?: string;
     }[]
   ): Promise<void> {
     if (entries.length === 0) return;
@@ -57,7 +59,28 @@ export class DrizzleCalendarEntryRepository implements CalendarEntryRepository {
         postingTime: entry.postingTime,
         pillar: entry.pillar,
         notes: entry.notes,
+        scheduledDate: entry.scheduledDate,
+        ritualTemplateId: entry.ritualTemplateId,
       }))
     );
+  }
+
+  async deleteFutureByRitual(
+    ritualTemplateId: string,
+    userId: string,
+    fromDate: Date
+  ): Promise<number> {
+    const deleted = await this.db
+      .delete(campaignCalendarEntries)
+      .where(
+        and(
+          eq(campaignCalendarEntries.ritualTemplateId, ritualTemplateId),
+          eq(campaignCalendarEntries.userId, userId),
+          gte(campaignCalendarEntries.scheduledDate, fromDate)
+        )
+      )
+      .returning({ id: campaignCalendarEntries.id });
+
+    return deleted.length;
   }
 }

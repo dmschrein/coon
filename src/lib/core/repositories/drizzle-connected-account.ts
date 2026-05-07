@@ -146,6 +146,7 @@ export class DrizzleConnectedAccountRepository implements ConnectedAccountReposi
     accountId?: string;
     profileImageUrl?: string;
     scopes?: string[];
+    metadata?: Record<string, unknown>;
   }): Promise<ConnectedAccount> {
     const [row] = await this.db
       .insert(connectedAccounts)
@@ -159,6 +160,7 @@ export class DrizzleConnectedAccountRepository implements ConnectedAccountReposi
         accountId: params.accountId ?? null,
         profileImageUrl: params.profileImageUrl ?? null,
         scopes: params.scopes ?? null,
+        metadata: params.metadata ?? null,
         isActive: true,
       })
       .returning();

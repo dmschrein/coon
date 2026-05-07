@@ -3,7 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Users, Megaphone, Settings } from "lucide-react";
+import {
+  LayoutDashboard,
+  Users,
+  UserCheck,
+  Megaphone,
+  Inbox,
+  Settings,
+  Sparkles,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { useUnreadCount } from "@/hooks/use-inbox";
 
 const navigation = [
   {
@@ -22,6 +32,21 @@ const navigation = [
     icon: Megaphone,
   },
   {
+    name: "Engagement",
+    href: "/dashboard/engagement",
+    icon: Sparkles,
+  },
+  {
+    name: "Members",
+    href: "/dashboard/members",
+    icon: UserCheck,
+  },
+  {
+    name: "Inbox",
+    href: "/dashboard/inbox",
+    icon: Inbox,
+  },
+  {
     name: "Settings",
     href: "/dashboard/settings",
     icon: Settings,
@@ -30,6 +55,7 @@ const navigation = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { data: unreadCount } = useUnreadCount();
 
   return (
     <div className="bg-muted/40 flex h-full w-64 flex-col border-r">
@@ -53,6 +79,14 @@ export function Sidebar() {
             >
               <item.icon className="h-5 w-5" />
               {item.name}
+              {item.name === "Inbox" && unreadCount ? (
+                <Badge
+                  variant="destructive"
+                  className="ml-auto h-5 min-w-5 px-1 text-xs"
+                >
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </Badge>
+              ) : null}
             </Link>
           );
         })}

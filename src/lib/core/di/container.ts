@@ -17,12 +17,23 @@ import {
   DrizzleAnalyticsRepository,
   DrizzleEngagementRepository,
   DrizzlePlatformMemberRepository,
+  DrizzleInboxRepository,
+  DrizzleBlockedSenderRepository,
+  DrizzleNotificationRepository,
+  DrizzleRitualTemplateRepository,
+  DrizzleWorkflowRepository,
 } from "../repositories";
 import { AudienceService } from "../services/audience-service";
 import { CampaignService } from "../services/campaign-service";
 import { PublishService } from "../services/publish-service";
 import { AnalyticsService } from "../services/analytics-service";
 import { EnrichmentService } from "../services/enrichment-service";
+import { InboxService } from "../services/inbox-service";
+import { RitualService } from "../services/ritual-service";
+import { EventService } from "../services/event-service";
+import { WorkflowService } from "../services/workflow-service";
+import { createOrchestration } from "@/lib/orchestration";
+import { draftOutreach } from "@/lib/agents/outreach-drafter";
 import { getAdapter } from "@/lib/services/social";
 import {
   PluginRunner,
@@ -47,6 +58,8 @@ import {
 } from "@/lib/agents/media-enrichment";
 import { scoreContent } from "@/lib/agents/content-scoring";
 import { optimizeContent } from "@/lib/agents/seo-optimization";
+import { checkModeration } from "@/lib/agents/moderation-checker";
+import { generateEventContent } from "@/lib/agents/campaign-content/event";
 
 // ─── Singleton Instances ──────────────────────────────────────────────────────
 
@@ -64,6 +77,11 @@ class Container {
   readonly analyticsRepo: DrizzleAnalyticsRepository;
   readonly engagementRepo: DrizzleEngagementRepository;
   readonly platformMemberRepo: DrizzlePlatformMemberRepository;
+  readonly inboxRepo: DrizzleInboxRepository;
+  readonly blockedSenderRepo: DrizzleBlockedSenderRepository;
+  readonly notificationRepo: DrizzleNotificationRepository;
+  readonly ritualRepo: DrizzleRitualTemplateRepository;
+  readonly workflowRepo: DrizzleWorkflowRepository;
 
   // Plugins
   readonly pluginRunner: PluginRunner;
@@ -76,6 +94,10 @@ class Container {
   readonly publishService: PublishService;
   readonly analyticsService: AnalyticsService;
   readonly enrichmentService: EnrichmentService;
+  readonly inboxService: InboxService;
+  readonly ritualService: RitualService;
+  readonly eventService: EventService;
+  readonly workflowService: WorkflowService;
 
   constructor(database: typeof db) {
     // Initialize repositories
@@ -89,6 +111,11 @@ class Container {
     this.analyticsRepo = new DrizzleAnalyticsRepository(database);
     this.engagementRepo = new DrizzleEngagementRepository(database);
     this.platformMemberRepo = new DrizzlePlatformMemberRepository(database);
+    this.inboxRepo = new DrizzleInboxRepository(database);
+    this.blockedSenderRepo = new DrizzleBlockedSenderRepository(database);
+    this.notificationRepo = new DrizzleNotificationRepository(database);
+    this.ritualRepo = new DrizzleRitualTemplateRepository(database);
+    this.workflowRepo = new DrizzleWorkflowRepository(database);
 
     // Initialize plugins
     this.pluginRunner = new PluginRunner();
@@ -143,6 +170,20 @@ class Container {
       { generateAnalyticsInsights }
     );
 
+    const workflowOrchestration = createOrchestration();
+    this.workflowService = new WorkflowService(
+      this.workflowRepo,
+      this.inboxRepo,
+      this.notificationRepo,
+      this.platformMemberRepo,
+      this.profileRepo,
+      { draftOutreach },
+      {
+        queue: workflowOrchestration.queue,
+        circuitBreaker: workflowOrchestration.circuitBreaker,
+      }
+    );
+
     this.enrichmentService = new EnrichmentService(
       this.contentRepo,
       { enrichContentWithMedia, isVisualPlatform },
@@ -150,7 +191,30 @@ class Container {
       this.campaignRepo,
       { optimizeContent },
       this.engagementRepo,
-      getAdapter
+      getAdapter,
+      this.platformMemberRepo,
+      this.notificationRepo,
+      this.workflowService
+    );
+
+    this.inboxService = new InboxService(
+      this.inboxRepo,
+      this.blockedSenderRepo,
+      { checkModeration }
+    );
+
+    this.ritualService = new RitualService(
+      this.ritualRepo,
+      this.calendarEntryRepo,
+      this.campaignRepo
+    );
+
+    this.eventService = new EventService(
+      this.campaignRepo,
+      this.contentRepo,
+      this.profileRepo,
+      this.agentRunRepo,
+      { generateEventContent }
     );
   }
 }

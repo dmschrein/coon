@@ -16,6 +16,7 @@ import type {
   CampaignDuration,
   ContentPillar,
   ContentApprovalStatus,
+  CampaignContentStatus,
   QuizResponse,
   AudienceProfile,
   ConfidenceLevel,
@@ -117,9 +118,15 @@ export interface CampaignContentRepository {
       platform: CampaignPlatform;
       pillar?: string;
       title?: string;
+      body?: string;
       scheduledFor?: Date;
+      status?: CampaignContentStatus;
+      contentType?: string;
+      eventTitle?: string;
+      eventDatetime?: Date;
+      eventRsvpUrl?: string;
     }[]
-  ): Promise<void>;
+  ): Promise<string[]>;
   updateStatus(
     id: string,
     status: string,
@@ -205,8 +212,40 @@ export interface CalendarEntryRepository {
       postingTime?: string;
       pillar?: string;
       notes?: string;
+      scheduledDate?: Date;
+      ritualTemplateId?: string;
     }[]
   ): Promise<void>;
+  deleteFutureByRitual(
+    ritualTemplateId: string,
+    userId: string,
+    fromDate: Date
+  ): Promise<number>;
+}
+
+// ─── Ritual Template Repository ──────────────────────────────────────────────
+
+export type RitualRecurrence = "weekly" | "biweekly" | "monthly";
+
+export interface RitualTemplateRow {
+  id: string;
+  userId: string | null;
+  name: string;
+  description: string | null;
+  platform: string;
+  promptTemplate: string;
+  recurrence: RitualRecurrence;
+  dayOfWeek: number | null;
+  isActive: boolean;
+  sourceTemplateId: string | null;
+  createdAt: Date;
+}
+
+export interface RitualTemplateRepository {
+  listForUser(userId: string): Promise<RitualTemplateRow[]>;
+  findById(id: string): Promise<RitualTemplateRow | null>;
+  cloneForUser(builtInId: string, userId: string): Promise<RitualTemplateRow>;
+  setActive(id: string, userId: string, isActive: boolean): Promise<void>;
 }
 
 // ─── Agent Run Repository ─────────────────────────────────────────────────────
@@ -259,6 +298,7 @@ export interface ConnectedAccountRepository {
     accountId?: string;
     profileImageUrl?: string;
     scopes?: string[];
+    metadata?: Record<string, unknown>;
   }): Promise<ConnectedAccount>;
   updateTokens(
     id: string,
@@ -322,6 +362,9 @@ export interface EngagementRepository {
   getEngagementByContentId(
     campaignContentId: string
   ): Promise<PostEngagementRow[]>;
+  getAverageEngagementRate(
+    campaignContentIds: string[]
+  ): Promise<number | null>;
 }
 
 // ─── Platform Member Repository ─────────────────────────────────────────────
@@ -336,6 +379,9 @@ export interface PlatformMemberRow {
   firstSeenAt: Date;
   engagementCount: number;
   lastSeenAt: Date;
+  status: string;
+  tags: string[];
+  notes: string | null;
 }
 
 export interface PlatformMemberRepository {
@@ -346,7 +392,37 @@ export interface PlatformMemberRepository {
     username: string;
     displayName?: string;
   }): Promise<PlatformMemberRow>;
+  createMember(params: {
+    userId: string;
+    platform: string;
+    platformUserId: string;
+    username: string;
+    displayName?: string;
+  }): Promise<PlatformMemberRow | null>;
   getMembersByUserId(userId: string): Promise<PlatformMemberRow[]>;
+  listMembers(
+    userId: string,
+    filters: {
+      status?: string;
+      platform?: string;
+      minEngagement?: number;
+      page: number;
+      limit: number;
+    }
+  ): Promise<{ items: PlatformMemberRow[]; total: number }>;
+  getMember(id: string): Promise<PlatformMemberRow | null>;
+  updateMember(
+    id: string,
+    patch: {
+      status?: string;
+      tags?: string[];
+      notes?: string | null;
+      displayName?: string | null;
+    }
+  ): Promise<PlatformMemberRow | null>;
+  deleteMember(id: string): Promise<void>;
+  findInactiveMembers(thresholdDate: Date): Promise<PlatformMemberRow[]>;
+  markInactiveFired(memberId: string, firedAt: Date): Promise<void>;
 }
 
 // ─── Analytics Repository ────────────────────────────────────────────────────
@@ -418,4 +494,166 @@ export interface AnalyticsRepository {
     saves: number;
     engagementRate: string;
   }): Promise<void>;
+}
+
+// ─── Inbox ──────────────────────────────────────────────────────────────────
+
+export interface InboxItemRow {
+  id: string;
+  userId: string;
+  campaignId: string | null;
+  contentId: string | null;
+  platform: string;
+  authorHandle: string;
+  authorDisplayName: string | null;
+  messageText: string;
+  messageType: string;
+  status: string;
+  platformMessageId: string;
+  receivedAt: Date;
+  flagged: boolean;
+  flagReason: string | null;
+  flagCategory: string | null;
+  createdAt: Date | null;
+}
+
+export interface InboxRepository {
+  createItem(params: {
+    userId: string;
+    campaignId?: string | null;
+    contentId?: string | null;
+    platform: string;
+    authorHandle: string;
+    authorDisplayName?: string;
+    messageText: string;
+    messageType: string;
+    platformMessageId: string;
+    receivedAt: Date;
+    flagged?: boolean;
+    flagReason?: string | null;
+    flagCategory?: string | null;
+  }): Promise<InboxItemRow>;
+
+  listItems(params: {
+    userId: string;
+    status?: string;
+    platform?: string;
+    campaignId?: string;
+    flagged?: boolean;
+    page: number;
+    limit: number;
+  }): Promise<{ items: InboxItemRow[]; total: number }>;
+
+  getItem(id: string): Promise<InboxItemRow | null>;
+
+  updateStatus(id: string, status: string): Promise<InboxItemRow>;
+
+  setFlagged(id: string, flagged: boolean): Promise<InboxItemRow>;
+
+  markAllFromAuthorRead(
+    userId: string,
+    platform: string,
+    authorHandle: string
+  ): Promise<number>;
+
+  countUnread(userId: string): Promise<number>;
+}
+
+// ─── Blocked Senders ────────────────────────────────────────────────────────
+
+export interface BlockedSenderRow {
+  id: string;
+  userId: string;
+  platform: string;
+  handle: string;
+  blockedAt: Date;
+}
+
+export interface BlockedSenderRepository {
+  block(params: {
+    userId: string;
+    platform: string;
+    handle: string;
+  }): Promise<BlockedSenderRow>;
+
+  listForUser(userId: string): Promise<BlockedSenderRow[]>;
+}
+
+// ─── Notifications ──────────────────────────────────────────────────────────
+
+export interface NotificationRow {
+  id: string;
+  userId: string;
+  type: string;
+  title: string;
+  body: string;
+  link: string | null;
+  read: boolean;
+  createdAt: Date;
+}
+
+export interface NotificationRepository {
+  createNotification(params: {
+    userId: string;
+    type: string;
+    title: string;
+    body: string;
+    link?: string | null;
+  }): Promise<NotificationRow>;
+
+  listNotifications(userId: string, limit: number): Promise<NotificationRow[]>;
+
+  findExistingByLink(params: {
+    userId: string;
+    type: string;
+    link: string;
+  }): Promise<NotificationRow | null>;
+
+  markAllRead(userId: string): Promise<void>;
+
+  countUnread(userId: string): Promise<number>;
+}
+
+// ─── Workflow Triggers ───────────────────────────────────────────────────────
+
+import type { WorkflowAction } from "@/lib/validations/workflow";
+
+export interface WorkflowTriggerRow {
+  id: string;
+  userId: string;
+  name: string;
+  eventType: string;
+  conditions: Record<string, unknown>;
+  actions: WorkflowAction[];
+  isActive: boolean;
+  createdAt: Date;
+}
+
+export interface WorkflowRepository {
+  listActiveForUserAndEvent(
+    userId: string,
+    eventType: string
+  ): Promise<WorkflowTriggerRow[]>;
+  listForUser(userId: string): Promise<WorkflowTriggerRow[]>;
+  findById(id: string, userId: string): Promise<WorkflowTriggerRow | null>;
+  create(params: {
+    userId: string;
+    name: string;
+    eventType: string;
+    conditions: Record<string, unknown>;
+    actions: WorkflowAction[];
+    isActive: boolean;
+  }): Promise<WorkflowTriggerRow>;
+  update(
+    id: string,
+    userId: string,
+    patch: {
+      name?: string;
+      eventType?: string;
+      conditions?: Record<string, unknown>;
+      actions?: WorkflowAction[];
+      isActive?: boolean;
+    }
+  ): Promise<WorkflowTriggerRow | null>;
+  delete(id: string, userId: string): Promise<void>;
 }

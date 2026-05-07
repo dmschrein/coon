@@ -19,6 +19,7 @@ export { LinkedInAdapter } from "./linkedin";
 export { TikTokAdapter } from "./tiktok";
 export { YouTubeAdapter } from "./youtube";
 export { ThreadsAdapter } from "./threads";
+export { DiscordAdapter } from "./discord";
 export { MockAdapter } from "./mock";
 
 import type { SocialPlatformAdapter } from "./types";
@@ -30,6 +31,7 @@ import { LinkedInAdapter } from "./linkedin";
 import { TikTokAdapter } from "./tiktok";
 import { YouTubeAdapter } from "./youtube";
 import { ThreadsAdapter } from "./threads";
+import { DiscordAdapter } from "./discord";
 import { MockAdapter } from "./mock";
 
 function createAdapters(): Partial<
@@ -55,6 +57,7 @@ function createAdapters(): Partial<
     tiktok: isDev ? new MockAdapter("tiktok") : new TikTokAdapter(),
     youtube: isDev ? new MockAdapter("youtube") : new YouTubeAdapter(),
     threads: isDev ? new MockAdapter("threads") : new ThreadsAdapter(),
+    discord: isDev ? new MockAdapter("discord") : new DiscordAdapter(),
   };
 }
 

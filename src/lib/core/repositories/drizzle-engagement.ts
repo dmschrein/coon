@@ -2,7 +2,7 @@
  * Drizzle Engagement Repository - Data access for post engagement metrics.
  */
 
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray, sql } from "drizzle-orm";
 import { postEngagement } from "@/lib/db/schema";
 import type { EngagementRepository, PostEngagementRow } from "./interfaces";
 
@@ -101,5 +101,24 @@ export class DrizzleEngagementRepository implements EngagementRepository {
     return rows.map((row: typeof postEngagement.$inferSelect) =>
       this.toRow(row)
     );
+  }
+
+  async getAverageEngagementRate(
+    campaignContentIds: string[]
+  ): Promise<number | null> {
+    if (campaignContentIds.length === 0) return null;
+
+    const [{ avg }] = await this.db
+      .select({
+        avg: sql<
+          string | null
+        >`AVG(NULLIF(${postEngagement.engagementRate}, '')::numeric)`,
+      })
+      .from(postEngagement)
+      .where(inArray(postEngagement.campaignContentId, campaignContentIds));
+
+    if (avg === null || avg === undefined) return null;
+    const parsed = Number(avg);
+    return Number.isFinite(parsed) ? parsed : null;
   }
 }

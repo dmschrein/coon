@@ -87,6 +87,34 @@ export class PublishService {
     });
   }
 
+  async connectBotPlatform(params: {
+    userId: string;
+    platform: SocialPlatform;
+    accessToken: string;
+    accountId: string;
+    accountName: string;
+    profileImageUrl?: string;
+    metadata?: Record<string, unknown>;
+  }): Promise<ConnectedAccount> {
+    const existing = await this.accountRepo.findByUserAndPlatform(
+      params.userId,
+      params.platform
+    );
+    if (existing) {
+      await this.accountRepo.deactivate(existing.id);
+    }
+
+    return this.accountRepo.create({
+      userId: params.userId,
+      platform: params.platform,
+      accessTokenEncrypted: encrypt(params.accessToken),
+      accountId: params.accountId,
+      accountName: params.accountName,
+      profileImageUrl: params.profileImageUrl,
+      metadata: params.metadata,
+    });
+  }
+
   async disconnectAccount(userId: string, accountId: string): Promise<void> {
     const account = await this.accountRepo.findById(accountId);
     if (!account || account.userId !== userId) {
