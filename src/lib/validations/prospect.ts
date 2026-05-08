@@ -88,3 +88,30 @@ export const bulkImportSchema = z.object({
 });
 
 export type BulkImport = z.infer<typeof bulkImportSchema>;
+
+// --- Cold Outreach Drafter ---
+
+const COMMUNITY_NAME_MAX = 100;
+
+export const draftColdOutreachBodySchema = z.object({
+  communityName: z.string().min(1).max(COMMUNITY_NAME_MAX).optional(),
+});
+
+export type DraftColdOutreachBody = z.infer<typeof draftColdOutreachBodySchema>;
+
+export const coldOutreachApproachValues = ["direct", "value_first"] as const;
+export type ColdOutreachApproach = (typeof coldOutreachApproachValues)[number];
+
+export const coldOutreachVariantSchema = z.object({
+  message: z.string().min(1),
+  approach: z.enum(coldOutreachApproachValues),
+  followUp: z.string().min(1),
+});
+
+export const coldOutreachOutputSchema = z.object({
+  variants: z
+    .array(coldOutreachVariantSchema)
+    .length(2, "Must return exactly 2 variants"),
+});
+
+export type ColdOutreachOutput = z.infer<typeof coldOutreachOutputSchema>;

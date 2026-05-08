@@ -616,7 +616,8 @@ export type AgentType =
   | "seo_optimization"
   | "feedback_loop"
   | "conversation_seeds"
-  | "event_content";
+  | "event_content"
+  | "cold_outreach";
 
 export type AgentStatus = "success" | "failed" | "partial";
 
