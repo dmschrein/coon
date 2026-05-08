@@ -315,6 +315,39 @@ export const platformMembers = pgTable(
   ]
 );
 
+// ─── Outreach Prospects ─────────────────────────────────────────────────────
+export const outreachProspects = pgTable(
+  "outreach_prospect",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    handle: text("handle").notNull(),
+    platform: text("platform").notNull(),
+    source: text("source"), // 'manual' | 'content_engagement' | 'import'
+    status: text("status").notNull().default("cold"), // cold | contacted | responded | joined | declined
+    notes: text("notes"),
+    tags: text("tags").array().default([]),
+    lastContactedAt: timestamp("last_contacted_at"),
+    contactedCount: integer("contacted_count").default(0),
+    convertedFromContentId: uuid("converted_from_content_id").references(
+      () => campaignContent.id
+    ),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    index("outreach_prospect_user_idx").on(table.userId),
+    index("outreach_prospect_user_status_idx").on(table.userId, table.status),
+    unique("outreach_prospect_user_platform_handle_unique").on(
+      table.userId,
+      table.platform,
+      table.handle
+    ),
+  ]
+);
+
 // ─── Agent Runs ──────────────────────────────────────────────────────────────
 export const agentRuns = pgTable("agent_runs", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -489,6 +522,20 @@ export const platformMembersRelations = relations(
     user: one(users, {
       fields: [platformMembers.userId],
       references: [users.id],
+    }),
+  })
+);
+
+export const outreachProspectsRelations = relations(
+  outreachProspects,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [outreachProspects.userId],
+      references: [users.id],
+    }),
+    convertedFromContent: one(campaignContent, {
+      fields: [outreachProspects.convertedFromContentId],
+      references: [campaignContent.id],
     }),
   })
 );

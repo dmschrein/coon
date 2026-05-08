@@ -425,6 +425,65 @@ export interface PlatformMemberRepository {
   markInactiveFired(memberId: string, firedAt: Date): Promise<void>;
 }
 
+// ─── Outreach Prospect Repository ────────────────────────────────────────────
+
+export interface ProspectRow {
+  id: string;
+  userId: string;
+  handle: string;
+  platform: string;
+  source: string | null;
+  status: string;
+  notes: string | null;
+  tags: string[];
+  lastContactedAt: Date | null;
+  contactedCount: number;
+  convertedFromContentId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ProspectRepository {
+  listProspects(
+    userId: string,
+    filters: {
+      status?: string;
+      platform?: string;
+      source?: string;
+      page: number;
+      limit: number;
+    }
+  ): Promise<{ items: ProspectRow[]; total: number }>;
+  getProspect(id: string): Promise<ProspectRow | null>;
+  createProspect(params: {
+    userId: string;
+    handle: string;
+    platform: string;
+    source?: string;
+    notes?: string;
+    tags?: string[];
+    convertedFromContentId?: string;
+  }): Promise<ProspectRow | null>;
+  bulkCreateProspects(
+    prospects: Array<{
+      userId: string;
+      handle: string;
+      platform: string;
+      source?: string;
+    }>
+  ): Promise<{ inserted: ProspectRow[]; skipped: number }>;
+  updateProspect(
+    id: string,
+    patch: {
+      status?: string;
+      notes?: string | null;
+      tags?: string[];
+      handle?: string;
+    }
+  ): Promise<ProspectRow | null>;
+  deleteProspect(id: string): Promise<void>;
+}
+
 // ─── Analytics Repository ────────────────────────────────────────────────────
 
 export interface CampaignAnalyticsSnapshot {
