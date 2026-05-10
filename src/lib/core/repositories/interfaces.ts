@@ -513,6 +513,32 @@ export interface GrowthAttributionResult {
   totalJoins: number;
 }
 
+// ─── Cross-Community Partner Repository ─────────────────────────────────────
+
+import type { PartnerCreate, PartnerUpdate } from "@/lib/validations/partner";
+
+export interface PartnerRow {
+  id: string;
+  userId: string;
+  name: string;
+  platform: string;
+  url: string | null;
+  contactHandle: string | null;
+  status: string;
+  collaborationIdeas: string | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PartnerRepository {
+  listPartners(userId: string): Promise<PartnerRow[]>;
+  getPartner(id: string): Promise<PartnerRow | null>;
+  createPartner(userId: string, data: PartnerCreate): Promise<PartnerRow>;
+  updatePartner(id: string, patch: PartnerUpdate): Promise<PartnerRow | null>;
+  deletePartner(id: string): Promise<void>;
+}
+
 // ─── Analytics Repository ────────────────────────────────────────────────────
 
 export interface CampaignAnalyticsSnapshot {

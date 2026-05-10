@@ -348,6 +348,30 @@ export const outreachProspects = pgTable(
   ]
 );
 
+// ─── Cross-Community Partners ───────────────────────────────────────────────
+export const partners = pgTable(
+  "partners",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    platform: text("platform").notNull(),
+    url: text("url"),
+    contactHandle: text("contact_handle"),
+    status: text("status").notNull().default("prospect"), // prospect | active | inactive
+    collaborationIdeas: text("collaboration_ideas"),
+    notes: text("notes"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    index("partners_user_idx").on(table.userId),
+    index("partners_user_status_idx").on(table.userId, table.status),
+  ]
+);
+
 // ─── Agent Runs ──────────────────────────────────────────────────────────────
 export const agentRuns = pgTable("agent_runs", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -539,6 +563,13 @@ export const outreachProspectsRelations = relations(
     }),
   })
 );
+
+export const partnersRelations = relations(partners, ({ one }) => ({
+  user: one(users, {
+    fields: [partners.userId],
+    references: [users.id],
+  }),
+}));
 
 // ─── Inbox Items ──────────────────────────────────────────────────────────────
 export const inboxItems = pgTable(

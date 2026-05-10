@@ -18,6 +18,8 @@ export type {
   PlatformMemberRow,
   ProspectRepository,
   ProspectRow,
+  PartnerRepository,
+  PartnerRow,
   InboxRepository,
   InboxItemRow,
   BlockedSenderRepository,
@@ -42,6 +44,7 @@ export { DrizzleAnalyticsRepository } from "./drizzle-analytics";
 export { DrizzleEngagementRepository } from "./drizzle-engagement";
 export { DrizzlePlatformMemberRepository } from "./drizzle-platform-member";
 export { DrizzleProspectRepository } from "./drizzle-prospect";
+export { DrizzlePartnerRepository } from "./drizzle-partner";
 export { DrizzleInboxRepository } from "./drizzle-inbox";
 export { DrizzleBlockedSenderRepository } from "./drizzle-blocked-sender";
 export { DrizzleNotificationRepository } from "./drizzle-notification";
