@@ -65,13 +65,15 @@ export const updateProspectSchema = z
       .max(TAGS_ARRAY_MAX)
       .optional(),
     handle: z.string().min(1).max(HANDLE_MAX).optional(),
+    convertedFromContentId: z.string().uuid().nullable().optional(),
   })
   .refine(
     (data) =>
       data.status !== undefined ||
       data.notes !== undefined ||
       data.tags !== undefined ||
-      data.handle !== undefined,
+      data.handle !== undefined ||
+      data.convertedFromContentId !== undefined,
     { message: "At least one field must be provided" }
   );
 

@@ -153,6 +153,7 @@ export function useUpdateProspect() {
     onSettled: (_data, _err, vars) => {
       queryClient.invalidateQueries({ queryKey: ["prospects"] });
       queryClient.invalidateQueries({ queryKey: ["prospect", vars.id] });
+      queryClient.invalidateQueries({ queryKey: ["growth-attribution"] });
     },
   });
 }

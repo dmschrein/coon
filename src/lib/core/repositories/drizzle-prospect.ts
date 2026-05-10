@@ -3,8 +3,13 @@
  */
 
 import { eq, and, sql, desc, type SQL } from "drizzle-orm";
-import { outreachProspects } from "@/lib/db/schema";
-import type { ProspectRepository, ProspectRow } from "./interfaces";
+import { outreachProspects, campaignContent } from "@/lib/db/schema";
+import type {
+  GrowthAttributionContentRow,
+  GrowthAttributionResult,
+  ProspectRepository,
+  ProspectRow,
+} from "./interfaces";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DrizzleDb = any;
@@ -161,6 +166,7 @@ export class DrizzleProspectRepository implements ProspectRepository {
       notes?: string | null;
       tags?: string[];
       handle?: string;
+      convertedFromContentId?: string | null;
     }
   ): Promise<ProspectRow | null> {
     const setClause: Record<string, unknown> = {};
@@ -168,6 +174,9 @@ export class DrizzleProspectRepository implements ProspectRepository {
     if (patch.notes !== undefined) setClause.notes = patch.notes;
     if (patch.tags !== undefined) setClause.tags = patch.tags;
     if (patch.handle !== undefined) setClause.handle = patch.handle;
+    if (patch.convertedFromContentId !== undefined) {
+      setClause.convertedFromContentId = patch.convertedFromContentId;
+    }
 
     if (patch.status === "contacted") {
       setClause.lastContactedAt = new Date();
@@ -191,5 +200,69 @@ export class DrizzleProspectRepository implements ProspectRepository {
 
   async deleteProspect(id: string): Promise<void> {
     await this.db.delete(outreachProspects).where(eq(outreachProspects.id, id));
+  }
+
+  async getGrowthAttribution(userId: string): Promise<GrowthAttributionResult> {
+    const perContent: GrowthAttributionContentRow[] = await this.db
+      .select({
+        contentId: campaignContent.id,
+        title: campaignContent.title,
+        pillar: campaignContent.pillar,
+        platform: campaignContent.platform,
+        joins: sql<number>`count(${outreachProspects.id})::int`,
+      })
+      .from(outreachProspects)
+      .innerJoin(
+        campaignContent,
+        eq(outreachProspects.convertedFromContentId, campaignContent.id)
+      )
+      .where(
+        and(
+          eq(outreachProspects.userId, userId),
+          eq(outreachProspects.status, "joined"),
+          sql`${outreachProspects.convertedFromContentId} is not null`
+        )
+      )
+      .groupBy(
+        campaignContent.id,
+        campaignContent.title,
+        campaignContent.pillar,
+        campaignContent.platform
+      )
+      .orderBy(desc(sql`count(${outreachProspects.id})`));
+
+    const pillarMap = new Map<string, number>();
+    const platformMap = new Map<string, number>();
+    for (const row of perContent) {
+      const pillarKey = row.pillar ?? "uncategorized";
+      pillarMap.set(pillarKey, (pillarMap.get(pillarKey) ?? 0) + row.joins);
+      platformMap.set(
+        row.platform,
+        (platformMap.get(row.platform) ?? 0) + row.joins
+      );
+    }
+
+    const joinsByPillar = Array.from(pillarMap.entries())
+      .map(([pillar, joins]) => ({ pillar, joins }))
+      .sort((a, b) => b.joins - a.joins);
+
+    const topPillar = joinsByPillar[0] ?? null;
+
+    const sortedPlatforms = Array.from(platformMap.entries()).sort(
+      (a, b) => b[1] - a[1]
+    );
+    const topPlatform = sortedPlatforms[0]
+      ? { platform: sortedPlatforms[0][0], joins: sortedPlatforms[0][1] }
+      : null;
+
+    const totalJoins = perContent.reduce((sum, r) => sum + r.joins, 0);
+
+    return {
+      topConvertingContent: perContent.slice(0, 5),
+      topConvertingPlatform: topPlatform,
+      topConvertingPillar: topPillar,
+      joinsByPillar,
+      totalJoins,
+    };
   }
 }

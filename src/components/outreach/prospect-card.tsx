@@ -18,13 +18,23 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { ProspectStatus } from "@/lib/validations/prospect";
 import type { Prospect } from "@/hooks/use-prospects";
+import type { RecentContent } from "@/hooks/use-growth";
 
 interface ProspectCardProps {
   prospect: Prospect;
   onDraftMessage: (prospect: Prospect) => void;
+  onMarkJoined?: (prospect: Prospect, contentId: string) => void;
+  recentContent?: RecentContent[];
   isDragOverlay?: boolean;
 }
 
@@ -65,6 +75,8 @@ function relativeTime(iso: string | null): string {
 export function ProspectCard({
   prospect,
   onDraftMessage,
+  onMarkJoined,
+  recentContent = [],
   isDragOverlay = false,
 }: ProspectCardProps) {
   const sortable = useSortable({
@@ -83,6 +95,18 @@ export function ProspectCard({
   const PlatformIcon = platformIcons[prospect.platform] ?? Globe;
   const visibleTags = prospect.tags.slice(0, 3);
   const overflowCount = prospect.tags.length - visibleTags.length;
+
+  const showAttributionDropdown =
+    prospect.convertedFromContentId === null &&
+    prospect.status !== "declined" &&
+    onMarkJoined !== undefined &&
+    recentContent.length > 0;
+
+  const attributedTitle =
+    prospect.convertedFromContentId !== null
+      ? (recentContent.find((c) => c.id === prospect.convertedFromContentId)
+          ?.title ?? null)
+      : null;
 
   return (
     <Card
@@ -136,6 +160,31 @@ export function ProspectCard({
             {prospect.contactedCount}
           </span>
         </div>
+
+        {prospect.convertedFromContentId !== null ? (
+          <Badge variant="outline" className="w-full justify-start text-xs">
+            Joined from: {attributedTitle ?? "previous content"}
+          </Badge>
+        ) : null}
+
+        {showAttributionDropdown ? (
+          <div onPointerDown={(e) => e.stopPropagation()}>
+            <Select
+              onValueChange={(contentId) => onMarkJoined?.(prospect, contentId)}
+            >
+              <SelectTrigger className="w-full text-xs">
+                <SelectValue placeholder="Mark as joined from..." />
+              </SelectTrigger>
+              <SelectContent>
+                {recentContent.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.platform}: {c.title ?? "Untitled"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
 
         <Button
           size="sm"

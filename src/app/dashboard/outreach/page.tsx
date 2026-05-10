@@ -13,11 +13,13 @@ import {
   useUpdateProspect,
   type Prospect,
 } from "@/hooks/use-prospects";
+import { useRecentContent } from "@/hooks/use-growth";
 import type { ProspectStatus } from "@/lib/validations/prospect";
 
 export default function OutreachPage() {
   const { data, isLoading, error } = useProspectList({ limit: 100 });
   const updateProspect = useUpdateProspect();
+  const { data: recentContent } = useRecentContent();
   const [newOpen, setNewOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [draftFor, setDraftFor] = useState<Prospect | null>(null);
@@ -25,6 +27,20 @@ export default function OutreachPage() {
   function handleStatusChange(id: string, status: ProspectStatus) {
     updateProspect.mutate(
       { id, patch: { status } },
+      {
+        onError: (err) => {
+          toast.error(err.message);
+        },
+      }
+    );
+  }
+
+  function handleMarkJoined(prospect: Prospect, contentId: string) {
+    updateProspect.mutate(
+      {
+        id: prospect.id,
+        patch: { status: "joined", convertedFromContentId: contentId },
+      },
       {
         onError: (err) => {
           toast.error(err.message);
@@ -67,6 +83,8 @@ export default function OutreachPage() {
           prospects={data?.items ?? []}
           onStatusChange={handleStatusChange}
           onDraftMessage={(p) => setDraftFor(p)}
+          onMarkJoined={handleMarkJoined}
+          recentContent={recentContent ?? []}
         />
       )}
 

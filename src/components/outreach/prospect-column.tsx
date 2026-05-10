@@ -10,6 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import type { ProspectStatus } from "@/lib/validations/prospect";
 import type { Prospect } from "@/hooks/use-prospects";
+import type { RecentContent } from "@/hooks/use-growth";
 import { ProspectCard } from "./prospect-card";
 
 interface ProspectColumnProps {
@@ -17,6 +18,8 @@ interface ProspectColumnProps {
   label: string;
   items: Prospect[];
   onDraftMessage: (prospect: Prospect) => void;
+  onMarkJoined?: (prospect: Prospect, contentId: string) => void;
+  recentContent?: RecentContent[];
 }
 
 export function ProspectColumn({
@@ -24,6 +27,8 @@ export function ProspectColumn({
   label,
   items,
   onDraftMessage,
+  onMarkJoined,
+  recentContent,
 }: ProspectColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
@@ -57,6 +62,8 @@ export function ProspectColumn({
                   key={p.id}
                   prospect={p}
                   onDraftMessage={onDraftMessage}
+                  onMarkJoined={onMarkJoined}
+                  recentContent={recentContent}
                 />
               ))
             )}

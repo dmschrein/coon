@@ -18,6 +18,7 @@ import {
   type ProspectStatus,
 } from "@/lib/validations/prospect";
 import type { Prospect } from "@/hooks/use-prospects";
+import type { RecentContent } from "@/hooks/use-growth";
 import { ProspectColumn } from "./prospect-column";
 import { ProspectCard } from "./prospect-card";
 
@@ -25,6 +26,8 @@ interface ProspectBoardProps {
   prospects: Prospect[];
   onStatusChange: (id: string, status: ProspectStatus) => void;
   onDraftMessage: (prospect: Prospect) => void;
+  onMarkJoined?: (prospect: Prospect, contentId: string) => void;
+  recentContent?: RecentContent[];
 }
 
 const columns: { status: ProspectStatus; label: string }[] = [
@@ -41,6 +44,8 @@ export function ProspectBoard({
   prospects,
   onStatusChange,
   onDraftMessage,
+  onMarkJoined,
+  recentContent,
 }: ProspectBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -102,6 +107,8 @@ export function ProspectBoard({
             label={col.label}
             items={itemsByColumn[col.status]}
             onDraftMessage={onDraftMessage}
+            onMarkJoined={onMarkJoined}
+            recentContent={recentContent}
           />
         ))}
       </div>

@@ -174,6 +174,17 @@ export interface CampaignContentRepository {
       externalPostId: string;
     }[]
   >;
+  findRecentByUserId(
+    userId: string,
+    limit: number
+  ): Promise<RecentContentRow[]>;
+}
+
+export interface RecentContentRow {
+  id: string;
+  title: string | null;
+  platform: string;
+  pillar: string | null;
 }
 
 // ─── Quiz Response Repository ─────────────────────────────────────────────────
@@ -479,9 +490,27 @@ export interface ProspectRepository {
       notes?: string | null;
       tags?: string[];
       handle?: string;
+      convertedFromContentId?: string | null;
     }
   ): Promise<ProspectRow | null>;
   deleteProspect(id: string): Promise<void>;
+  getGrowthAttribution(userId: string): Promise<GrowthAttributionResult>;
+}
+
+export interface GrowthAttributionContentRow {
+  contentId: string;
+  title: string | null;
+  pillar: string | null;
+  platform: string;
+  joins: number;
+}
+
+export interface GrowthAttributionResult {
+  topConvertingContent: GrowthAttributionContentRow[];
+  topConvertingPlatform: { platform: string; joins: number } | null;
+  topConvertingPillar: { pillar: string; joins: number } | null;
+  joinsByPillar: Array<{ pillar: string; joins: number }>;
+  totalJoins: number;
 }
 
 // ─── Analytics Repository ────────────────────────────────────────────────────
