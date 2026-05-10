@@ -11,6 +11,7 @@ import {
   Inbox,
   Settings,
   Sparkles,
+  Send,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useUnreadCount } from "@/hooks/use-inbox";
@@ -35,6 +36,11 @@ const navigation = [
     name: "Engagement",
     href: "/dashboard/engagement",
     icon: Sparkles,
+  },
+  {
+    name: "Outreach",
+    href: "/dashboard/outreach",
+    icon: Send,
   },
   {
     name: "Members",
