@@ -617,7 +617,8 @@ export type AgentType =
   | "feedback_loop"
   | "conversation_seeds"
   | "event_content"
-  | "cold_outreach";
+  | "cold_outreach"
+  | "reply_drafter";
 
 export type AgentStatus = "success" | "failed" | "partial";
 

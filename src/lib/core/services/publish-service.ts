@@ -45,7 +45,10 @@ export class PublishService {
   ): string {
     const adapter = this.getAdapter(platform);
     if (!adapter) {
-      throw new ServiceError(`Platform ${platform} is not supported`);
+      throw new ServiceError(
+        `Platform ${platform} is not supported`,
+        "UNSUPPORTED_PLATFORM"
+      );
     }
     return adapter.getAuthUrl(redirectUri, state);
   }
@@ -58,7 +61,10 @@ export class PublishService {
   ): Promise<ConnectedAccount> {
     const adapter = this.getAdapter(platform);
     if (!adapter) {
-      throw new ServiceError(`Platform ${platform} is not supported`);
+      throw new ServiceError(
+        `Platform ${platform} is not supported`,
+        "UNSUPPORTED_PLATFORM"
+      );
     }
 
     const tokens = await adapter.exchangeCode(code, redirectUri);
@@ -118,7 +124,7 @@ export class PublishService {
   async disconnectAccount(userId: string, accountId: string): Promise<void> {
     const account = await this.accountRepo.findById(accountId);
     if (!account || account.userId !== userId) {
-      throw new ServiceError("Account not found");
+      throw new ServiceError("Account not found", "NOT_FOUND");
     }
     await this.accountRepo.deactivate(accountId);
   }
@@ -129,13 +135,14 @@ export class PublishService {
   ): Promise<ConnectedAccount> {
     const account = await this.accountRepo.findByIdWithTokens(accountId);
     if (!account || account.userId !== userId) {
-      throw new ServiceError("Account not found");
+      throw new ServiceError("Account not found", "NOT_FOUND");
     }
 
     const adapter = this.getAdapter(account.platform);
     if (!adapter || !adapter.refreshAccessToken) {
       throw new ServiceError(
-        `Token refresh not supported for ${account.platform}`
+        `Token refresh not supported for ${account.platform}`,
+        "UNSUPPORTED_OPERATION"
       );
     }
 
@@ -158,7 +165,8 @@ export class PublishService {
     } catch {
       await this.accountRepo.deactivate(accountId);
       throw new ServiceError(
-        `Token refresh failed for ${account.platform}. Please re-authorize.`
+        `Token refresh failed for ${account.platform}. Please re-authorize.`,
+        "TOKEN_REFRESH_FAILED"
       );
     }
   }
@@ -171,13 +179,16 @@ export class PublishService {
   ): Promise<PublishResult> {
     const content = await this.contentRepo.findById(contentId);
     if (!content) {
-      throw new ServiceError("Content not found");
+      throw new ServiceError("Content not found", "NOT_FOUND");
     }
     if (content.userId !== userId) {
-      throw new ServiceError("Unauthorized");
+      throw new ServiceError("Unauthorized", "UNAUTHORIZED");
     }
     if (content.approvalStatus !== "approved") {
-      throw new ServiceError("Content must be approved before publishing");
+      throw new ServiceError(
+        "Content must be approved before publishing",
+        "NOT_APPROVED"
+      );
     }
 
     const platform = content.platform as SocialPlatform;
@@ -187,13 +198,17 @@ export class PublishService {
     );
     if (!account) {
       throw new ServiceError(
-        `No connected ${platform} account. Connect your account first.`
+        `No connected ${platform} account. Connect your account first.`,
+        "NO_ACCOUNT"
       );
     }
 
     const adapter = this.getAdapter(platform);
     if (!adapter) {
-      throw new ServiceError(`Platform ${platform} is not supported`);
+      throw new ServiceError(
+        `Platform ${platform} is not supported`,
+        "UNSUPPORTED_PLATFORM"
+      );
     }
 
     const payload = this.buildPostPayload(content);
@@ -227,10 +242,10 @@ export class PublishService {
   ): Promise<void> {
     const content = await this.contentRepo.findById(contentId);
     if (!content) {
-      throw new ServiceError("Content not found");
+      throw new ServiceError("Content not found", "NOT_FOUND");
     }
     if (content.userId !== userId) {
-      throw new ServiceError("Unauthorized");
+      throw new ServiceError("Unauthorized", "UNAUTHORIZED");
     }
 
     await this.contentRepo.updateApprovalStatus(contentId, "approved");
