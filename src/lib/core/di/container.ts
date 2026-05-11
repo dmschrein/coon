@@ -18,6 +18,7 @@ import {
   DrizzleEngagementRepository,
   DrizzlePlatformMemberRepository,
   DrizzleProspectRepository,
+  DrizzleGrowthRepository,
   DrizzlePartnerRepository,
   DrizzleInboxRepository,
   DrizzleBlockedSenderRepository,
@@ -80,6 +81,7 @@ class Container {
   readonly engagementRepo: DrizzleEngagementRepository;
   readonly platformMemberRepo: DrizzlePlatformMemberRepository;
   readonly prospectRepo: DrizzleProspectRepository;
+  readonly growthRepo: DrizzleGrowthRepository;
   readonly partnerRepo: DrizzlePartnerRepository;
   readonly inboxRepo: DrizzleInboxRepository;
   readonly blockedSenderRepo: DrizzleBlockedSenderRepository;
@@ -116,6 +118,7 @@ class Container {
     this.engagementRepo = new DrizzleEngagementRepository(database);
     this.platformMemberRepo = new DrizzlePlatformMemberRepository(database);
     this.prospectRepo = new DrizzleProspectRepository(database);
+    this.growthRepo = new DrizzleGrowthRepository(database);
     this.partnerRepo = new DrizzlePartnerRepository(database);
     this.inboxRepo = new DrizzleInboxRepository(database);
     this.blockedSenderRepo = new DrizzleBlockedSenderRepository(database);

@@ -513,6 +513,14 @@ export interface GrowthAttributionResult {
   totalJoins: number;
 }
 
+// ─── Growth Summary Repository ───────────────────────────────────────────────
+
+import type { GrowthSummary } from "@/lib/validations/growth";
+
+export interface GrowthRepository {
+  getSummary(userId: string): Promise<GrowthSummary>;
+}
+
 // ─── Cross-Community Partner Repository ─────────────────────────────────────
 
 import type { PartnerCreate, PartnerUpdate } from "@/lib/validations/partner";
