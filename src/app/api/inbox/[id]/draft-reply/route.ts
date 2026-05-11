@@ -38,16 +38,20 @@ export async function POST(
       );
     }
 
-    const { result, modelUsed, tokensUsed } = await queue.add(() =>
-      circuitBreaker.execute(() =>
-        draftReply({
-          originalPost: item.contentId ? item.messageText : "",
-          incomingMessage: item.messageText,
-          platform: item.platform,
-          authorHandle: item.authorHandle,
-        })
-      )
-    );
+    const { result, modelUsed, tokensUsed } = await queue.enqueue({
+      id: `reply-drafter:${id}`,
+      agentType: "reply_drafter",
+      priority: 1,
+      execute: () =>
+        circuitBreaker.execute(() =>
+          draftReply({
+            originalPost: item.contentId ? item.messageText : "",
+            incomingMessage: item.messageText,
+            platform: item.platform,
+            authorHandle: item.authorHandle,
+          })
+        ),
+    });
 
     return NextResponse.json({
       data: { drafts: result.drafts, modelUsed, tokensUsed },

@@ -12,6 +12,8 @@ import { PlatformBreakdown } from "@/components/analytics/platform-breakdown";
 import { ContentRankings } from "@/components/analytics/content-rankings";
 import { PillarPerformance } from "@/components/analytics/pillar-performance";
 import { AiRecommendations } from "@/components/analytics/ai-recommendations";
+import { GrowthAttributionChart } from "@/components/analytics/growth-attribution-chart";
+import { useGrowthAttribution } from "@/hooks/use-growth";
 import {
   EngagementChart,
   type EngagementChartDatum,
@@ -43,6 +45,7 @@ export default function AnalyticsPage({
     dataUpdatedAt,
   } = useEngagement(id);
   const { data: contentList } = useCampaignContent(id);
+  const { data: growthAttribution } = useGrowthAttribution();
   const refreshEngagement = useRefreshEngagement(id);
 
   const handleGenerate = async () => {
@@ -201,6 +204,8 @@ export default function AnalyticsPage({
         </div>
         <EngagementChart data={chartData} isLoading={engagementLoading} />
       </div>
+
+      <GrowthAttributionChart data={growthAttribution?.joinsByPillar ?? []} />
 
       <div className="grid gap-4 md:grid-cols-2">
         <PlatformBreakdown data={analytics.platformBreakdown} />

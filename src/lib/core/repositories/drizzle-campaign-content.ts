@@ -2,10 +2,20 @@
  * Drizzle Campaign Content Repository - Data access for platform content.
  */
 
-import { eq, inArray, and, or, isNull, isNotNull, lt } from "drizzle-orm";
+import {
+  eq,
+  inArray,
+  and,
+  or,
+  isNull,
+  isNotNull,
+  lt,
+  desc,
+  sql,
+} from "drizzle-orm";
 import { campaignContent } from "@/lib/db/schema";
 import { CampaignContentEntity } from "../domain/content";
-import type { CampaignContentRepository } from "./interfaces";
+import type { CampaignContentRepository, RecentContentRow } from "./interfaces";
 import type {
   CampaignPlatform,
   CampaignContentStatus,
@@ -303,5 +313,26 @@ export class DrizzleCampaignContentRepository implements CampaignContentReposito
         externalPostId: row.externalPostId!,
       })
     );
+  }
+
+  async findRecentByUserId(
+    userId: string,
+    limit: number
+  ): Promise<RecentContentRow[]> {
+    return this.db
+      .select({
+        id: campaignContent.id,
+        title: campaignContent.title,
+        platform: campaignContent.platform,
+        pillar: campaignContent.pillar,
+      })
+      .from(campaignContent)
+      .where(eq(campaignContent.userId, userId))
+      .orderBy(
+        desc(
+          sql`coalesce(${campaignContent.postedAt}, ${campaignContent.createdAt})`
+        )
+      )
+      .limit(limit);
   }
 }

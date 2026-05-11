@@ -27,9 +27,8 @@ function durationToWeeks(duration: CampaignDuration): number {
   const map: Record<CampaignDuration, number> = {
     "1-week": 1,
     "2-weeks": 2,
-    "4-weeks": 4,
-    "8-weeks": 8,
-    "12-weeks": 12,
+    "1-month": 4,
+    ongoing: 12,
   };
   return map[duration];
 }

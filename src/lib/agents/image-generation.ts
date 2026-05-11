@@ -41,7 +41,10 @@ export async function generateImage(params: {
     });
   });
 
-  const imageData = response.data[0];
+  const imageData = response.data?.[0];
+  if (!imageData) {
+    throw new Error("Image generation returned no data");
+  }
 
   return {
     type: params.shotNumber != null ? "storyboard_frame" : "image",

@@ -95,7 +95,7 @@ export class AnalyticsService {
   ): Promise<CampaignAnalyticsData> {
     const campaign = await this.campaignRepo.findById(campaignId, userId);
     if (!campaign) {
-      throw new ServiceError("Campaign not found");
+      throw new ServiceError("Campaign not found", "NOT_FOUND");
     }
 
     // Aggregate content analytics into platform and pillar breakdowns

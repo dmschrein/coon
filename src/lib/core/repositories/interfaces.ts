@@ -174,6 +174,17 @@ export interface CampaignContentRepository {
       externalPostId: string;
     }[]
   >;
+  findRecentByUserId(
+    userId: string,
+    limit: number
+  ): Promise<RecentContentRow[]>;
+}
+
+export interface RecentContentRow {
+  id: string;
+  title: string | null;
+  platform: string;
+  pillar: string | null;
 }
 
 // ─── Quiz Response Repository ─────────────────────────────────────────────────
@@ -423,6 +434,117 @@ export interface PlatformMemberRepository {
   deleteMember(id: string): Promise<void>;
   findInactiveMembers(thresholdDate: Date): Promise<PlatformMemberRow[]>;
   markInactiveFired(memberId: string, firedAt: Date): Promise<void>;
+}
+
+// ─── Outreach Prospect Repository ────────────────────────────────────────────
+
+export interface ProspectRow {
+  id: string;
+  userId: string;
+  handle: string;
+  platform: string;
+  source: string | null;
+  status: string;
+  notes: string | null;
+  tags: string[];
+  lastContactedAt: Date | null;
+  contactedCount: number;
+  convertedFromContentId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ProspectRepository {
+  listProspects(
+    userId: string,
+    filters: {
+      status?: string;
+      platform?: string;
+      source?: string;
+      page: number;
+      limit: number;
+    }
+  ): Promise<{ items: ProspectRow[]; total: number }>;
+  getProspect(id: string): Promise<ProspectRow | null>;
+  createProspect(params: {
+    userId: string;
+    handle: string;
+    platform: string;
+    source?: string;
+    notes?: string;
+    tags?: string[];
+    convertedFromContentId?: string;
+  }): Promise<ProspectRow | null>;
+  bulkCreateProspects(
+    prospects: Array<{
+      userId: string;
+      handle: string;
+      platform: string;
+      source?: string;
+    }>
+  ): Promise<{ inserted: ProspectRow[]; skipped: number }>;
+  updateProspect(
+    id: string,
+    patch: {
+      status?: string;
+      notes?: string | null;
+      tags?: string[];
+      handle?: string;
+      convertedFromContentId?: string | null;
+    }
+  ): Promise<ProspectRow | null>;
+  deleteProspect(id: string): Promise<void>;
+  getGrowthAttribution(userId: string): Promise<GrowthAttributionResult>;
+}
+
+export interface GrowthAttributionContentRow {
+  contentId: string;
+  title: string | null;
+  pillar: string | null;
+  platform: string;
+  joins: number;
+}
+
+export interface GrowthAttributionResult {
+  topConvertingContent: GrowthAttributionContentRow[];
+  topConvertingPlatform: { platform: string; joins: number } | null;
+  topConvertingPillar: { pillar: string; joins: number } | null;
+  joinsByPillar: Array<{ pillar: string; joins: number }>;
+  totalJoins: number;
+}
+
+// ─── Growth Summary Repository ───────────────────────────────────────────────
+
+import type { GrowthSummary } from "@/lib/validations/growth";
+
+export interface GrowthRepository {
+  getSummary(userId: string): Promise<GrowthSummary>;
+}
+
+// ─── Cross-Community Partner Repository ─────────────────────────────────────
+
+import type { PartnerCreate, PartnerUpdate } from "@/lib/validations/partner";
+
+export interface PartnerRow {
+  id: string;
+  userId: string;
+  name: string;
+  platform: string;
+  url: string | null;
+  contactHandle: string | null;
+  status: string;
+  collaborationIdeas: string | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PartnerRepository {
+  listPartners(userId: string): Promise<PartnerRow[]>;
+  getPartner(id: string): Promise<PartnerRow | null>;
+  createPartner(userId: string, data: PartnerCreate): Promise<PartnerRow>;
+  updatePartner(id: string, patch: PartnerUpdate): Promise<PartnerRow | null>;
+  deletePartner(id: string): Promise<void>;
 }
 
 // ─── Analytics Repository ────────────────────────────────────────────────────
