@@ -547,6 +547,42 @@ export interface PartnerRepository {
   deletePartner(id: string): Promise<void>;
 }
 
+// ─── Sponsor Repository ──────────────────────────────────────────────────────
+
+import type {
+  SponsorCreate,
+  SponsorStatus,
+  SponsorUpdate,
+} from "@/lib/validations/sponsor";
+
+export interface SponsorRow {
+  id: string;
+  userId: string;
+  companyName: string;
+  contactName: string | null;
+  contactEmail: string | null;
+  dealValue: number | null;
+  status: string;
+  deliverables: string | null;
+  startDate: Date | null;
+  endDate: Date | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface SponsorRepository {
+  listSponsors(
+    userId: string,
+    filters?: { status?: SponsorStatus }
+  ): Promise<SponsorRow[]>;
+  getSponsor(id: string): Promise<SponsorRow | null>;
+  createSponsor(userId: string, data: SponsorCreate): Promise<SponsorRow>;
+  updateSponsor(id: string, patch: SponsorUpdate): Promise<SponsorRow | null>;
+  deleteSponsor(id: string): Promise<void>;
+  getPipelineValue(userId: string): Promise<number>;
+}
+
 // ─── Analytics Repository ────────────────────────────────────────────────────
 
 export interface CampaignAnalyticsSnapshot {

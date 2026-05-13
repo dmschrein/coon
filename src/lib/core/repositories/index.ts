@@ -21,6 +21,8 @@ export type {
   GrowthRepository,
   PartnerRepository,
   PartnerRow,
+  SponsorRepository,
+  SponsorRow,
   InboxRepository,
   InboxItemRow,
   BlockedSenderRepository,
@@ -49,6 +51,7 @@ export { DrizzlePlatformMemberRepository } from "./drizzle-platform-member";
 export { DrizzleProspectRepository } from "./drizzle-prospect";
 export { DrizzleGrowthRepository } from "./drizzle-growth";
 export { DrizzlePartnerRepository } from "./drizzle-partner";
+export { DrizzleSponsorRepository } from "./drizzle-sponsor";
 export { DrizzleInboxRepository } from "./drizzle-inbox";
 export { DrizzleBlockedSenderRepository } from "./drizzle-blocked-sender";
 export { DrizzleNotificationRepository } from "./drizzle-notification";

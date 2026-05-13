@@ -715,3 +715,36 @@ export const workflowTriggersRelations = relations(
     }),
   })
 );
+
+// ─── Sponsors ─────────────────────────────────────────────────────────────────
+export const sponsors = pgTable(
+  "sponsors",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    companyName: text("company_name").notNull(),
+    contactName: text("contact_name"),
+    contactEmail: text("contact_email"),
+    dealValue: integer("deal_value"), // cents
+    status: text("status").notNull().default("outreach"), // outreach | negotiating | active | completed | declined
+    deliverables: text("deliverables"),
+    startDate: timestamp("start_date"),
+    endDate: timestamp("end_date"),
+    notes: text("notes"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    index("sponsors_user_idx").on(table.userId),
+    index("sponsors_user_status_idx").on(table.userId, table.status),
+  ]
+);
+
+export const sponsorsRelations = relations(sponsors, ({ one }) => ({
+  user: one(users, {
+    fields: [sponsors.userId],
+    references: [users.id],
+  }),
+}));

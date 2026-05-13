@@ -619,7 +619,8 @@ export type AgentType =
   | "event_content"
   | "cold_outreach"
   | "reply_drafter"
-  | "monetization_readiness";
+  | "monetization_readiness"
+  | "sponsor_pitch";
 
 export type AgentStatus = "success" | "failed" | "partial";
 
