@@ -738,7 +738,7 @@ export interface NotificationRepository {
 
 // ─── Monetization Config ─────────────────────────────────────────────────────
 
-import type { MonetizationConfig } from "@/types";
+import type { MonetizationConfig, ReadinessOutput } from "@/types";
 
 export interface MonetizationConfigRepository {
   getConfig(userId: string): Promise<MonetizationConfig | null>;
@@ -746,6 +746,13 @@ export interface MonetizationConfigRepository {
     userId: string,
     config: MonetizationConfig
   ): Promise<MonetizationConfig>;
+}
+
+export interface MonetizationReadinessRepository {
+  getCache(
+    userId: string
+  ): Promise<{ cache: ReadinessOutput | null; updatedAt: Date | null }>;
+  upsertCache(userId: string, cache: ReadinessOutput): Promise<void>;
 }
 
 // ─── Workflow Triggers ───────────────────────────────────────────────────────

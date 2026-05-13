@@ -33,6 +33,7 @@ export type {
   WorkflowRepository,
   WorkflowTriggerRow,
   MonetizationConfigRepository,
+  MonetizationReadinessRepository,
 } from "./interfaces";
 
 export { DrizzleCampaignRepository } from "./drizzle-campaign";
@@ -54,3 +55,4 @@ export { DrizzleNotificationRepository } from "./drizzle-notification";
 export { DrizzleRitualTemplateRepository } from "./drizzle-ritual-template";
 export { DrizzleWorkflowRepository } from "./drizzle-workflow";
 export { DrizzleMonetizationConfigRepository } from "./drizzle-monetization-config";
+export { DrizzleMonetizationReadinessRepository } from "./drizzle-monetization-readiness";

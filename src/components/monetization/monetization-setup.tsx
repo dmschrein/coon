@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ModelWizard } from "./model-wizard";
+import { ReadinessScorecard } from "./readiness-scorecard";
 import { useMonetizationConfig } from "@/hooks/use-monetization-config";
 import { MONETIZATION_MODEL_CARDS } from "@/lib/constants/monetization-models";
 
@@ -56,6 +57,7 @@ export function MonetizationSetup() {
           onOpenChange={setOpen}
           defaultSelected={config.selectedModels}
         />
+        <ReadinessScorecard enabled={config.selectedModels.length > 0} />
       </div>
     );
   }

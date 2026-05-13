@@ -18,6 +18,8 @@ export const users = pgTable("users", {
   name: text("name"),
   onboardingCompleted: boolean("onboarding_completed").default(false),
   monetizationConfig: jsonb("monetization_config"),
+  readinessCache: jsonb("readiness_cache"),
+  readinessUpdatedAt: timestamp("readiness_updated_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
