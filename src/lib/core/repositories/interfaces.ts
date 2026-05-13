@@ -791,6 +791,35 @@ export interface MonetizationReadinessRepository {
   upsertCache(userId: string, cache: ReadinessOutput): Promise<void>;
 }
 
+// ─── Membership Tier Repository ──────────────────────────────────────────────
+
+import type { TierCreate, TierUpdate } from "@/lib/validations/tier";
+
+export interface TierRow {
+  id: string;
+  userId: string;
+  name: string;
+  tagline: string | null;
+  description: string | null;
+  priceCents: number;
+  billingCycle: string;
+  benefits: string[];
+  externalPaymentUrl: string | null;
+  memberCount: number;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: Date;
+}
+
+export interface TierRepository {
+  listTiers(userId: string): Promise<TierRow[]>;
+  getTier(id: string): Promise<TierRow | null>;
+  createTier(userId: string, data: TierCreate): Promise<TierRow>;
+  updateTier(id: string, patch: TierUpdate): Promise<TierRow | null>;
+  deleteTier(id: string): Promise<void>;
+  reorderTiers(userId: string, orderedIds: string[]): Promise<void>;
+}
+
 // ─── Workflow Triggers ───────────────────────────────────────────────────────
 
 import type { WorkflowAction } from "@/lib/validations/workflow";

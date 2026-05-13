@@ -620,7 +620,8 @@ export type AgentType =
   | "cold_outreach"
   | "reply_drafter"
   | "monetization_readiness"
-  | "sponsor_pitch";
+  | "sponsor_pitch"
+  | "tier_copy";
 
 export type AgentStatus = "success" | "failed" | "partial";
 

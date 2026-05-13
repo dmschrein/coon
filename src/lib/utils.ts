@@ -19,3 +19,15 @@ export function formatCurrency(
     maximumFractionDigits: 0,
   }).format(cents / 100);
 }
+
+// Format a tier price with its billing cycle suffix.
+// e.g. (2900, "monthly") -> "$29/month"; (1000, "one_time") -> "$10 one-time"
+export function formatTierPrice(
+  cents: number,
+  billingCycle: "monthly" | "yearly" | "one_time"
+): string {
+  const amount = formatCurrency(cents);
+  if (billingCycle === "monthly") return `${amount}/month`;
+  if (billingCycle === "yearly") return `${amount}/year`;
+  return `${amount} one-time`;
+}
