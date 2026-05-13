@@ -29,6 +29,7 @@ import {
   DrizzleWorkflowRepository,
   DrizzleMonetizationConfigRepository,
   DrizzleMonetizationReadinessRepository,
+  DrizzleRevenueRepository,
 } from "../repositories";
 import type { AgentPipeline } from "@/lib/orchestration";
 import { AudienceService } from "../services/audience-service";
@@ -97,6 +98,7 @@ class Container {
   readonly workflowRepo: DrizzleWorkflowRepository;
   readonly monetizationConfigRepo: DrizzleMonetizationConfigRepository;
   readonly monetizationReadinessRepo: DrizzleMonetizationReadinessRepository;
+  readonly revenueRepo: DrizzleRevenueRepository;
 
   // Orchestration
   readonly monetizationPipeline: AgentPipeline;
@@ -145,6 +147,7 @@ class Container {
     this.monetizationReadinessRepo = new DrizzleMonetizationReadinessRepository(
       database
     );
+    this.revenueRepo = new DrizzleRevenueRepository(database);
 
     // Monetization gets its own orchestration so circuit-breaker / queue state
     // doesn't bleed across unrelated agents.

@@ -31,3 +31,20 @@ export function formatTierPrice(
   if (billingCycle === "yearly") return `${amount}/year`;
   return `${amount} one-time`;
 }
+
+// RFC 4180 CSV serializer. A cell is wrapped in double-quotes when it contains
+// a comma, a double-quote, or a newline; embedded double-quotes are escaped
+// by doubling them.
+export function csvFromRows(headers: string[], rows: string[][]): string {
+  const escape = (cell: string): string => {
+    if (/[",\n\r]/.test(cell)) {
+      return `"${cell.replace(/"/g, '""')}"`;
+    }
+    return cell;
+  };
+  const lines = [headers.map(escape).join(",")];
+  for (const row of rows) {
+    lines.push(row.map(escape).join(","));
+  }
+  return lines.join("\n");
+}

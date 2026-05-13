@@ -820,6 +820,45 @@ export interface TierRepository {
   reorderTiers(userId: string, orderedIds: string[]): Promise<void>;
 }
 
+// ─── Revenue Entries ─────────────────────────────────────────────────────────
+
+import type {
+  RevenueCreate,
+  RevenueUpdate,
+  MRRSummary,
+} from "@/lib/validations/revenue";
+
+export interface RevenueEntryRow {
+  id: string;
+  userId: string;
+  date: Date;
+  source: string | null;
+  type: string;
+  amountCents: number;
+  notes: string | null;
+  createdAt: Date;
+}
+
+export interface RevenueDateRange {
+  from?: Date;
+  to?: Date;
+}
+
+export interface RevenueRepository {
+  listEntries(
+    userId: string,
+    dateRange?: RevenueDateRange
+  ): Promise<RevenueEntryRow[]>;
+  createEntry(userId: string, data: RevenueCreate): Promise<RevenueEntryRow>;
+  updateEntry(
+    id: string,
+    patch: RevenueUpdate
+  ): Promise<RevenueEntryRow | null>;
+  deleteEntry(id: string): Promise<void>;
+  getEntry(id: string): Promise<RevenueEntryRow | null>;
+  getMRRSummary(userId: string): Promise<MRRSummary>;
+}
+
 // ─── Workflow Triggers ───────────────────────────────────────────────────────
 
 import type { WorkflowAction } from "@/lib/validations/workflow";

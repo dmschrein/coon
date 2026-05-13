@@ -9,6 +9,7 @@ import {
   uuid,
   index,
   unique,
+  date,
 } from "drizzle-orm/pg-core";
 
 // ─── Users ───────────────────────────────────────────────────────────────────
@@ -775,6 +776,34 @@ export const membershipTier = pgTable(
 export const membershipTierRelations = relations(membershipTier, ({ one }) => ({
   user: one(users, {
     fields: [membershipTier.userId],
+    references: [users.id],
+  }),
+}));
+
+// ─── Revenue Entries ─────────────────────────────────────────────────────────
+export const revenueEntry = pgTable(
+  "revenue_entry",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    date: date("date").notNull(),
+    source: text("source"),
+    type: text("type").notNull(), // sponsorship | membership | course | event | other
+    amountCents: integer("amount_cents").notNull(),
+    notes: text("notes"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [
+    index("revenue_entry_user_idx").on(table.userId),
+    index("revenue_entry_user_date_idx").on(table.userId, table.date),
+  ]
+);
+
+export const revenueEntryRelations = relations(revenueEntry, ({ one }) => ({
+  user: one(users, {
+    fields: [revenueEntry.userId],
     references: [users.id],
   }),
 }));
