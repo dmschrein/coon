@@ -25,6 +25,7 @@ import {
   DrizzleNotificationRepository,
   DrizzleRitualTemplateRepository,
   DrizzleWorkflowRepository,
+  DrizzleMonetizationConfigRepository,
 } from "../repositories";
 import { AudienceService } from "../services/audience-service";
 import { CampaignService } from "../services/campaign-service";
@@ -88,6 +89,7 @@ class Container {
   readonly notificationRepo: DrizzleNotificationRepository;
   readonly ritualRepo: DrizzleRitualTemplateRepository;
   readonly workflowRepo: DrizzleWorkflowRepository;
+  readonly monetizationConfigRepo: DrizzleMonetizationConfigRepository;
 
   // Plugins
   readonly pluginRunner: PluginRunner;
@@ -125,6 +127,9 @@ class Container {
     this.notificationRepo = new DrizzleNotificationRepository(database);
     this.ritualRepo = new DrizzleRitualTemplateRepository(database);
     this.workflowRepo = new DrizzleWorkflowRepository(database);
+    this.monetizationConfigRepo = new DrizzleMonetizationConfigRepository(
+      database
+    );
 
     // Initialize plugins
     this.pluginRunner = new PluginRunner();

@@ -32,6 +32,7 @@ export type {
   RitualRecurrence,
   WorkflowRepository,
   WorkflowTriggerRow,
+  MonetizationConfigRepository,
 } from "./interfaces";
 
 export { DrizzleCampaignRepository } from "./drizzle-campaign";
@@ -52,3 +53,4 @@ export { DrizzleBlockedSenderRepository } from "./drizzle-blocked-sender";
 export { DrizzleNotificationRepository } from "./drizzle-notification";
 export { DrizzleRitualTemplateRepository } from "./drizzle-ritual-template";
 export { DrizzleWorkflowRepository } from "./drizzle-workflow";
+export { DrizzleMonetizationConfigRepository } from "./drizzle-monetization-config";

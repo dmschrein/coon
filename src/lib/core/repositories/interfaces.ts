@@ -736,6 +736,18 @@ export interface NotificationRepository {
   countUnread(userId: string): Promise<number>;
 }
 
+// ─── Monetization Config ─────────────────────────────────────────────────────
+
+import type { MonetizationConfig } from "@/types";
+
+export interface MonetizationConfigRepository {
+  getConfig(userId: string): Promise<MonetizationConfig | null>;
+  upsertConfig(
+    userId: string,
+    config: MonetizationConfig
+  ): Promise<MonetizationConfig>;
+}
+
 // ─── Workflow Triggers ───────────────────────────────────────────────────────
 
 import type { WorkflowAction } from "@/lib/validations/workflow";

@@ -12,6 +12,7 @@ import {
   Settings,
   Sparkles,
   Send,
+  Coins,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useUnreadCount } from "@/hooks/use-inbox";
@@ -46,6 +47,11 @@ const navigation = [
     name: "Members",
     href: "/dashboard/members",
     icon: UserCheck,
+  },
+  {
+    name: "Monetization",
+    href: "/dashboard/monetization/setup",
+    icon: Coins,
   },
   {
     name: "Inbox",

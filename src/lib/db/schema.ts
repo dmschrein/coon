@@ -17,6 +17,7 @@ export const users = pgTable("users", {
   email: text("email").unique().notNull(),
   name: text("name"),
   onboardingCompleted: boolean("onboarding_completed").default(false),
+  monetizationConfig: jsonb("monetization_config"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

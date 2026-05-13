@@ -661,6 +661,26 @@ export interface FeedbackLoopOutput {
 }
 
 // ----------------------------------------------------------------------------
+// Monetization Types
+// ----------------------------------------------------------------------------
+
+export const monetizationModelValues = [
+  "paid_membership",
+  "sponsorships",
+  "courses",
+  "events",
+  "job_board",
+  "freemium",
+] as const;
+
+export type MonetizationModel = (typeof monetizationModelValues)[number];
+
+export interface MonetizationConfig {
+  selectedModels: MonetizationModel[];
+  completedAt: string;
+}
+
+// ----------------------------------------------------------------------------
 // API Response Type
 // ----------------------------------------------------------------------------
 
