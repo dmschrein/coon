@@ -20,12 +20,18 @@ import {
   DrizzleProspectRepository,
   DrizzleGrowthRepository,
   DrizzlePartnerRepository,
+  DrizzleSponsorRepository,
+  DrizzleTierRepository,
   DrizzleInboxRepository,
   DrizzleBlockedSenderRepository,
   DrizzleNotificationRepository,
   DrizzleRitualTemplateRepository,
   DrizzleWorkflowRepository,
+  DrizzleMonetizationConfigRepository,
+  DrizzleMonetizationReadinessRepository,
+  DrizzleRevenueRepository,
 } from "../repositories";
+import type { AgentPipeline } from "@/lib/orchestration";
 import { AudienceService } from "../services/audience-service";
 import { CampaignService } from "../services/campaign-service";
 import { PublishService } from "../services/publish-service";
@@ -83,11 +89,19 @@ class Container {
   readonly prospectRepo: DrizzleProspectRepository;
   readonly growthRepo: DrizzleGrowthRepository;
   readonly partnerRepo: DrizzlePartnerRepository;
+  readonly sponsorRepo: DrizzleSponsorRepository;
+  readonly tierRepo: DrizzleTierRepository;
   readonly inboxRepo: DrizzleInboxRepository;
   readonly blockedSenderRepo: DrizzleBlockedSenderRepository;
   readonly notificationRepo: DrizzleNotificationRepository;
   readonly ritualRepo: DrizzleRitualTemplateRepository;
   readonly workflowRepo: DrizzleWorkflowRepository;
+  readonly monetizationConfigRepo: DrizzleMonetizationConfigRepository;
+  readonly monetizationReadinessRepo: DrizzleMonetizationReadinessRepository;
+  readonly revenueRepo: DrizzleRevenueRepository;
+
+  // Orchestration
+  readonly monetizationPipeline: AgentPipeline;
 
   // Plugins
   readonly pluginRunner: PluginRunner;
@@ -120,11 +134,24 @@ class Container {
     this.prospectRepo = new DrizzleProspectRepository(database);
     this.growthRepo = new DrizzleGrowthRepository(database);
     this.partnerRepo = new DrizzlePartnerRepository(database);
+    this.sponsorRepo = new DrizzleSponsorRepository(database);
+    this.tierRepo = new DrizzleTierRepository(database);
     this.inboxRepo = new DrizzleInboxRepository(database);
     this.blockedSenderRepo = new DrizzleBlockedSenderRepository(database);
     this.notificationRepo = new DrizzleNotificationRepository(database);
     this.ritualRepo = new DrizzleRitualTemplateRepository(database);
     this.workflowRepo = new DrizzleWorkflowRepository(database);
+    this.monetizationConfigRepo = new DrizzleMonetizationConfigRepository(
+      database
+    );
+    this.monetizationReadinessRepo = new DrizzleMonetizationReadinessRepository(
+      database
+    );
+    this.revenueRepo = new DrizzleRevenueRepository(database);
+
+    // Monetization gets its own orchestration so circuit-breaker / queue state
+    // doesn't bleed across unrelated agents.
+    this.monetizationPipeline = createOrchestration().pipeline;
 
     // Initialize plugins
     this.pluginRunner = new PluginRunner();

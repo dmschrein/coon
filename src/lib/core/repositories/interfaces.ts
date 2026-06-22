@@ -547,6 +547,42 @@ export interface PartnerRepository {
   deletePartner(id: string): Promise<void>;
 }
 
+// ─── Sponsor Repository ──────────────────────────────────────────────────────
+
+import type {
+  SponsorCreate,
+  SponsorStatus,
+  SponsorUpdate,
+} from "@/lib/validations/sponsor";
+
+export interface SponsorRow {
+  id: string;
+  userId: string;
+  companyName: string;
+  contactName: string | null;
+  contactEmail: string | null;
+  dealValue: number | null;
+  status: string;
+  deliverables: string | null;
+  startDate: Date | null;
+  endDate: Date | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface SponsorRepository {
+  listSponsors(
+    userId: string,
+    filters?: { status?: SponsorStatus }
+  ): Promise<SponsorRow[]>;
+  getSponsor(id: string): Promise<SponsorRow | null>;
+  createSponsor(userId: string, data: SponsorCreate): Promise<SponsorRow>;
+  updateSponsor(id: string, patch: SponsorUpdate): Promise<SponsorRow | null>;
+  deleteSponsor(id: string): Promise<void>;
+  getPipelineValue(userId: string): Promise<number>;
+}
+
 // ─── Analytics Repository ────────────────────────────────────────────────────
 
 export interface CampaignAnalyticsSnapshot {
@@ -734,6 +770,93 @@ export interface NotificationRepository {
   markAllRead(userId: string): Promise<void>;
 
   countUnread(userId: string): Promise<number>;
+}
+
+// ─── Monetization Config ─────────────────────────────────────────────────────
+
+import type { MonetizationConfig, ReadinessOutput } from "@/types";
+
+export interface MonetizationConfigRepository {
+  getConfig(userId: string): Promise<MonetizationConfig | null>;
+  upsertConfig(
+    userId: string,
+    config: MonetizationConfig
+  ): Promise<MonetizationConfig>;
+}
+
+export interface MonetizationReadinessRepository {
+  getCache(
+    userId: string
+  ): Promise<{ cache: ReadinessOutput | null; updatedAt: Date | null }>;
+  upsertCache(userId: string, cache: ReadinessOutput): Promise<void>;
+}
+
+// ─── Membership Tier Repository ──────────────────────────────────────────────
+
+import type { TierCreate, TierUpdate } from "@/lib/validations/tier";
+
+export interface TierRow {
+  id: string;
+  userId: string;
+  name: string;
+  tagline: string | null;
+  description: string | null;
+  priceCents: number;
+  billingCycle: string;
+  benefits: string[];
+  externalPaymentUrl: string | null;
+  memberCount: number;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: Date;
+}
+
+export interface TierRepository {
+  listTiers(userId: string): Promise<TierRow[]>;
+  getTier(id: string): Promise<TierRow | null>;
+  createTier(userId: string, data: TierCreate): Promise<TierRow>;
+  updateTier(id: string, patch: TierUpdate): Promise<TierRow | null>;
+  deleteTier(id: string): Promise<void>;
+  reorderTiers(userId: string, orderedIds: string[]): Promise<void>;
+}
+
+// ─── Revenue Entries ─────────────────────────────────────────────────────────
+
+import type {
+  RevenueCreate,
+  RevenueUpdate,
+  MRRSummary,
+} from "@/lib/validations/revenue";
+
+export interface RevenueEntryRow {
+  id: string;
+  userId: string;
+  date: Date;
+  source: string | null;
+  type: string;
+  amountCents: number;
+  notes: string | null;
+  createdAt: Date;
+}
+
+export interface RevenueDateRange {
+  from?: Date;
+  to?: Date;
+}
+
+export interface RevenueRepository {
+  listEntries(
+    userId: string,
+    dateRange?: RevenueDateRange
+  ): Promise<RevenueEntryRow[]>;
+  createEntry(userId: string, data: RevenueCreate): Promise<RevenueEntryRow>;
+  updateEntry(
+    id: string,
+    patch: RevenueUpdate
+  ): Promise<RevenueEntryRow | null>;
+  deleteEntry(id: string): Promise<void>;
+  getEntry(id: string): Promise<RevenueEntryRow | null>;
+  getMRRSummary(userId: string): Promise<MRRSummary>;
 }
 
 // ─── Workflow Triggers ───────────────────────────────────────────────────────

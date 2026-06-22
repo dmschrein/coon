@@ -9,6 +9,7 @@ import {
   uuid,
   index,
   unique,
+  date,
 } from "drizzle-orm/pg-core";
 
 // ─── Users ───────────────────────────────────────────────────────────────────
@@ -17,6 +18,9 @@ export const users = pgTable("users", {
   email: text("email").unique().notNull(),
   name: text("name"),
   onboardingCompleted: boolean("onboarding_completed").default(false),
+  monetizationConfig: jsonb("monetization_config"),
+  readinessCache: jsonb("readiness_cache"),
+  readinessUpdatedAt: timestamp("readiness_updated_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -712,3 +716,94 @@ export const workflowTriggersRelations = relations(
     }),
   })
 );
+
+// ─── Sponsors ─────────────────────────────────────────────────────────────────
+export const sponsors = pgTable(
+  "sponsors",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    companyName: text("company_name").notNull(),
+    contactName: text("contact_name"),
+    contactEmail: text("contact_email"),
+    dealValue: integer("deal_value"), // cents
+    status: text("status").notNull().default("outreach"), // outreach | negotiating | active | completed | declined
+    deliverables: text("deliverables"),
+    startDate: timestamp("start_date"),
+    endDate: timestamp("end_date"),
+    notes: text("notes"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    index("sponsors_user_idx").on(table.userId),
+    index("sponsors_user_status_idx").on(table.userId, table.status),
+  ]
+);
+
+export const sponsorsRelations = relations(sponsors, ({ one }) => ({
+  user: one(users, {
+    fields: [sponsors.userId],
+    references: [users.id],
+  }),
+}));
+
+// ─── Membership Tiers ────────────────────────────────────────────────────────
+export const membershipTier = pgTable(
+  "membership_tier",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    tagline: text("tagline"),
+    description: text("description"),
+    priceCents: integer("price_cents").notNull().default(0),
+    billingCycle: text("billing_cycle").notNull().default("monthly"), // monthly | yearly | one_time
+    benefits: text("benefits").array().default([]),
+    externalPaymentUrl: text("external_payment_url"),
+    memberCount: integer("member_count").notNull().default(0),
+    isActive: boolean("is_active").notNull().default(true),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [index("membership_tier_user_idx").on(table.userId)]
+);
+
+export const membershipTierRelations = relations(membershipTier, ({ one }) => ({
+  user: one(users, {
+    fields: [membershipTier.userId],
+    references: [users.id],
+  }),
+}));
+
+// ─── Revenue Entries ─────────────────────────────────────────────────────────
+export const revenueEntry = pgTable(
+  "revenue_entry",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    date: date("date").notNull(),
+    source: text("source"),
+    type: text("type").notNull(), // sponsorship | membership | course | event | other
+    amountCents: integer("amount_cents").notNull(),
+    notes: text("notes"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [
+    index("revenue_entry_user_idx").on(table.userId),
+    index("revenue_entry_user_date_idx").on(table.userId, table.date),
+  ]
+);
+
+export const revenueEntryRelations = relations(revenueEntry, ({ one }) => ({
+  user: one(users, {
+    fields: [revenueEntry.userId],
+    references: [users.id],
+  }),
+}));

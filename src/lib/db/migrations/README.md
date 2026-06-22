@@ -1,13 +1,17 @@
 # Database Migrations
 
-## Convention: hand-written SQL, applied via `psql`
+## Convention: hand-written SQL, applied via `npm run db:migrate`
 
-Migrations from `0006_inbox_items.sql` onward are **hand-written** and applied directly with `psql`. Drizzle-kit is no longer used for generation or application:
+Migrations from `0006_inbox_items.sql` onward are **hand-written**. A small runner (`scripts/db-apply.ts`) applies them in order and tracks applied filenames in a `schema_migrations` table. Drizzle-kit is no longer used for generation or application:
 
 - `meta/_journal.json` only contains entries for `0000`–`0004` (the original kit-generated migrations). It has not been kept in sync.
 - `drizzle.__drizzle_migrations` in the production database is empty — the kit's migrate command has never been the source of truth here.
 
-As a result, **`npm run db:generate` and `npm run db:migrate` are intentionally disabled** in `package.json`. They will print a pointer to this file and exit non-zero. Don't re-enable them without a full rebaseline (see "Future cleanup" below).
+As a result, **`npm run db:generate` stays intentionally disabled** in `package.json` — it prints a pointer to this file and exits non-zero. Don't re-enable it without a full rebaseline (see "Future cleanup" below). `npm run db:migrate` is the runner described above and is the only supported way to apply migrations.
+
+### First run against an existing DB
+
+The runner auto-detects the bootstrap case: if `schema_migrations` is empty _and_ a `users` table already exists, it prompts to mark every current file as applied **without executing them**. Confirm with `y` once per environment and tracking is in sync from then on. Pass `--yes` to skip the prompt in scripted/CI use.
 
 ## How to add a new migration
 
@@ -19,10 +23,23 @@ As a result, **`npm run db:generate` and `npm run db:migrate` are intentionally 
    - Inline `REFERENCES "users"("id") ON DELETE CASCADE` for FK columns
 3. **Apply it** to the dev DB:
    ```bash
-   psql "$DATABASE_URL" -f src/lib/db/migrations/00NN_<name>.sql
-   psql "$DATABASE_URL" -c "\d <new_table>"   # verify
+   npm run db:status                # confirm the new file shows up as pending
+   npm run db:migrate               # applies pending migrations in order, inside transactions
+   npm run db:psql -- -c "\d <new_table>"     # spot-check the result
    ```
 4. **Do not** run `drizzle-kit generate` — it diffs against the stale snapshot in `meta/` and will produce SQL that re-creates already-existing tables.
+
+### Ad-hoc DB access — `npm run db:psql`
+
+When you need a quick query or interactive shell against the dev DB, `npm run db:psql` reads `DATABASE_URL` from `.env.local` and execs `psql` against it. Anything after `--` is forwarded to psql:
+
+```bash
+npm run db:psql                                    # interactive shell
+npm run db:psql -- -c "SELECT now()"               # one-off query
+npm run db:psql -- -f path/to/seed.sql             # run a SQL file
+```
+
+Prefer this over exporting `DATABASE_URL` yourself — the helper handles the `.env.local` parsing so the URL never lands in your shell history.
 
 ## What `meta/` contains and why it's stale
 

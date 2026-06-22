@@ -618,7 +618,10 @@ export type AgentType =
   | "conversation_seeds"
   | "event_content"
   | "cold_outreach"
-  | "reply_drafter";
+  | "reply_drafter"
+  | "monetization_readiness"
+  | "sponsor_pitch"
+  | "tier_copy";
 
 export type AgentStatus = "success" | "failed" | "partial";
 
@@ -658,6 +661,61 @@ export interface FeedbackLoopOutput {
   changes: AudienceProfileChange[];
   summary: string;
   confidence: number;
+}
+
+// ----------------------------------------------------------------------------
+// Monetization Types
+// ----------------------------------------------------------------------------
+
+export const monetizationModelValues = [
+  "paid_membership",
+  "sponsorships",
+  "courses",
+  "events",
+  "job_board",
+  "freemium",
+] as const;
+
+export type MonetizationModel = (typeof monetizationModelValues)[number];
+
+export interface MonetizationConfig {
+  selectedModels: MonetizationModel[];
+  completedAt: string;
+}
+
+export type TransformationClarity = "none" | "vague" | "clear";
+
+export interface ReadinessCommunityStats {
+  memberCount: number;
+  weeksActive: number;
+  avgReachPerPost: number;
+  /** 0–1 ratio of engaged interactions to reach */
+  engagementRate: number;
+  professionalMemberCount?: number;
+  nicheDefined: boolean;
+  transformationClarity: TransformationClarity;
+}
+
+export interface ReadinessInput {
+  selectedModels: MonetizationModel[];
+  community: ReadinessCommunityStats;
+}
+
+export interface ModelReadiness {
+  name: MonetizationModel;
+  /** Integer 0–100 */
+  score: number;
+  benchmark: string;
+  topActions: string[];
+  /** Derived: score >= 70 */
+  readyToLaunch: boolean;
+}
+
+export interface ReadinessOutput {
+  models: ModelReadiness[];
+  /** 0–100 */
+  overallScore: number;
+  summary: string;
 }
 
 // ----------------------------------------------------------------------------

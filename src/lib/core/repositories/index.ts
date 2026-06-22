@@ -21,6 +21,10 @@ export type {
   GrowthRepository,
   PartnerRepository,
   PartnerRow,
+  SponsorRepository,
+  SponsorRow,
+  TierRepository,
+  TierRow,
   InboxRepository,
   InboxItemRow,
   BlockedSenderRepository,
@@ -32,6 +36,11 @@ export type {
   RitualRecurrence,
   WorkflowRepository,
   WorkflowTriggerRow,
+  MonetizationConfigRepository,
+  MonetizationReadinessRepository,
+  RevenueRepository,
+  RevenueEntryRow,
+  RevenueDateRange,
 } from "./interfaces";
 
 export { DrizzleCampaignRepository } from "./drizzle-campaign";
@@ -47,8 +56,13 @@ export { DrizzlePlatformMemberRepository } from "./drizzle-platform-member";
 export { DrizzleProspectRepository } from "./drizzle-prospect";
 export { DrizzleGrowthRepository } from "./drizzle-growth";
 export { DrizzlePartnerRepository } from "./drizzle-partner";
+export { DrizzleSponsorRepository } from "./drizzle-sponsor";
+export { DrizzleTierRepository } from "./drizzle-tier";
 export { DrizzleInboxRepository } from "./drizzle-inbox";
 export { DrizzleBlockedSenderRepository } from "./drizzle-blocked-sender";
 export { DrizzleNotificationRepository } from "./drizzle-notification";
 export { DrizzleRitualTemplateRepository } from "./drizzle-ritual-template";
 export { DrizzleWorkflowRepository } from "./drizzle-workflow";
+export { DrizzleMonetizationConfigRepository } from "./drizzle-monetization-config";
+export { DrizzleMonetizationReadinessRepository } from "./drizzle-monetization-readiness";
+export { DrizzleRevenueRepository } from "./drizzle-revenue";
