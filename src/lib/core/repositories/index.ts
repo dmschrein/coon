@@ -38,6 +38,7 @@ export type {
   WorkflowTriggerRow,
   MonetizationConfigRepository,
   MonetizationReadinessRepository,
+  CommunityConfigRepository,
   RevenueRepository,
   RevenueEntryRow,
   RevenueDateRange,
@@ -65,4 +66,5 @@ export { DrizzleRitualTemplateRepository } from "./drizzle-ritual-template";
 export { DrizzleWorkflowRepository } from "./drizzle-workflow";
 export { DrizzleMonetizationConfigRepository } from "./drizzle-monetization-config";
 export { DrizzleMonetizationReadinessRepository } from "./drizzle-monetization-readiness";
+export { DrizzleCommunityConfigRepository } from "./drizzle-community-config";
 export { DrizzleRevenueRepository } from "./drizzle-revenue";

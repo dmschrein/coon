@@ -29,6 +29,7 @@ import {
   DrizzleWorkflowRepository,
   DrizzleMonetizationConfigRepository,
   DrizzleMonetizationReadinessRepository,
+  DrizzleCommunityConfigRepository,
   DrizzleRevenueRepository,
 } from "../repositories";
 import type { AgentPipeline } from "@/lib/orchestration";
@@ -98,10 +99,12 @@ class Container {
   readonly workflowRepo: DrizzleWorkflowRepository;
   readonly monetizationConfigRepo: DrizzleMonetizationConfigRepository;
   readonly monetizationReadinessRepo: DrizzleMonetizationReadinessRepository;
+  readonly communityConfigRepo: DrizzleCommunityConfigRepository;
   readonly revenueRepo: DrizzleRevenueRepository;
 
   // Orchestration
   readonly monetizationPipeline: AgentPipeline;
+  readonly communityPipeline: AgentPipeline;
 
   // Plugins
   readonly pluginRunner: PluginRunner;
@@ -147,11 +150,14 @@ class Container {
     this.monetizationReadinessRepo = new DrizzleMonetizationReadinessRepository(
       database
     );
+    this.communityConfigRepo = new DrizzleCommunityConfigRepository(database);
     this.revenueRepo = new DrizzleRevenueRepository(database);
 
     // Monetization gets its own orchestration so circuit-breaker / queue state
     // doesn't bleed across unrelated agents.
     this.monetizationPipeline = createOrchestration().pipeline;
+    // Community manifesto generation gets an isolated pipeline as well.
+    this.communityPipeline = createOrchestration().pipeline;
 
     // Initialize plugins
     this.pluginRunner = new PluginRunner();

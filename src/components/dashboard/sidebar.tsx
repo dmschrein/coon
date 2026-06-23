@@ -13,6 +13,7 @@ import {
   Sparkles,
   Send,
   Coins,
+  ScrollText,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useUnreadCount } from "@/hooks/use-inbox";
@@ -27,6 +28,11 @@ const navigation = [
     name: "Audience",
     href: "/dashboard/audience",
     icon: Users,
+  },
+  {
+    name: "Community",
+    href: "/dashboard/community",
+    icon: ScrollText,
   },
   {
     name: "Campaigns",
