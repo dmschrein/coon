@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { generateManifesto } from "../manifesto-generator";
 import {
@@ -75,7 +76,7 @@ describe("generateManifesto", () => {
   it("reports the model used and tokens consumed", async () => {
     mockClaudeResponse(manifestoOutputFixture);
     const result = await generateManifesto(manifestoInputFixture);
-    expect(result.modelUsed).toBe("claude-sonnet-4-6");
+    expect(result.modelUsed).toBe(CLAUDE_MODEL);
     expect(result.tokensUsed).toBe(1300);
   });
 

@@ -3,11 +3,12 @@
  * AI recommendations + audience profile updates.
  */
 
+import { CLAUDE_MODEL } from "@/lib/model";
 import { anthropic } from "@/lib/claude";
 import { extractJSON, withRetry } from "./utils";
 import type { AnalyticsInsightsInput, AnalyticsInsightsResult } from "@/types";
 
-const MODEL = "claude-sonnet-4-20250514";
+const MODEL = CLAUDE_MODEL;
 
 function buildInsightsPrompt(input: AnalyticsInsightsInput): string {
   const platforms = input.platformBreakdown

@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { ZodError } from "zod";
@@ -118,7 +119,7 @@ export async function POST(
           platform: body.platform,
           count: body.count,
         },
-        modelUsed: "claude-sonnet-4-20250514",
+        modelUsed: CLAUDE_MODEL,
         durationMs: Date.now() - startTime,
         status: "failed",
         errorMessage,

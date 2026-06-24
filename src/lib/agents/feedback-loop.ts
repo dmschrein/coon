@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { anthropic } from "@/lib/claude";
 import { feedbackLoopOutputSchema } from "@/lib/validations/feedback";
 import { extractJSON, withRetry } from "./utils";
@@ -7,7 +8,7 @@ import type {
   PostEngagementWithContext,
 } from "@/types";
 
-const MODEL = "claude-sonnet-4-20250514";
+const MODEL = CLAUDE_MODEL;
 
 function formatEngagementTable(data: PostEngagementWithContext[]): string {
   return data

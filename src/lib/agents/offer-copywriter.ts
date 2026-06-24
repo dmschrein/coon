@@ -1,9 +1,10 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { anthropic } from "@/lib/claude";
 import { tierCopyOutputSchema } from "@/lib/validations/tier";
 import { extractJSON, withRetry } from "./utils";
 import type { BillingCycle } from "@/lib/validations/tier";
 
-const MODEL = "claude-sonnet-4-20250514";
+const MODEL = CLAUDE_MODEL;
 
 export interface TierCopyInput {
   audienceSummary: string;

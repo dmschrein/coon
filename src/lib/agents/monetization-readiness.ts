@@ -3,6 +3,7 @@
  * against community size + engagement benchmarks, and returns top actions per model.
  */
 
+import { CLAUDE_MODEL } from "@/lib/model";
 import { anthropic } from "@/lib/claude";
 import { extractJSON, withRetry } from "./utils";
 import { readinessOutputSchema } from "@/lib/validations/monetization";
@@ -12,7 +13,7 @@ import type {
   ReadinessOutput,
 } from "@/types";
 
-const MODEL = "claude-sonnet-4-20250514";
+const MODEL = CLAUDE_MODEL;
 const READY_THRESHOLD = 70;
 
 interface BenchmarkSpec {

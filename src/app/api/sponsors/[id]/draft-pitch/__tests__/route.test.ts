@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockAuth = vi.fn();
@@ -183,7 +184,7 @@ describe("POST /api/sponsors/[id]/draft-pitch", () => {
         body: "Hi Jane — 1247 indie founders.",
         followUp: "Following up.",
       },
-      modelUsed: "claude-sonnet-4-20250514",
+      modelUsed: CLAUDE_MODEL,
       tokensUsed: 800,
     });
 
@@ -194,7 +195,7 @@ describe("POST /api/sponsors/[id]/draft-pitch", () => {
     expect(data.data.subject).toBe("Sponsor 1,247 founders");
     expect(data.data.body).toContain("1247");
     expect(data.data.followUp).toBe("Following up.");
-    expect(data.data.modelUsed).toBe("claude-sonnet-4-20250514");
+    expect(data.data.modelUsed).toBe(CLAUDE_MODEL);
     expect(data.data.tokensUsed).toBe(800);
     expect(mockLogAgentRun).toHaveBeenCalledWith(
       expect.objectContaining({

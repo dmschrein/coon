@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { analyzeAudience } from "../audience-analysis";
 import { quizFixture } from "../__fixtures__/quiz";
@@ -39,7 +40,7 @@ describe("analyzeAudience", () => {
     const result = await analyzeAudience(quizFixture);
 
     expect(result.profile).toEqual(audienceProfileFixture);
-    expect(result.modelUsed).toBe("claude-sonnet-4-20250514");
+    expect(result.modelUsed).toBe(CLAUDE_MODEL);
     expect(result.tokensUsed).toBe(1500);
   });
 
@@ -53,7 +54,7 @@ describe("analyzeAudience", () => {
 
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({
-        model: "claude-sonnet-4-20250514",
+        model: CLAUDE_MODEL,
         max_tokens: 4096,
         system: expect.stringContaining("expert market researcher"),
       })

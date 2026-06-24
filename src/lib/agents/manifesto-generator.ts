@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { anthropic } from "@/lib/claude";
 import {
   manifestoOutputSchema,
@@ -7,7 +8,7 @@ import {
 import { extractJSON, withRetry } from "./utils";
 import type { ManifestoInput, ManifestoOutput } from "@/types";
 
-const MODEL = "claude-sonnet-4-6";
+const MODEL = CLAUDE_MODEL;
 
 function buildPrompt(input: ManifestoInput): string {
   return `You are a brand strategist and community-building copywriter. Craft a compelling community manifesto for a founder building an audience before launch.

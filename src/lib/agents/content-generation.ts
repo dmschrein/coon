@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { anthropic } from "@/lib/claude";
 import {
   contentStrategySchema,
@@ -12,8 +13,8 @@ import type {
 } from "@/types";
 import { z } from "zod";
 
-const MODEL_STRATEGY = "claude-sonnet-4-20250514";
-const MODEL_DRAFTS = "claude-sonnet-4-20250514";
+const MODEL_STRATEGY = CLAUDE_MODEL;
+const MODEL_DRAFTS = CLAUDE_MODEL;
 
 function getContentCount(platforms: string[]): number {
   if (platforms.length <= 2) return 10;

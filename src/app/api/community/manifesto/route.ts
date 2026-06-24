@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { ZodError } from "zod";
@@ -9,7 +10,7 @@ import type { ManifestoInput, ManifestoOutput } from "@/types";
 
 export const maxDuration = 120;
 
-const MODEL = "claude-sonnet-4-6";
+const MODEL = CLAUDE_MODEL;
 
 function unauthorized() {
   return NextResponse.json(

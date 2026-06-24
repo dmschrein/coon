@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { anthropic } from "@/lib/claude";
 import {
   coldOutreachOutputSchema,
@@ -6,7 +7,7 @@ import {
 import type { AudienceProfile } from "@/types";
 import { extractJSON, withRetry } from "./utils";
 
-const MODEL = "claude-sonnet-4-20250514";
+const MODEL = CLAUDE_MODEL;
 
 const PLATFORM_CHAR_LIMITS: Record<string, number> = {
   twitter: 280,

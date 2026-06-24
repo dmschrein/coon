@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GET, POST } from "../manifesto/route";
 import { manifestoOutputFixture } from "@/lib/agents/__fixtures__/manifesto";
@@ -73,7 +74,7 @@ beforeEach(() => {
   });
   mockGenerate.mockResolvedValue({
     manifesto: manifestoOutputFixture,
-    modelUsed: "claude-sonnet-4-20250514",
+    modelUsed: CLAUDE_MODEL,
     tokensUsed: 1300,
   });
 });
@@ -146,7 +147,7 @@ describe("POST /api/community/manifesto", () => {
     };
     mockGenerate.mockResolvedValue({
       manifesto: regenerated,
-      modelUsed: "claude-sonnet-4-20250514",
+      modelUsed: CLAUDE_MODEL,
       tokensUsed: 500,
     });
 

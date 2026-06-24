@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { generateConversationSeeds, PLATFORM_TONE } from "../conversation-seed";
 import { seedInputFixture, seedOutputFixture } from "../__fixtures__/seeds";
@@ -49,7 +50,7 @@ describe("generateConversationSeeds", () => {
     const result = await generateConversationSeeds(inputWithoutCount);
 
     expect(result.seeds).toHaveLength(5);
-    expect(result.modelUsed).toBe("claude-sonnet-4-20250514");
+    expect(result.modelUsed).toBe(CLAUDE_MODEL);
     expect(result.tokensUsed).toBe(1500);
 
     const callArgs = mockCreate.mock.calls[0][0];

@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { checkModeration } from "../moderation-checker";
 
@@ -87,7 +88,7 @@ describe("checkModeration", () => {
 
     const out = await checkModeration(baseInput);
 
-    expect(out.modelUsed).toBe("claude-sonnet-4-20250514");
+    expect(out.modelUsed).toBe(CLAUDE_MODEL);
     expect(out.tokensUsed).toBe(250);
   });
 
@@ -101,7 +102,7 @@ describe("checkModeration", () => {
     });
 
     const callArgs = mockCreate.mock.calls[0][0];
-    expect(callArgs.model).toBe("claude-sonnet-4-20250514");
+    expect(callArgs.model).toBe(CLAUDE_MODEL);
     expect(callArgs.system).toContain("moderation");
     const userMessage = callArgs.messages[0].content as string;
     expect(userMessage).toContain("@alice");
