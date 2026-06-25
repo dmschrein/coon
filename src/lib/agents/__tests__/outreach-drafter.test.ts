@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { draftOutreach } from "../outreach-drafter";
 import {
@@ -51,7 +52,7 @@ describe("draftOutreach", () => {
 
     const { modelUsed, tokensUsed } = await draftOutreach(outreachInputFixture);
 
-    expect(modelUsed).toBe("claude-sonnet-4-20250514");
+    expect(modelUsed).toBe(CLAUDE_MODEL);
     expect(tokensUsed).toBe(500);
   });
 
@@ -65,7 +66,7 @@ describe("draftOutreach", () => {
 
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({
-        model: "claude-sonnet-4-20250514",
+        model: CLAUDE_MODEL,
         system: expect.stringContaining("outreach"),
       })
     );

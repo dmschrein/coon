@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { assessMonetizationReadiness } from "../monetization-readiness";
 import type { ReadinessInput, ReadinessOutput } from "@/types";
@@ -267,7 +268,7 @@ describe("assessMonetizationReadiness", () => {
 
     const out = await assessMonetizationReadiness(strongInput);
 
-    expect(out.modelUsed).toBe("claude-sonnet-4-20250514");
+    expect(out.modelUsed).toBe(CLAUDE_MODEL);
     expect(out.tokensUsed).toBe(1500);
   });
 });

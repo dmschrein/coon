@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { ZodError } from "zod";
@@ -12,7 +13,7 @@ export const maxDuration = 120;
 
 const { queue, circuitBreaker } = createOrchestration();
 
-const MODEL_FOR_LOGGING = "claude-sonnet-4-20250514";
+const MODEL_FOR_LOGGING = CLAUDE_MODEL;
 
 export async function POST(
   req: Request,

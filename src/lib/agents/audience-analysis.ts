@@ -1,9 +1,10 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { anthropic } from "@/lib/claude";
 import { audienceProfileSchema } from "@/lib/validations/audience";
 import { extractJSON, withRetry } from "./utils";
 import type { QuizResponse, AudienceProfile } from "@/types";
 
-const MODEL = "claude-sonnet-4-20250514";
+const MODEL = CLAUDE_MODEL;
 
 function buildPrompt(quiz: QuizResponse): string {
   return `You are an expert market researcher. Analyze the following product/business information and generate a detailed audience profile.

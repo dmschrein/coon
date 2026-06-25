@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { generateEventContent } from "../campaign-content/event";
 import { audienceProfileFixture } from "../__fixtures__/audience";
@@ -76,7 +77,7 @@ describe("generateEventContent", () => {
 
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({
-        model: "claude-sonnet-4-20250514",
+        model: CLAUDE_MODEL,
         system: expect.stringContaining("JSON only"),
       })
     );

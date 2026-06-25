@@ -791,6 +791,19 @@ export interface MonetizationReadinessRepository {
   upsertCache(userId: string, cache: ReadinessOutput): Promise<void>;
 }
 
+// ─── Community Config ────────────────────────────────────────────────────────
+
+import type { CommunityConfig } from "@/types";
+
+export interface CommunityConfigRepository {
+  getConfig(userId: string): Promise<CommunityConfig | null>;
+  /** Shallow-merges the patch into the user's existing community_config. */
+  upsertConfig(
+    userId: string,
+    patch: CommunityConfig
+  ): Promise<CommunityConfig>;
+}
+
 // ─── Membership Tier Repository ──────────────────────────────────────────────
 
 import type { TierCreate, TierUpdate } from "@/lib/validations/tier";

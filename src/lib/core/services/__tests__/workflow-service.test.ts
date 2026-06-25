@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   WorkflowService,
@@ -213,7 +214,7 @@ describe("WorkflowService.evaluateTriggersForEvent", () => {
     };
     outreachAgent.draftOutreach.mockResolvedValue({
       result: drafterOutput,
-      modelUsed: "claude-sonnet-4-20250514",
+      modelUsed: CLAUDE_MODEL,
       tokensUsed: 200,
     });
     inboxRepo.createItem.mockResolvedValue({ id: "inbox-1" });
@@ -254,7 +255,7 @@ describe("WorkflowService.evaluateTriggersForEvent", () => {
   it("invokes all action handlers for a trigger with multiple actions", async () => {
     outreachAgent.draftOutreach.mockResolvedValue({
       result: { message: "hi", tone: "warm" },
-      modelUsed: "claude-sonnet-4-20250514",
+      modelUsed: CLAUDE_MODEL,
       tokensUsed: 100,
     });
     inboxRepo.createItem.mockResolvedValue({ id: "inbox-1" });

@@ -3,11 +3,12 @@
  * using Claude: engagement potential, brand voice alignment, and platform fit.
  */
 
+import { CLAUDE_MODEL } from "@/lib/model";
 import { anthropic } from "@/lib/claude";
 import { extractJSON, withRetry } from "./utils";
 import type { ContentScores, CampaignPlatform } from "@/types";
 
-const MODEL = "claude-sonnet-4-20250514";
+const MODEL = CLAUDE_MODEL;
 
 interface ScoreContentInput {
   platform: CampaignPlatform;

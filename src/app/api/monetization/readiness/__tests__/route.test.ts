@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GET } from "../route";
 import type { ReadinessOutput, MonetizationConfig } from "@/types";
@@ -137,7 +138,7 @@ describe("GET /api/monetization/readiness", () => {
     mockGetConfig.mockResolvedValue(config);
     mockAgent.mockResolvedValue({
       result: freshResult,
-      modelUsed: "claude-sonnet-4-20250514",
+      modelUsed: CLAUDE_MODEL,
       tokensUsed: 1500,
     });
 
@@ -157,7 +158,7 @@ describe("GET /api/monetization/readiness", () => {
     mockGetConfig.mockResolvedValue(config);
     mockAgent.mockResolvedValue({
       result: freshResult,
-      modelUsed: "claude-sonnet-4-20250514",
+      modelUsed: CLAUDE_MODEL,
       tokensUsed: 1500,
     });
 

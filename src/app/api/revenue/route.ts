@@ -4,7 +4,7 @@ import { ZodError } from "zod";
 import { getContainer } from "@/lib/core/di/container";
 import { revenueCreateSchema } from "@/lib/validations/revenue";
 
-export async function GET() {
+export async function GET(_req: Request) {
   try {
     const { userId } = await auth();
     if (!userId) {

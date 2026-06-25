@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CampaignService } from "../campaign-service";
 import { ServiceError } from "../audience-service";
@@ -137,6 +138,7 @@ describe("CampaignService", () => {
       findById: vi.fn(),
       create: vi.fn(),
       deactivateAllForUser: vi.fn(),
+      updateProfileData: vi.fn(),
     };
     quizRepo = { findLatestByUserId: vi.fn() };
     contentRepo = {
@@ -155,6 +157,9 @@ describe("CampaignService", () => {
       bulkUpdateSchedule: vi.fn(),
       updateHashtags: vi.fn(),
       updateTargetCommunity: vi.fn(),
+      updateLastEngagementFetch: vi.fn(),
+      findStalePublished: vi.fn(),
+      findRecentByUserId: vi.fn(),
     };
     calendarEntryRepo = {
       findByCampaignId: vi.fn(),
@@ -251,7 +256,7 @@ describe("CampaignService", () => {
 
       strategyAgent.generateCampaignStrategy.mockResolvedValue({
         strategy: mockStrategy,
-        modelUsed: "claude-sonnet-4-20250514",
+        modelUsed: CLAUDE_MODEL,
         tokensUsed: 1000,
       });
 
@@ -380,7 +385,7 @@ describe("CampaignService", () => {
 
       calendarAgent.generateCampaignCalendar.mockResolvedValue({
         calendar: mockCalendar,
-        modelUsed: "claude-sonnet-4-20250514",
+        modelUsed: CLAUDE_MODEL,
         tokensUsed: 800,
       });
 

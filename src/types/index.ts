@@ -621,7 +621,8 @@ export type AgentType =
   | "reply_drafter"
   | "monetization_readiness"
   | "sponsor_pitch"
-  | "tier_copy";
+  | "tier_copy"
+  | "community_manifesto";
 
 export type AgentStatus = "success" | "failed" | "partial";
 
@@ -716,6 +717,52 @@ export interface ReadinessOutput {
   /** 0–100 */
   overallScore: number;
   summary: string;
+}
+
+// ----------------------------------------------------------------------------
+// Community / Manifesto Types
+// ----------------------------------------------------------------------------
+
+export interface ManifestoValue {
+  name: string;
+  description: string;
+}
+
+export interface ManifestoOutput {
+  /** Exactly 3 community name ideas */
+  nameSuggestions: string[];
+  mission: string;
+  whoFor: string;
+  whoNotFor: string;
+  /** Exactly 5 core values */
+  values: ManifestoValue[];
+  /** Warm, first-person founder voice — 150–250 words */
+  invitationLetter: string;
+}
+
+export type ManifestoSection =
+  | "nameSuggestions"
+  | "mission"
+  | "whoFor"
+  | "whoNotFor"
+  | "values"
+  | "invitationLetter";
+
+/** Inputs for the manifesto agent, distilled from the quiz + audience profile */
+export interface ManifestoInput {
+  elevatorPitch: string;
+  problemSolved: string;
+  idealCustomer: string;
+  industryNiche: string[];
+  brandVoice?: string;
+}
+
+/** Per-user community configuration stored on users.community_config (jsonb) */
+export interface CommunityConfig {
+  manifesto?: ManifestoOutput;
+  setupGuides?: Record<string, boolean>;
+  onboardingActive?: boolean;
+  rules?: string[];
 }
 
 // ----------------------------------------------------------------------------

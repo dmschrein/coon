@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { analyzeFeedbackLoop } from "../feedback-loop";
 import {
@@ -48,7 +49,7 @@ describe("analyzeFeedbackLoop", () => {
     const result = await analyzeFeedbackLoop(defaultInput);
 
     expect(result.result).toEqual(feedbackOutputFixture);
-    expect(result.modelUsed).toBe("claude-sonnet-4-20250514");
+    expect(result.modelUsed).toBe(CLAUDE_MODEL);
     expect(result.tokensUsed).toBe(2000);
   });
 
@@ -77,7 +78,7 @@ describe("analyzeFeedbackLoop", () => {
 
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({
-        model: "claude-sonnet-4-20250514",
+        model: CLAUDE_MODEL,
         max_tokens: 4096,
         system: expect.stringContaining("audience strategist"),
       })

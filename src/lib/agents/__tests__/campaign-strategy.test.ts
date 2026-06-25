@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { generateCampaignStrategy } from "../campaign-strategy";
 import { quizFixture } from "../__fixtures__/quiz";
@@ -49,7 +50,7 @@ describe("generateCampaignStrategy", () => {
     );
 
     expect(result.strategy).toEqual(campaignStrategyFixture);
-    expect(result.modelUsed).toBe("claude-sonnet-4-20250514");
+    expect(result.modelUsed).toBe(CLAUDE_MODEL);
     expect(result.tokensUsed).toBe(2300);
   });
 

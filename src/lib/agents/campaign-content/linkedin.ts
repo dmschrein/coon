@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { anthropic } from "@/lib/claude";
 import { linkedinContentSchema } from "@/lib/validations/campaign";
 import { extractJSON, withRetry } from "../utils";
@@ -8,7 +9,7 @@ import type {
   LinkedInContent,
 } from "@/types";
 
-const MODEL = "claude-sonnet-4-20250514";
+const MODEL = CLAUDE_MODEL;
 
 function buildPrompt(
   strategy: CampaignStrategy,

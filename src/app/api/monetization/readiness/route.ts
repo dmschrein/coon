@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getContainer } from "@/lib/core/di/container";
@@ -71,7 +72,7 @@ export async function GET(_req: Request) {
         agentType: "monetization_readiness",
         inputData: input,
         outputData: step.data,
-        modelUsed: "claude-sonnet-4-20250514",
+        modelUsed: CLAUDE_MODEL,
         tokensUsed: step.tokensUsed,
         durationMs: Date.now() - startTime,
         status: "success",
@@ -83,7 +84,7 @@ export async function GET(_req: Request) {
         userId,
         agentType: "monetization_readiness",
         inputData: input,
-        modelUsed: "claude-sonnet-4-20250514",
+        modelUsed: CLAUDE_MODEL,
         durationMs: Date.now() - startTime,
         status: "failed",
         errorMessage:

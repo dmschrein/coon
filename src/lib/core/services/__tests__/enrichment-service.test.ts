@@ -34,6 +34,9 @@ function createMockContentRepo(): MockRepo<CampaignContentRepository> {
     bulkUpdateSchedule: vi.fn(),
     updateHashtags: vi.fn(),
     updateTargetCommunity: vi.fn(),
+    updateLastEngagementFetch: vi.fn(),
+    findStalePublished: vi.fn(),
+    findRecentByUserId: vi.fn(),
   };
 }
 
@@ -58,6 +61,7 @@ function createMockEngagementRepo(): MockRepo<EngagementRepository> {
   return {
     upsertEngagement: vi.fn(),
     getEngagementByContentId: vi.fn(),
+    getAverageEngagementRate: vi.fn(),
   };
 }
 
@@ -133,7 +137,9 @@ describe("EnrichmentService — fetchAndStoreEngagement", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       { optimizeContent: vi.fn() } as any,
       engagementRepo as unknown as EngagementRepository,
-      mockGetAdapter
+      mockGetAdapter as unknown as (
+        platform: string
+      ) => SocialPlatformAdapter | null
     );
   });
 
@@ -325,7 +331,9 @@ describe("EnrichmentService — commentAuthors → platform member upsert", () =
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       { optimizeContent: vi.fn() } as any,
       engagementRepo as unknown as EngagementRepository,
-      mockGetAdapter,
+      mockGetAdapter as unknown as (
+        platform: string
+      ) => SocialPlatformAdapter | null,
       memberRepo as unknown as PlatformMemberRepository
     );
 

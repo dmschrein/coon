@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AudienceService, ServiceError } from "../audience-service";
 import { AudienceProfileEntity } from "../../domain/audience-profile";
@@ -73,6 +74,7 @@ describe("AudienceService", () => {
       findById: vi.fn(),
       create: vi.fn(),
       deactivateAllForUser: vi.fn(),
+      updateProfileData: vi.fn(),
     };
     quizRepo = {
       findLatestByUserId: vi.fn(),
@@ -126,7 +128,7 @@ describe("AudienceService", () => {
 
       agent.analyzeAudience.mockResolvedValue({
         profile: mockProfileData,
-        modelUsed: "claude-sonnet-4-20250514",
+        modelUsed: CLAUDE_MODEL,
         tokensUsed: 500,
       });
 

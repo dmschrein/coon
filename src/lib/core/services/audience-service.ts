@@ -5,6 +5,7 @@
  * Testable via dependency injection.
  */
 
+import { CLAUDE_MODEL } from "@/lib/model";
 import type {
   AudienceProfileRepository,
   QuizResponseRepository,
@@ -137,7 +138,7 @@ export class AudienceService {
         userId,
         agentType: "audience_analysis",
         inputData: quizResponse.responseData,
-        modelUsed: "claude-sonnet-4-20250514",
+        modelUsed: CLAUDE_MODEL,
         durationMs,
         status: "failed",
         errorMessage: err.message,
@@ -238,7 +239,7 @@ export class AudienceService {
       await this.agentRunRepo.log({
         userId,
         agentType: "feedback_loop",
-        modelUsed: "claude-sonnet-4-20250514",
+        modelUsed: CLAUDE_MODEL,
         durationMs,
         status: "failed",
         errorMessage: err.message,

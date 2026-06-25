@@ -21,6 +21,7 @@ export const users = pgTable("users", {
   monetizationConfig: jsonb("monetization_config"),
   readinessCache: jsonb("readiness_cache"),
   readinessUpdatedAt: timestamp("readiness_updated_at"),
+  communityConfig: jsonb("community_config"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

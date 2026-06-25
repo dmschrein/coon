@@ -3,6 +3,7 @@
  * persists the posts as campaign_content rows.
  */
 
+import { CLAUDE_MODEL } from "@/lib/model";
 import type {
   CampaignRepository,
   CampaignContentRepository,
@@ -135,7 +136,7 @@ export class EventService {
           platform: input.platform,
         },
         outputData: { contentIds },
-        modelUsed: "claude-sonnet-4-20250514",
+        modelUsed: CLAUDE_MODEL,
         tokensUsed: result.tokensUsed,
         durationMs: Date.now() - startTime,
         status: "success",
@@ -150,7 +151,7 @@ export class EventService {
         userId,
         agentType: "event_content",
         inputData: { campaignId, platform: input.platform },
-        modelUsed: "claude-sonnet-4-20250514",
+        modelUsed: CLAUDE_MODEL,
         durationMs: Date.now() - startTime,
         status: "failed",
         errorMessage,

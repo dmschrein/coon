@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { anthropic } from "@/lib/claude";
 import { campaignCalendarSchema } from "@/lib/validations/campaign";
 import { extractJSON, withRetry } from "./utils";
@@ -7,7 +8,7 @@ import type {
   CampaignCalendar,
 } from "@/types";
 
-const MODEL = "claude-sonnet-4-20250514";
+const MODEL = CLAUDE_MODEL;
 
 function buildCalendarPrompt(
   strategy: CampaignStrategy,
@@ -34,7 +35,9 @@ ${strategy.platformAllocations
 
 ## Content Pillars
 ${strategy.contentPillars
-  .map((p) => `- ${p.theme}: ${p.description} (Pain point: ${p.targetedPainPoint})`)
+  .map(
+    (p) => `- ${p.theme}: ${p.description} (Pain point: ${p.targetedPainPoint})`
+  )
   .join("\n")}
 
 ## Audience Context

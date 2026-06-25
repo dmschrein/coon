@@ -3,6 +3,7 @@
  * off-topic, or self-promotion content. Conservative on softer categories.
  */
 
+import { CLAUDE_MODEL } from "@/lib/model";
 import { anthropic } from "@/lib/claude";
 import { extractJSON, withRetry } from "./utils";
 import {
@@ -11,7 +12,7 @@ import {
   type ModerationCheckerOutput,
 } from "@/lib/validations/inbox";
 
-const MODEL = "claude-sonnet-4-20250514";
+const MODEL = CLAUDE_MODEL;
 
 export type ModerationInput = ModerationCheckerInput;
 export type ModerationOutput = ModerationCheckerOutput;

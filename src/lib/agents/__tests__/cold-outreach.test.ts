@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { draftColdOutreach } from "../cold-outreach";
 import {
@@ -73,7 +74,7 @@ describe("draftColdOutreach", () => {
       coldOutreachInputFixture
     );
 
-    expect(modelUsed).toBe("claude-sonnet-4-20250514");
+    expect(modelUsed).toBe(CLAUDE_MODEL);
     expect(tokensUsed).toBe(800);
   });
 
@@ -89,7 +90,7 @@ describe("draftColdOutreach", () => {
 
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({
-        model: "claude-sonnet-4-20250514",
+        model: CLAUDE_MODEL,
         max_tokens: 1024,
         system: expect.stringContaining("outreach copywriter"),
       })

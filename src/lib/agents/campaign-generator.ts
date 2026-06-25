@@ -1,3 +1,4 @@
+import { CLAUDE_MODEL } from "@/lib/model";
 import { anthropic } from "@/lib/claude";
 import { extractJSON, withRetry } from "./utils";
 import type {
@@ -10,7 +11,7 @@ import type {
   ContentPillar,
 } from "@/types";
 
-const MODEL = "claude-sonnet-4-20250514";
+const MODEL = CLAUDE_MODEL;
 
 interface CampaignGeneratorInput {
   profile: AudienceProfile;
