@@ -74,6 +74,7 @@ describe("AudienceService", () => {
       findById: vi.fn(),
       create: vi.fn(),
       deactivateAllForUser: vi.fn(),
+      updateProfileData: vi.fn(),
     };
     quizRepo = {
       findLatestByUserId: vi.fn(),

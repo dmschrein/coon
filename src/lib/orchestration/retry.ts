@@ -133,8 +133,8 @@ export const retryPredicates = {
   },
 
   /** Never retry - useful for testing or non-retryable operations */
-  never: (): boolean => false,
+  never: (_error: Error): boolean => false,
 
   /** Always retry - useful as a fallback */
-  always: (): boolean => true,
+  always: (_error: Error): boolean => true,
 };

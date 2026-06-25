@@ -138,6 +138,7 @@ describe("CampaignService", () => {
       findById: vi.fn(),
       create: vi.fn(),
       deactivateAllForUser: vi.fn(),
+      updateProfileData: vi.fn(),
     };
     quizRepo = { findLatestByUserId: vi.fn() };
     contentRepo = {
@@ -156,6 +157,9 @@ describe("CampaignService", () => {
       bulkUpdateSchedule: vi.fn(),
       updateHashtags: vi.fn(),
       updateTargetCommunity: vi.fn(),
+      updateLastEngagementFetch: vi.fn(),
+      findStalePublished: vi.fn(),
+      findRecentByUserId: vi.fn(),
     };
     calendarEntryRepo = {
       findByCampaignId: vi.fn(),

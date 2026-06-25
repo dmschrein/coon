@@ -23,9 +23,11 @@ function fakeDb(rows: PerContentRow[]) {
     chain[method] = () => chain;
   }
   // Make the chain awaitable
-  (chain as unknown as PromiseLike<PerContentRow[]>).then = (
+  (chain as unknown as PromiseLike<PerContentRow[]>).then = ((
     onFulfilled: (value: PerContentRow[]) => unknown
-  ) => Promise.resolve(rows).then(onFulfilled);
+  ) => Promise.resolve(rows).then(onFulfilled)) as PromiseLike<
+    PerContentRow[]
+  >["then"];
   return chain;
 }
 
