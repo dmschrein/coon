@@ -41,12 +41,10 @@ describe("crypto encrypt/decrypt", () => {
     expect(decrypt(b)).toBe("same input");
   });
 
-  it("encrypts an empty string but cannot round-trip it (known source limitation)", () => {
-    // NOTE (source bug): encrypting "" yields an empty ciphertext base64 part,
-    // so decrypt() treats the format as invalid. Round-trip is not possible.
+  it("round-trips an empty string", () => {
     const ciphertext = encrypt("");
     expect(ciphertext.split(":")).toHaveLength(3);
-    expect(() => decrypt(ciphertext)).toThrow(/Invalid encrypted token format/);
+    expect(decrypt(ciphertext)).toBe("");
   });
 
   it("handles unicode and multibyte content", () => {

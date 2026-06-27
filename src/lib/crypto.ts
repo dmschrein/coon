@@ -48,11 +48,15 @@ export function encrypt(plaintext: string): string {
 
 export function decrypt(ciphertext: string): string {
   const key = getKey();
-  const [ivB64, authTagB64, encryptedB64] = ciphertext.split(":");
+  const parts = ciphertext.split(":");
 
-  if (!ivB64 || !authTagB64 || !encryptedB64) {
+  // Require exactly three parts with a present iv and authTag. The ciphertext
+  // segment may be empty — that is the valid encoding of an empty plaintext.
+  if (parts.length !== 3 || !parts[0] || !parts[1]) {
     throw new Error("Invalid encrypted token format");
   }
+
+  const [ivB64, authTagB64, encryptedB64] = parts;
 
   const iv = Buffer.from(ivB64, "base64");
   const authTag = Buffer.from(authTagB64, "base64");
