@@ -87,7 +87,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-function row(overrides: Partial<FakeRow>): FakeRow {
+function row(overrides: Partial<FakeRow> = {}): FakeRow {
   return {
     id: "r1",
     userId: "user_123",
@@ -231,5 +231,143 @@ describe("DrizzleRevenueRepository.getMRRSummary", () => {
       m.month.startsWith("2026-04")
     );
     expect(aprilEntry?.total).toBe(500);
+  });
+});
+
+describe("DrizzleRevenueRepository CRUD", () => {
+  describe("listEntries", () => {
+    it("maps rows and accepts a string date column", async () => {
+      const { db, queue } = makeFakeDb();
+      queue.select.push([row({ date: "2026-05-10" })]);
+      const repo = new DrizzleRevenueRepository(db);
+
+      const rows = await repo.listEntries("user_123");
+
+      expect(rows).toHaveLength(1);
+      expect(rows[0].date).toBeInstanceOf(Date);
+    });
+
+    it("applies from/to date-range filters", async () => {
+      const { db, queue } = makeFakeDb();
+      queue.select.push([row()]);
+      const repo = new DrizzleRevenueRepository(db);
+
+      const rows = await repo.listEntries("user_123", {
+        from: new Date("2026-05-01"),
+        to: new Date("2026-05-31"),
+      });
+
+      expect(rows).toHaveLength(1);
+    });
+
+    it("defaults createdAt when null", async () => {
+      const { db, queue } = makeFakeDb();
+      queue.select.push([row({ createdAt: null })]);
+      const repo = new DrizzleRevenueRepository(db);
+
+      const rows = await repo.listEntries("user_123");
+      expect(rows[0].createdAt).toBeInstanceOf(Date);
+    });
+  });
+
+  describe("getEntry", () => {
+    it("returns the entry when found", async () => {
+      const { db, queue } = makeFakeDb();
+      queue.select.push([row()]);
+      const repo = new DrizzleRevenueRepository(db);
+      expect((await repo.getEntry("r1"))?.id).toBe("r1");
+    });
+
+    it("returns null when not found", async () => {
+      const { db, queue } = makeFakeDb();
+      queue.select.push([]);
+      const repo = new DrizzleRevenueRepository(db);
+      expect(await repo.getEntry("x")).toBeNull();
+    });
+  });
+
+  describe("createEntry", () => {
+    it("serialises date to YYYY-MM-DD and returns mapped row", async () => {
+      const { db, queue, captured } = makeFakeDb();
+      queue.insert.push([row()]);
+      const repo = new DrizzleRevenueRepository(db);
+
+      const result = await repo.createEntry("user_123", {
+        date: new Date("2026-05-10T00:00:00Z"),
+        source: "Patreon",
+        type: "membership",
+        amountCents: 1000,
+        notes: "n",
+      } as never);
+
+      expect(result.id).toBe("r1");
+      expect(captured.insertValues).toMatchObject({
+        userId: "user_123",
+        date: "2026-05-10",
+        amountCents: 1000,
+      });
+    });
+
+    it("defaults source and notes to null", async () => {
+      const { db, queue, captured } = makeFakeDb();
+      queue.insert.push([row()]);
+      const repo = new DrizzleRevenueRepository(db);
+
+      await repo.createEntry("user_123", {
+        date: new Date("2026-05-10T00:00:00Z"),
+        type: "membership",
+        amountCents: 500,
+      } as never);
+
+      const values = captured.insertValues as FakeRow;
+      expect(values.source).toBeNull();
+      expect(values.notes).toBeNull();
+    });
+  });
+
+  describe("updateEntry", () => {
+    it("updates supplied fields, serialising date", async () => {
+      const { db, queue, captured } = makeFakeDb();
+      queue.update.push([row({ amountCents: 2000 })]);
+      const repo = new DrizzleRevenueRepository(db);
+
+      const result = await repo.updateEntry("r1", {
+        date: new Date("2026-06-01T00:00:00Z"),
+        source: "Stripe",
+        type: "course",
+        amountCents: 2000,
+        notes: "n",
+      } as never);
+
+      expect(result?.amountCents).toBe(2000);
+      const set = captured.updateSet as FakeRow;
+      expect(set.date).toBe("2026-06-01");
+      expect(set.amountCents).toBe(2000);
+    });
+
+    it("returns null when no row was updated", async () => {
+      const { db, queue } = makeFakeDb();
+      queue.update.push([]);
+      const repo = new DrizzleRevenueRepository(db);
+      expect(
+        await repo.updateEntry("x", { amountCents: 1 } as never)
+      ).toBeNull();
+    });
+
+    it("falls back to getEntry when patch is empty", async () => {
+      const { db, queue } = makeFakeDb();
+      queue.select.push([row()]);
+      const repo = new DrizzleRevenueRepository(db);
+      expect((await repo.updateEntry("r1", {} as never))?.id).toBe("r1");
+    });
+  });
+
+  describe("deleteEntry", () => {
+    it("issues a delete", async () => {
+      const { db, captured } = makeFakeDb();
+      const repo = new DrizzleRevenueRepository(db);
+      await repo.deleteEntry("r1");
+      expect(captured.deleteCalled).toBe(true);
+    });
   });
 });
