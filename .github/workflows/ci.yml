@@ -52,7 +52,7 @@ jobs:
       # Stub env vars for build (not real secrets)
       ANTHROPIC_API_KEY: "sk-ant-build-placeholder"
       DATABASE_URL: "postgresql://build:build@localhost:5432/build"
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_build"
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_Y2xlcmsuZXhhbXBsZS5jb20k"
       CLERK_SECRET_KEY: "sk_test_build"
     steps:
       - uses: actions/checkout@v4
