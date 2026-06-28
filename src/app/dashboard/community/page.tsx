@@ -4,15 +4,31 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Loader2, ScrollText, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ManifestoEditor } from "@/components/community/manifesto-editor";
+import {
+  SetupGuideModal,
+  SETUP_GUIDE_PLATFORMS,
+} from "@/components/community/setup-guide-modal";
 import { useManifesto, useGenerateManifesto } from "@/hooks/use-manifesto";
-import type { ManifestoSection } from "@/types";
+import { useSetupGuides } from "@/hooks/use-setup-guide";
+import type { ManifestoSection, SetupGuidePlatform } from "@/types";
 
 export default function CommunityPage() {
   const { data: manifesto, isLoading } = useManifesto();
   const generate = useGenerateManifesto();
   const [regeneratingSection, setRegeneratingSection] =
     useState<ManifestoSection | null>(null);
+
+  const { data: setupGuides } = useSetupGuides();
+  const [setupOpen, setSetupOpen] = useState(false);
+  const [setupPlatform, setSetupPlatform] =
+    useState<SetupGuidePlatform>("discord");
+
+  const openSetupGuide = (platform: SetupGuidePlatform) => {
+    setSetupPlatform(platform);
+    setSetupOpen(true);
+  };
 
   const handleGenerate = () => {
     generate.mutate(
@@ -90,6 +106,45 @@ export default function CommunityPage() {
           </Button>
         </div>
       )}
+
+      <section className="space-y-3 border-t pt-6">
+        <div>
+          <h2 className="text-xl font-semibold">Platform Setup</h2>
+          <p className="text-muted-foreground text-sm">
+            Step-by-step checklists to launch your community on each platform.
+          </p>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {SETUP_GUIDE_PLATFORMS.map((p) => (
+            <div
+              key={p.value}
+              className="flex items-center justify-between rounded-lg border p-3"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">{p.label}</span>
+                {setupGuides?.[p.value]?.completed ? (
+                  <Badge className="border-transparent bg-green-600 text-white">
+                    Completed
+                  </Badge>
+                ) : null}
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => openSetupGuide(p.value)}
+              >
+                Open Setup Guide
+              </Button>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <SetupGuideModal
+        open={setupOpen}
+        onOpenChange={setSetupOpen}
+        initialPlatform={setupPlatform}
+      />
     </div>
   );
 }

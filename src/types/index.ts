@@ -622,7 +622,8 @@ export type AgentType =
   | "monetization_readiness"
   | "sponsor_pitch"
   | "tier_copy"
-  | "community_manifesto";
+  | "community_manifesto"
+  | "community_setup_guide";
 
 export type AgentStatus = "success" | "failed" | "partial";
 
@@ -760,9 +761,61 @@ export interface ManifestoInput {
 /** Per-user community configuration stored on users.community_config (jsonb) */
 export interface CommunityConfig {
   manifesto?: ManifestoOutput;
-  setupGuides?: Record<string, boolean>;
+  /** Per-platform setup progress, keyed by SetupGuidePlatform */
+  setupGuides?: Record<string, SetupGuideProgress>;
   onboardingActive?: boolean;
   rules?: string[];
+}
+
+// ----------------------------------------------------------------------------
+// Platform Setup Guide Types
+// ----------------------------------------------------------------------------
+
+/** Platforms a founder can generate a setup checklist for */
+export type SetupGuidePlatform =
+  | "discord"
+  | "reddit"
+  | "slack"
+  | "circle"
+  | "whatsapp";
+
+export interface SetupGuideStep {
+  /** What to do, in one actionable sentence */
+  text: string;
+  /** How long the step takes, a positive integer count of minutes */
+  estimatedMinutes: number;
+  /** Exact, pasteable text (channel names, rules, welcome copy). Omitted when N/A. */
+  copyReady?: string;
+}
+
+export interface SetupGuideSection {
+  /** Short section heading shown in the sidebar */
+  section: string;
+  steps: SetupGuideStep[];
+}
+
+/** Inputs for the platform setup guide agent */
+export interface SetupGuideInput {
+  platform: SetupGuidePlatform;
+  communityName: string;
+  audienceProfile: AudienceProfile;
+}
+
+export interface SetupGuideOutput {
+  checklist: SetupGuideSection[];
+  /** Pasteable welcome message for the community's welcome channel/post */
+  welcomeMessage: string;
+  /** Sum of every step's estimatedMinutes — a positive integer */
+  estimatedTotalMinutes: number;
+}
+
+/** Persisted per-platform progress: the generated guide plus which steps are checked. */
+export interface SetupGuideProgress {
+  guide: SetupGuideOutput;
+  /** Step keys (`${sectionIndex}:${stepIndex}`) the user has checked off. */
+  completedSteps: string[];
+  /** Derived: every step in the guide has been checked. */
+  completed: boolean;
 }
 
 // ----------------------------------------------------------------------------

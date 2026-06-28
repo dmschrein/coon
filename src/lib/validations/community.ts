@@ -48,3 +48,60 @@ export const manifestoRequestSchema = z.object({
 });
 
 export type ManifestoRequestInput = z.infer<typeof manifestoRequestSchema>;
+
+// ============================================================================
+// Platform Setup Guide Schemas
+// ============================================================================
+
+// --- Shared enum values ---
+
+export const setupGuidePlatformValues = [
+  "discord",
+  "reddit",
+  "slack",
+  "circle",
+  "whatsapp",
+] as const;
+
+export const setupGuidePlatformSchema = z.enum(setupGuidePlatformValues);
+
+// --- Sub-schemas ---
+
+export const setupGuideStepSchema = z.object({
+  text: z.string().min(1),
+  estimatedMinutes: z.number().int().positive(),
+  // copyReady is a string when present, never an empty string. An empty or
+  // whitespace-only value from the model collapses to `undefined` (omitted).
+  copyReady: z
+    .string()
+    .optional()
+    .transform((v) => (v && v.trim().length > 0 ? v : undefined)),
+});
+
+export const setupGuideSectionSchema = z.object({
+  section: z.string().min(1),
+  steps: z.array(setupGuideStepSchema).min(1),
+});
+
+/** What the agent's LLM call must produce. `estimatedTotalMinutes` is derived in code. */
+export const setupGuideAgentOutputSchema = z.object({
+  checklist: z.array(setupGuideSectionSchema).min(1),
+  welcomeMessage: z.string().min(1),
+});
+
+export type SetupGuideAgentOutput = z.infer<typeof setupGuideAgentOutputSchema>;
+
+/** Body schema for POST /api/community/setup-guide (generate / get-or-create) */
+export const setupGuideRequestSchema = z.object({
+  platform: setupGuidePlatformSchema,
+});
+
+export type SetupGuideRequestInput = z.infer<typeof setupGuideRequestSchema>;
+
+/** Body schema for PATCH /api/community/setup-guide (persist checked steps) */
+export const setupGuideProgressSchema = z.object({
+  platform: setupGuidePlatformSchema,
+  completedSteps: z.array(z.string()),
+});
+
+export type SetupGuideProgressInput = z.infer<typeof setupGuideProgressSchema>;
