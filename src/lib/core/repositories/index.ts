@@ -68,3 +68,4 @@ export { DrizzleMonetizationConfigRepository } from "./drizzle-monetization-conf
 export { DrizzleMonetizationReadinessRepository } from "./drizzle-monetization-readiness";
 export { DrizzleCommunityConfigRepository } from "./drizzle-community-config";
 export { DrizzleRevenueRepository } from "./drizzle-revenue";
+export { DrizzleOnboardingRepository } from "./drizzle-onboarding";

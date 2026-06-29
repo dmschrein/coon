@@ -20,7 +20,8 @@ export class DrizzleCalendarEntryRepository implements CalendarEntryRepository {
 
     return rows.map((row: typeof campaignCalendarEntries.$inferSelect) => ({
       id: row.id,
-      campaignId: row.campaignId,
+      // Filtered by campaignId, so these rows always carry one.
+      campaignId: row.campaignId as string,
       dayNumber: row.dayNumber,
       platform: row.platform,
       contentType: row.contentType,

@@ -6,6 +6,7 @@ import { Loader2, ScrollText, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ManifestoEditor } from "@/components/community/manifesto-editor";
+import { OnboardingBuilder } from "@/components/community/onboarding-builder";
 import {
   SetupGuideModal,
   SETUP_GUIDE_PLATFORMS,
@@ -139,6 +140,10 @@ export default function CommunityPage() {
           ))}
         </div>
       </section>
+
+      <div className="border-t pt-6">
+        <OnboardingBuilder />
+      </div>
 
       <SetupGuideModal
         open={setupOpen}
