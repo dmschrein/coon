@@ -156,9 +156,10 @@ export const campaignCalendarEntries = pgTable(
   "campaign_calendar_entries",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    campaignId: uuid("campaign_id")
-      .notNull()
-      .references(() => campaigns.id, { onDelete: "cascade" }),
+    // Nullable: onboarding-sequence entries are not tied to a campaign.
+    campaignId: uuid("campaign_id").references(() => campaigns.id, {
+      onDelete: "cascade",
+    }),
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
@@ -174,9 +175,13 @@ export const campaignCalendarEntries = pgTable(
       () => campaignContent.id
     ),
     ritualTemplateId: uuid("ritual_template_id"),
+    onboardingStepId: uuid("onboarding_step_id"),
     createdAt: timestamp("created_at").defaultNow(),
   },
-  (table) => [index("calendar_entries_ritual_idx").on(table.ritualTemplateId)]
+  (table) => [
+    index("calendar_entries_ritual_idx").on(table.ritualTemplateId),
+    index("calendar_entries_onboarding_idx").on(table.onboardingStepId),
+  ]
 );
 
 // ─── Ritual Templates ────────────────────────────────────────────────────────
@@ -806,5 +811,61 @@ export const revenueEntryRelations = relations(revenueEntry, ({ one }) => ({
   user: one(users, {
     fields: [revenueEntry.userId],
     references: [users.id],
+  }),
+}));
+
+// ─── Onboarding Sequences ────────────────────────────────────────────────────
+export const onboardingSequence = pgTable(
+  "onboarding_sequence",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull().default("New Member Onboarding"),
+    isActive: boolean("is_active").notNull().default(false),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [index("onboarding_sequence_user_idx").on(table.userId)]
+);
+
+export const onboardingStep = pgTable(
+  "onboarding_step",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    sequenceId: uuid("sequence_id")
+      .notNull()
+      .references(() => onboardingSequence.id, { onDelete: "cascade" }),
+    stepNumber: integer("step_number").notNull(),
+    triggerTiming: text("trigger_timing").notNull(), // immediate | day1 | day3 | day7 | day14
+    channel: text("channel").notNull().default("email"), // email | discord_dm | in_app | sms
+    subject: text("subject"),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [
+    index("onboarding_step_sequence_idx").on(table.sequenceId),
+    unique("onboarding_step_sequence_stepnum_unique").on(
+      table.sequenceId,
+      table.stepNumber
+    ),
+  ]
+);
+
+export const onboardingSequenceRelations = relations(
+  onboardingSequence,
+  ({ one, many }) => ({
+    user: one(users, {
+      fields: [onboardingSequence.userId],
+      references: [users.id],
+    }),
+    steps: many(onboardingStep),
+  })
+);
+
+export const onboardingStepRelations = relations(onboardingStep, ({ one }) => ({
+  sequence: one(onboardingSequence, {
+    fields: [onboardingStep.sequenceId],
+    references: [onboardingSequence.id],
   }),
 }));

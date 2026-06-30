@@ -623,7 +623,8 @@ export type AgentType =
   | "sponsor_pitch"
   | "tier_copy"
   | "community_manifesto"
-  | "community_setup_guide";
+  | "community_setup_guide"
+  | "onboarding_sequence";
 
 export type AgentStatus = "success" | "failed" | "partial";
 
@@ -816,6 +817,47 @@ export interface SetupGuideProgress {
   completedSteps: string[];
   /** Derived: every step in the guide has been checked. */
   completed: boolean;
+}
+
+// ----------------------------------------------------------------------------
+// Onboarding Sequence Types
+// ----------------------------------------------------------------------------
+
+import type {
+  OnboardingTiming,
+  OnboardingChannel,
+} from "@/lib/core/domain/onboarding-schedule";
+
+export type { OnboardingTiming, OnboardingChannel };
+
+/** A single step in the new-member onboarding sequence. */
+export interface OnboardingStep {
+  /** Present once persisted; absent on freshly generated drafts. */
+  id?: string;
+  stepNumber: number;
+  triggerTiming: OnboardingTiming;
+  channel: OnboardingChannel;
+  subject: string | null;
+  content: string;
+}
+
+export interface OnboardingSequence {
+  id: string;
+  userId: string;
+  name: string;
+  isActive: boolean;
+  createdAt: Date | null;
+}
+
+export interface OnboardingSequenceWithSteps extends OnboardingSequence {
+  steps: OnboardingStep[];
+}
+
+/** Input to the `generateOnboardingSequence` agent. */
+export interface OnboardingInput {
+  audienceProfile: AudienceProfile;
+  communityName?: string;
+  productPitch?: string;
 }
 
 // ----------------------------------------------------------------------------
