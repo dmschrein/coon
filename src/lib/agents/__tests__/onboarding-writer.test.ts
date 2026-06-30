@@ -116,6 +116,54 @@ function fiveSteps(): FakeRow[] {
   return ONBOARDING_TIMINGS.map((timing, i) => stepRow(i + 1, timing));
 }
 
+describe("DrizzleOnboardingRepository.getSequence", () => {
+  it("returns the latest sequence with its ordered steps", async () => {
+    const { db, queue } = makeFakeDb();
+    queue.select.push([sequenceRow()]); // latest sequence
+    queue.select.push(fiveSteps()); // its steps
+    const repo = new DrizzleOnboardingRepository(db);
+
+    const result = await repo.getSequence("user_123");
+
+    expect(result?.id).toBe("seq1");
+    expect(result?.steps).toHaveLength(5);
+    expect(result?.steps.map((s) => s.stepNumber)).toEqual([1, 2, 3, 4, 5]);
+  });
+
+  it("returns null when the user has no sequence", async () => {
+    const { db, queue } = makeFakeDb();
+    queue.select.push([]);
+    const repo = new DrizzleOnboardingRepository(db);
+
+    expect(await repo.getSequence("user_123")).toBeNull();
+  });
+});
+
+describe("DrizzleOnboardingRepository.upsertStep", () => {
+  it("upserts on the (sequenceId, stepNumber) slot and maps the row", async () => {
+    const { db, queue, captured } = makeFakeDb();
+    queue.insert.push([stepRow(2, "day1", { subject: "Edited subject" })]);
+    const repo = new DrizzleOnboardingRepository(db);
+
+    const saved = await repo.upsertStep("seq1", {
+      stepNumber: 2,
+      triggerTiming: "day1",
+      channel: "email",
+      subject: "Edited subject",
+      content: "Edited content",
+    });
+
+    expect(saved.subject).toBe("Edited subject");
+    expect(captured.insertValues).toMatchObject({
+      sequenceId: "seq1",
+      stepNumber: 2,
+      triggerTiming: "day1",
+      content: "Edited content",
+    });
+    expect(captured.onConflictDoUpdate).toBeTruthy();
+  });
+});
+
 describe("DrizzleOnboardingRepository.activateSequence", () => {
   it("creates exactly 5 calendar_entry rows", async () => {
     const { db, queue, captured } = makeFakeDb();

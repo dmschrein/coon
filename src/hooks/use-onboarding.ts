@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { OnboardingSequenceWithSteps } from "@/types";
+import type { OnboardingSequenceWithSteps, OnboardingStep } from "@/types";
 
 const QUERY_KEY = ["community-onboarding"] as const;
 
@@ -35,6 +35,40 @@ export function useGenerateOnboarding() {
         const json = await res.json().catch(() => ({}));
         throw new Error(
           json?.error?.message ?? "Failed to generate onboarding sequence"
+        );
+      }
+      const json = await res.json();
+      if (json.error) throw new Error(json.error.message);
+      return json.data.sequence as OnboardingSequenceWithSteps;
+    },
+    onSuccess: (sequence) => {
+      queryClient.setQueryData(QUERY_KEY, sequence);
+    },
+  });
+}
+
+export function useSaveOnboarding() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (steps: OnboardingStep[]) => {
+      const res = await fetch("/api/community/onboarding", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          steps: steps.map((s) => ({
+            stepNumber: s.stepNumber,
+            triggerTiming: s.triggerTiming,
+            channel: s.channel,
+            subject: s.subject,
+            content: s.content,
+          })),
+        }),
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error(
+          json?.error?.message ?? "Failed to save onboarding sequence"
         );
       }
       const json = await res.json();

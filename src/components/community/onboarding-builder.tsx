@@ -17,12 +17,13 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
-import { GripVertical, Loader2, Rocket, Sparkles } from "lucide-react";
+import { GripVertical, Loader2, Rocket, Save, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OnboardingStepRow } from "./onboarding-step-row";
 import {
   useOnboarding,
   useGenerateOnboarding,
+  useSaveOnboarding,
   useActivateOnboarding,
 } from "@/hooks/use-onboarding";
 import { ONBOARDING_TIMINGS } from "@/lib/core/domain/onboarding-schedule";
@@ -85,6 +86,7 @@ function SortableStepRow({
 export function OnboardingBuilder() {
   const { data: sequence, isLoading } = useOnboarding();
   const generate = useGenerateOnboarding();
+  const save = useSaveOnboarding();
   const activate = useActivateOnboarding();
   const [rows, setRows] = useState<Row[]>([]);
   // Reset local rows whenever the server sequence reference changes (initial
@@ -110,13 +112,31 @@ export function OnboardingBuilder() {
     );
   };
 
-  const handleActivate = () => {
+  const handleSave = () => {
+    save.mutate(rows, {
+      onSuccess: () => toast.success("Changes saved"),
+      onError: (err) => toast.error(err.message),
+    });
+  };
+
+  const handleActivate = async () => {
+    // Persist edits/reorder first so the scheduled entries match what's on screen.
+    try {
+      await save.mutateAsync(rows);
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to save changes"
+      );
+      return;
+    }
     activate.mutate(undefined, {
       onSuccess: (data) =>
         toast.success(`Sequence activated — ${data.scheduled} steps scheduled`),
       onError: (err) => toast.error(err.message),
     });
   };
+
+  const busy = save.isPending || activate.isPending;
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -157,10 +177,17 @@ export function OnboardingBuilder() {
             )}
             {rows.length > 0 ? "Regenerate Sequence" : "Generate Sequence"}
           </Button>
-          <Button
-            onClick={handleActivate}
-            disabled={activate.isPending || rows.length === 0}
-          >
+          {rows.length > 0 && (
+            <Button variant="outline" onClick={handleSave} disabled={busy}>
+              {save.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              Save Changes
+            </Button>
+          )}
+          <Button onClick={handleActivate} disabled={busy || rows.length === 0}>
             {activate.isPending ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
