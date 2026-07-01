@@ -624,6 +624,7 @@ export type AgentType =
   | "tier_copy"
   | "community_manifesto"
   | "community_setup_guide"
+  | "community_rules"
   | "onboarding_sequence";
 
 export type AgentStatus = "success" | "failed" | "partial";
@@ -750,6 +751,39 @@ export type ManifestoSection =
   | "values"
   | "invitationLetter";
 
+// ----------------------------------------------------------------------------
+// Community Rules Types
+// ----------------------------------------------------------------------------
+
+/** Voice used when generating community rules. */
+export type RulesTone = "casual" | "professional" | "strict";
+
+/** A single positively-framed community rule. */
+export interface CommunityRule {
+  /** Positively framed, niche-specific — never starts with "Don't" or "No". */
+  title: string;
+  description: string;
+  /** A concrete example of behavior that breaks this rule. */
+  exampleViolation: string;
+  /** What happens when the rule is broken. */
+  enforcement: string;
+}
+
+/** Inputs for the community rules agent. */
+export interface RulesInput {
+  communityName: string;
+  niche: string;
+  platform: string;
+  tone: RulesTone;
+  existingValues?: string[];
+}
+
+/** What the rules agent's LLM call must produce. */
+export interface RulesOutput {
+  /** 6–8 rules. */
+  rules: CommunityRule[];
+}
+
 /** Inputs for the manifesto agent, distilled from the quiz + audience profile */
 export interface ManifestoInput {
   elevatorPitch: string;
@@ -765,7 +799,8 @@ export interface CommunityConfig {
   /** Per-platform setup progress, keyed by SetupGuidePlatform */
   setupGuides?: Record<string, SetupGuideProgress>;
   onboardingActive?: boolean;
-  rules?: string[];
+  /** Generated, positively-framed community rules. */
+  rules?: CommunityRule[];
 }
 
 // ----------------------------------------------------------------------------
