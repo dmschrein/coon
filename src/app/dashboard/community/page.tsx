@@ -2,18 +2,21 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Loader2, ScrollText, Sparkles } from "lucide-react";
+import { Gavel, Loader2, ScrollText, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ManifestoEditor } from "@/components/community/manifesto-editor";
 import { OnboardingBuilder } from "@/components/community/onboarding-builder";
+import { RulesEditor } from "@/components/community/rules-editor";
 import {
   SetupGuideModal,
   SETUP_GUIDE_PLATFORMS,
 } from "@/components/community/setup-guide-modal";
 import { useManifesto, useGenerateManifesto } from "@/hooks/use-manifesto";
+import { useRules, useGenerateRules, useSaveRules } from "@/hooks/use-rules";
 import { useSetupGuides } from "@/hooks/use-setup-guide";
-import type { ManifestoSection, SetupGuidePlatform } from "@/types";
+import { rulesToneValues } from "@/lib/validations/community";
+import type { ManifestoSection, RulesTone, SetupGuidePlatform } from "@/types";
 
 export default function CommunityPage() {
   const { data: manifesto, isLoading } = useManifesto();
@@ -21,10 +24,32 @@ export default function CommunityPage() {
   const [regeneratingSection, setRegeneratingSection] =
     useState<ManifestoSection | null>(null);
 
+  const { data: rules } = useRules();
+  const generateRules = useGenerateRules();
+  const saveRules = useSaveRules();
+  const [rulesTone, setRulesTone] = useState<RulesTone>("professional");
+
   const { data: setupGuides } = useSetupGuides();
   const [setupOpen, setSetupOpen] = useState(false);
   const [setupPlatform, setSetupPlatform] =
     useState<SetupGuidePlatform>("discord");
+
+  const handleGenerateRules = () => {
+    generateRules.mutate(
+      { tone: rulesTone },
+      {
+        onSuccess: () => toast.success("Rules generated"),
+        onError: (err) => toast.error(err.message),
+      }
+    );
+  };
+
+  const handleSaveRules = (next: Parameters<typeof saveRules.mutate>[0]) => {
+    saveRules.mutate(next, {
+      onSuccess: () => toast.success("Rules saved"),
+      onError: (err) => toast.error(err.message),
+    });
+  };
 
   const openSetupGuide = (platform: SetupGuidePlatform) => {
     setSetupPlatform(platform);
@@ -139,6 +164,57 @@ export default function CommunityPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="space-y-3 border-t pt-6">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <h2 className="text-xl font-semibold">Community Rules</h2>
+            <p className="text-muted-foreground text-sm">
+              Positively-framed ground rules tailored to your niche.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              aria-label="Rules tone"
+              className="border-input bg-background h-9 rounded-md border px-2 text-sm capitalize"
+              value={rulesTone}
+              onChange={(e) => setRulesTone(e.target.value as RulesTone)}
+            >
+              {rulesToneValues.map((t) => (
+                <option key={t} value={t} className="capitalize">
+                  {t}
+                </option>
+              ))}
+            </select>
+            <Button
+              onClick={handleGenerateRules}
+              disabled={generateRules.isPending}
+            >
+              {generateRules.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Gavel className="mr-2 h-4 w-4" />
+              )}
+              {rules && rules.length > 0
+                ? "Regenerate Rules"
+                : "Generate Rules"}
+            </Button>
+          </div>
+        </div>
+
+        {rules && rules.length > 0 ? (
+          <RulesEditor
+            communityName={manifesto?.nameSuggestions?.[0] ?? ""}
+            rules={rules}
+            onSave={handleSaveRules}
+            isSaving={saveRules.isPending}
+          />
+        ) : (
+          <div className="text-muted-foreground rounded-lg border border-dashed py-12 text-center text-sm">
+            No rules yet. Generate a set tailored to your community.
+          </div>
+        )}
       </section>
 
       <div className="border-t pt-6">

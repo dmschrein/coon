@@ -50,6 +50,48 @@ export const manifestoRequestSchema = z.object({
 export type ManifestoRequestInput = z.infer<typeof manifestoRequestSchema>;
 
 // ============================================================================
+// Community Rules Schemas
+// ============================================================================
+
+// --- Shared enum values ---
+
+export const rulesToneValues = ["casual", "professional", "strict"] as const;
+export const rulesToneSchema = z.enum(rulesToneValues);
+
+export const RULES_MIN = 6;
+export const RULES_MAX = 8;
+
+// --- Sub-schemas ---
+
+export const communityRuleSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().min(1),
+  exampleViolation: z.string().min(1),
+  enforcement: z.string().min(1),
+});
+
+/** What the rules agent's LLM call must produce — 6 to 8 rules. */
+export const rulesOutputSchema = z.object({
+  rules: z.array(communityRuleSchema).min(RULES_MIN).max(RULES_MAX),
+});
+
+export type RulesOutputParsed = z.infer<typeof rulesOutputSchema>;
+
+/** Body schema for PUT /api/community/rules — manual edits, looser bounds. */
+export const rulesSaveSchema = z.object({
+  rules: z.array(communityRuleSchema).min(1),
+});
+
+export type RulesSaveInput = z.infer<typeof rulesSaveSchema>;
+
+/** Body schema for POST /api/community/rules */
+export const rulesRequestSchema = z.object({
+  tone: rulesToneSchema.optional(),
+});
+
+export type RulesRequestInput = z.infer<typeof rulesRequestSchema>;
+
+// ============================================================================
 // Platform Setup Guide Schemas
 // ============================================================================
 
