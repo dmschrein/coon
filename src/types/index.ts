@@ -803,6 +803,20 @@ export interface CommunityConfig {
   rules?: CommunityRule[];
 }
 
+/**
+ * Derived, at-a-glance state powering the community hub page and its progress
+ * checklist. Booleans are the four sequential completion gates; memberCount is
+ * pulled from the platform members table.
+ */
+export interface CommunityHubData {
+  hasManifesto: boolean;
+  /** Platform keys whose setup guide the user has fully checked off. */
+  completedSetupGuides: string[];
+  hasRules: boolean;
+  hasActiveOnboarding: boolean;
+  memberCount: number;
+}
+
 // ----------------------------------------------------------------------------
 // Platform Setup Guide Types
 // ----------------------------------------------------------------------------
