@@ -5,7 +5,12 @@
  * Requires TOKEN_ENCRYPTION_KEY env var (32-byte hex string, 64 hex chars).
  */
 
-import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  randomBytes,
+} from "crypto";
 
 const ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 16;
@@ -73,4 +78,14 @@ export function decrypt(ciphertext: string): string {
   ]);
 
   return decrypted.toString("utf8");
+}
+
+// ─── OAuth2 PKCE (RFC 7636) ──────────────────────────────────────────────────
+
+export function generateCodeVerifier(): string {
+  return randomBytes(32).toString("base64url");
+}
+
+export function generateCodeChallenge(codeVerifier: string): string {
+  return createHash("sha256").update(codeVerifier).digest("base64url");
 }

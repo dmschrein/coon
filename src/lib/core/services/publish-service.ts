@@ -57,7 +57,8 @@ export class PublishService {
     userId: string,
     platform: SocialPlatform,
     code: string,
-    redirectUri: string
+    redirectUri: string,
+    codeVerifier?: string
   ): Promise<ConnectedAccount> {
     const adapter = this.getAdapter(platform);
     if (!adapter) {
@@ -67,7 +68,7 @@ export class PublishService {
       );
     }
 
-    const tokens = await adapter.exchangeCode(code, redirectUri);
+    const tokens = await adapter.exchangeCode(code, redirectUri, codeVerifier);
 
     // Deactivate existing account for this platform if any
     const existing = await this.accountRepo.findByUserAndPlatform(

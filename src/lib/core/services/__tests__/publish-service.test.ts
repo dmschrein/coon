@@ -151,7 +151,8 @@ describe("PublishService", () => {
 
       expect(adapter.exchangeCode).toHaveBeenCalledWith(
         "code-123",
-        "https://cb"
+        "https://cb",
+        undefined
       );
       expect(accountRepo.deactivate).toHaveBeenCalledWith("acc-1");
       expect(accountRepo.create).toHaveBeenCalledWith(

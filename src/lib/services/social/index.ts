@@ -40,6 +40,7 @@ function createAdapters(): Partial<
   const isDev = process.env.NODE_ENV === "development";
   const hasRedditCreds = !!process.env.REDDIT_CLIENT_ID;
   const hasInstagramCreds = !!process.env.INSTAGRAM_APP_ID;
+  const hasTwitterCreds = !!process.env.TWITTER_CLIENT_ID;
 
   return {
     reddit: hasRedditCreds
@@ -52,7 +53,11 @@ function createAdapters(): Partial<
       : isDev
         ? new MockAdapter("instagram")
         : undefined,
-    twitter: isDev ? new MockAdapter("twitter") : new TwitterAdapter(),
+    twitter: hasTwitterCreds
+      ? new TwitterAdapter()
+      : isDev
+        ? new MockAdapter("twitter")
+        : new TwitterAdapter(),
     linkedin: isDev ? new MockAdapter("linkedin") : new LinkedInAdapter(),
     tiktok: isDev ? new MockAdapter("tiktok") : new TikTokAdapter(),
     youtube: isDev ? new MockAdapter("youtube") : new YouTubeAdapter(),
