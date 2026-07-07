@@ -48,7 +48,7 @@ const PLATFORMS: PlatformConfig[] = [
     value: "twitter",
     label: "Twitter/X",
     description: "Share updates and engage on Twitter/X",
-    available: false,
+    available: true,
   },
 ];
 

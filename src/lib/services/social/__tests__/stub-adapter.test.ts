@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { TwitterAdapter } from "../twitter";
+import { LinkedInAdapter } from "../linkedin";
 import { NotImplementedError } from "../types";
 
-describe("StubAdapter (via TwitterAdapter)", () => {
-  const adapter = new TwitterAdapter();
+describe("StubAdapter (via LinkedInAdapter)", () => {
+  const adapter = new LinkedInAdapter();
 
   it("has correct platform", () => {
-    expect(adapter.platform).toBe("twitter");
+    expect(adapter.platform).toBe("linkedin");
   });
 
   it("throws NotImplementedError for getAuthUrl", () => {

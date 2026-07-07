@@ -43,9 +43,13 @@ export class AuthExpiredError extends Error {
 }
 
 export class RateLimitError extends Error {
-  constructor(message = "Rate limit exceeded") {
+  /** Seconds to wait before retrying, parsed from the Retry-After header. */
+  retryAfter?: number;
+
+  constructor(message = "Rate limit exceeded", retryAfter?: number) {
     super(message);
     this.name = "RateLimitError";
+    this.retryAfter = retryAfter;
   }
 }
 
@@ -64,10 +68,15 @@ export interface SocialPlatformAdapter {
     accountName: string;
     profileImageUrl?: string;
   }>;
-  getAuthUrl(redirectUri: string, state: string): string;
+  getAuthUrl(
+    redirectUri: string,
+    state: string,
+    codeChallenge?: string
+  ): string;
   exchangeCode(
     code: string,
-    redirectUri: string
+    redirectUri: string,
+    codeVerifier?: string
   ): Promise<{
     accessToken: string;
     refreshToken?: string;
