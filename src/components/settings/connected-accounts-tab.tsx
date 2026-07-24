@@ -27,6 +27,13 @@ const PLATFORMS: PlatformConfig[] = [
     available: true,
   },
   {
+    value: "linkedin",
+    label: "LinkedIn",
+    description:
+      "Connect your LinkedIn account to share posts with your professional network",
+    available: true,
+  },
+  {
     value: "tiktok",
     label: "TikTok",
     description: "Share short-form video content on TikTok",

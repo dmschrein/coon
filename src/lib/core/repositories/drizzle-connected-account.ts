@@ -37,6 +37,7 @@ function toConnectedAccountWithTokens(
     ...toConnectedAccount(row),
     accessTokenEncrypted: row.accessTokenEncrypted,
     refreshTokenEncrypted: row.refreshTokenEncrypted ?? null,
+    metadata: (row.metadata as Record<string, unknown> | null) ?? null,
   };
 }
 

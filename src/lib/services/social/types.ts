@@ -62,7 +62,11 @@ export class NotImplementedError extends Error {
 
 export interface SocialPlatformAdapter {
   platform: SocialPlatform;
-  post(accessToken: string, payload: PostPayload): Promise<PostResult>;
+  post(
+    accessToken: string,
+    payload: PostPayload,
+    accountMetadata?: Record<string, unknown> | null
+  ): Promise<PostResult>;
   getAccountInfo(accessToken: string): Promise<{
     accountId: string;
     accountName: string;
@@ -85,6 +89,7 @@ export interface SocialPlatformAdapter {
     accountName: string;
     profileImageUrl?: string;
     scopes?: string[];
+    metadata?: Record<string, unknown>;
   }>;
   refreshAccessToken?(refreshToken: string): Promise<{
     accessToken: string;
