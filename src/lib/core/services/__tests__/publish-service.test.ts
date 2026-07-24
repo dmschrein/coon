@@ -232,10 +232,13 @@ describe("PublishService", () => {
   });
 
   describe("disconnectAccount", () => {
-    it("deactivates an owned account", async () => {
+    it("hard-deletes an owned account so stored credentials are removed", async () => {
       accountRepo.findById.mockResolvedValue(account);
       await service.disconnectAccount("user-1", "acc-1");
-      expect(accountRepo.deactivate).toHaveBeenCalledWith("acc-1");
+      // Platform API terms (e.g. LinkedIn §4.4) require deleting tokens on
+      // user-initiated disconnect — a soft deactivate would retain them.
+      expect(accountRepo.delete).toHaveBeenCalledWith("acc-1");
+      expect(accountRepo.deactivate).not.toHaveBeenCalled();
     });
 
     it("throws NOT_FOUND when account missing", async () => {
@@ -349,7 +352,8 @@ describe("PublishService", () => {
 
       expect(adapter.post).toHaveBeenCalledWith(
         "access-tok",
-        expect.objectContaining({ body: "hello world", hashtags: ["#a"] })
+        expect.objectContaining({ body: "hello world", hashtags: ["#a"] }),
+        null
       );
       expect(contentRepo.updateStatus).toHaveBeenCalledWith("c-1", "complete");
       expect(result).toEqual({
@@ -410,7 +414,8 @@ describe("PublishService", () => {
           mediaUrls: ["u"],
           subreddit: "r/test",
           communityTarget: "tc",
-        })
+        }),
+        null
       );
     });
 

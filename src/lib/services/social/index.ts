@@ -41,6 +41,7 @@ function createAdapters(): Partial<
   const hasRedditCreds = !!process.env.REDDIT_CLIENT_ID;
   const hasInstagramCreds = !!process.env.INSTAGRAM_APP_ID;
   const hasTwitterCreds = !!process.env.TWITTER_CLIENT_ID;
+  const hasLinkedInCreds = !!process.env.LINKEDIN_CLIENT_ID;
 
   return {
     reddit: hasRedditCreds
@@ -58,7 +59,11 @@ function createAdapters(): Partial<
       : isDev
         ? new MockAdapter("twitter")
         : new TwitterAdapter(),
-    linkedin: isDev ? new MockAdapter("linkedin") : new LinkedInAdapter(),
+    linkedin: hasLinkedInCreds
+      ? new LinkedInAdapter()
+      : isDev
+        ? new MockAdapter("linkedin")
+        : new LinkedInAdapter(),
     tiktok: isDev ? new MockAdapter("tiktok") : new TikTokAdapter(),
     youtube: isDev ? new MockAdapter("youtube") : new YouTubeAdapter(),
     threads: isDev ? new MockAdapter("threads") : new ThreadsAdapter(),

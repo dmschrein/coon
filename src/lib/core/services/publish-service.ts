@@ -91,6 +91,7 @@ export class PublishService {
       accountId: tokens.accountId,
       profileImageUrl: tokens.profileImageUrl,
       scopes: tokens.scopes,
+      metadata: tokens.metadata,
     });
   }
 
@@ -127,7 +128,9 @@ export class PublishService {
     if (!account || account.userId !== userId) {
       throw new ServiceError("Account not found", "NOT_FOUND");
     }
-    await this.accountRepo.deactivate(accountId);
+    // Hard delete rather than deactivate: platform API terms (e.g. LinkedIn
+    // API Terms §4.4) require deleting stored tokens when a user disconnects.
+    await this.accountRepo.delete(accountId);
   }
 
   async refreshAccountTokens(
@@ -216,7 +219,11 @@ export class PublishService {
     const accessToken = decrypt(account.accessTokenEncrypted);
 
     try {
-      const result = await adapter.post(accessToken, payload);
+      const result = await adapter.post(
+        accessToken,
+        payload,
+        account.metadata ?? null
+      );
       await this.contentRepo.updateStatus(contentId, "complete");
 
       return {

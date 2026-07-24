@@ -284,6 +284,7 @@ export interface AgentRunRepository {
 export interface ConnectedAccountWithTokens extends ConnectedAccount {
   accessTokenEncrypted: string;
   refreshTokenEncrypted: string | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 export interface ConnectedAccountRepository {
