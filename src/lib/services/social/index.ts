@@ -11,7 +11,12 @@ export type {
   PostResult,
   PlatformEngagement,
 } from "./types";
-export { AuthExpiredError, RateLimitError, NotImplementedError } from "./types";
+export {
+  AuthExpiredError,
+  RateLimitError,
+  NotImplementedError,
+  SubscriberThresholdError,
+} from "./types";
 export { RedditAdapter } from "./reddit";
 export { InstagramAdapter } from "./instagram";
 export { TwitterAdapter } from "./twitter";
@@ -42,6 +47,7 @@ function createAdapters(): Partial<
   const hasInstagramCreds = !!process.env.INSTAGRAM_APP_ID;
   const hasTwitterCreds = !!process.env.TWITTER_CLIENT_ID;
   const hasLinkedInCreds = !!process.env.LINKEDIN_CLIENT_ID;
+  const hasYouTubeCreds = !!process.env.YOUTUBE_CLIENT_ID;
 
   return {
     reddit: hasRedditCreds
@@ -65,7 +71,11 @@ function createAdapters(): Partial<
         ? new MockAdapter("linkedin")
         : new LinkedInAdapter(),
     tiktok: isDev ? new MockAdapter("tiktok") : new TikTokAdapter(),
-    youtube: isDev ? new MockAdapter("youtube") : new YouTubeAdapter(),
+    youtube: hasYouTubeCreds
+      ? new YouTubeAdapter()
+      : isDev
+        ? new MockAdapter("youtube")
+        : new YouTubeAdapter(),
     threads: isDev ? new MockAdapter("threads") : new ThreadsAdapter(),
     discord: isDev ? new MockAdapter("discord") : new DiscordAdapter(),
   };

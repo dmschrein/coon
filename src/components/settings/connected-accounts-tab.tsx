@@ -48,8 +48,8 @@ const PLATFORMS: PlatformConfig[] = [
   {
     value: "youtube",
     label: "YouTube",
-    description: "Publish video content to your YouTube channel",
-    available: false,
+    description: "Publish Community posts to your YouTube channel",
+    available: true,
   },
   {
     value: "twitter",

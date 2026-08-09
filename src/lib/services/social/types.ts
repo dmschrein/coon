@@ -53,6 +53,13 @@ export class RateLimitError extends Error {
   }
 }
 
+export class SubscriberThresholdError extends Error {
+  constructor(message = "YouTube Community posts require 1000+ subscribers") {
+    super(message);
+    this.name = "SubscriberThresholdError";
+  }
+}
+
 export class NotImplementedError extends Error {
   constructor(platform: string, method: string) {
     super(`${method} is not yet implemented for ${platform}`);
