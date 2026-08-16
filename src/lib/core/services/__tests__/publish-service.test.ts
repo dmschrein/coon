@@ -26,6 +26,7 @@ function createAccountRepo(): MockRepo<ConnectedAccountRepository> {
     findExpiringTokens: vi.fn(),
     create: vi.fn(),
     updateTokens: vi.fn(),
+    updateMetadata: vi.fn(),
     deactivate: vi.fn(),
     delete: vi.fn(),
   };
@@ -64,6 +65,7 @@ const account: ConnectedAccount = {
   isActive: true,
   tokenExpiresAt: null,
   scopes: ["read"],
+  metadata: null,
   createdAt: new Date(),
 };
 
@@ -362,6 +364,51 @@ describe("PublishService", () => {
         externalPostId: "ext-1",
         externalPostUrl: "https://x.com/ext-1",
       });
+    });
+
+    it("forwards a selected boardId into the post payload", async () => {
+      contentRepo.findById.mockResolvedValue({
+        ...approvedContent,
+        platform: "pinterest",
+      });
+      accountRepo.findByUserAndPlatformWithTokens.mockResolvedValue(
+        accountWithTokens
+      );
+      (adapter.post as ReturnType<typeof vi.fn>).mockResolvedValue({
+        externalPostId: "pin-1",
+        externalPostUrl: "https://www.pinterest.com/pin/pin-1/",
+      });
+
+      await service.publishContent("user-1", "c-1", { boardId: "board-2" });
+
+      expect(adapter.post).toHaveBeenCalledWith(
+        "access-tok",
+        expect.objectContaining({ boardId: "board-2" }),
+        null
+      );
+    });
+
+    it("falls back to the boardId stored on the content when none is selected", async () => {
+      contentRepo.findById.mockResolvedValue({
+        ...approvedContent,
+        platform: "pinterest",
+        contentData: { boardId: "board-9" },
+      });
+      accountRepo.findByUserAndPlatformWithTokens.mockResolvedValue(
+        accountWithTokens
+      );
+      (adapter.post as ReturnType<typeof vi.fn>).mockResolvedValue({
+        externalPostId: "pin-2",
+        externalPostUrl: "https://www.pinterest.com/pin/pin-2/",
+      });
+
+      await service.publishContent("user-1", "c-1");
+
+      expect(adapter.post).toHaveBeenCalledWith(
+        "access-tok",
+        expect.objectContaining({ boardId: "board-9" }),
+        null
+      );
     });
 
     it("returns failed result when adapter.post throws", async () => {

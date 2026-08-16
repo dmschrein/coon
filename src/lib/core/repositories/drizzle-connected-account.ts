@@ -26,6 +26,7 @@ function toConnectedAccount(
     isActive: row.isActive ?? true,
     tokenExpiresAt: row.tokenExpiresAt ?? null,
     scopes: row.scopes ?? null,
+    metadata: (row.metadata as Record<string, unknown> | null) ?? null,
     createdAt: row.createdAt ?? new Date(),
   };
 }
@@ -37,7 +38,6 @@ function toConnectedAccountWithTokens(
     ...toConnectedAccount(row),
     accessTokenEncrypted: row.accessTokenEncrypted,
     refreshTokenEncrypted: row.refreshTokenEncrypted ?? null,
-    metadata: (row.metadata as Record<string, unknown> | null) ?? null,
   };
 }
 
@@ -183,6 +183,16 @@ export class DrizzleConnectedAccountRepository implements ConnectedAccountReposi
         tokenExpiresAt: tokenExpiresAt ?? null,
         updatedAt: new Date(),
       })
+      .where(eq(connectedAccounts.id, id));
+  }
+
+  async updateMetadata(
+    id: string,
+    metadata: Record<string, unknown>
+  ): Promise<void> {
+    await this.db
+      .update(connectedAccounts)
+      .set({ metadata, updatedAt: new Date() })
       .where(eq(connectedAccounts.id, id));
   }
 

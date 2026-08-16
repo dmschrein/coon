@@ -3,6 +3,8 @@
 import { use, useState } from "react";
 import { useCampaign } from "@/hooks/use-campaign";
 import { usePublishContent } from "@/hooks/use-publish";
+import { useConnectedAccounts } from "@/hooks/use-connected-accounts";
+import { BoardSelector } from "@/components/publish/board-selector";
 import { ConnectedAccountsBar } from "@/components/publish/connected-accounts-bar";
 import { ScheduleTimeline } from "@/components/publish/schedule-timeline";
 import { StatusFeed } from "@/components/publish/status-feed";
@@ -10,7 +12,12 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
-import type { SocialPlatform, PublishResult, CampaignPlatform } from "@/types";
+import type {
+  SocialPlatform,
+  PublishResult,
+  CampaignPlatform,
+  PinterestBoard,
+} from "@/types";
 
 const SUPPORTED_SOCIAL: SocialPlatform[] = [
   "reddit",
@@ -20,6 +27,7 @@ const SUPPORTED_SOCIAL: SocialPlatform[] = [
   "youtube",
   "threads",
   "linkedin",
+  "pinterest",
 ];
 
 export default function PublishPage({
@@ -29,14 +37,29 @@ export default function PublishPage({
 }) {
   const { id } = use(params);
   const { data, isLoading, error } = useCampaign(id);
+  const { data: accounts } = useConnectedAccounts();
   const publishContent = usePublishContent(id);
   const [publishingId, setPublishingId] = useState<string | null>(null);
   const [publishResults, setPublishResults] = useState<PublishResult[]>([]);
+  const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
+
+  // Boards were cached on the account at connect time — no Pinterest call here.
+  const pinterestBoards =
+    (accounts?.find((a) => a.platform === "pinterest")?.metadata
+      ?.boards as PinterestBoard[]) ?? [];
+  const boardId = selectedBoardId ?? pinterestBoards[0]?.id ?? null;
 
   const handlePublish = async (contentId: string) => {
+    const platform = data?.content.find(
+      (c: { id: string }) => c.id === contentId
+    )?.platform;
+
     setPublishingId(contentId);
     try {
-      const result = await publishContent.mutateAsync(contentId);
+      const result = await publishContent.mutateAsync({
+        contentId,
+        boardId: platform === "pinterest" ? (boardId ?? undefined) : undefined,
+      });
       setPublishResults((prev) => [result, ...prev]);
       if (result.status === "published") {
         toast.success("Content published successfully!");
@@ -125,6 +148,18 @@ export default function PublishPage({
       </div>
 
       <ConnectedAccountsBar requiredPlatforms={campaignPlatforms} />
+
+      {contentItems.some(
+        (c: { platform: CampaignPlatform }) => c.platform === "pinterest"
+      ) && (
+        <div className="rounded-lg border p-4">
+          <BoardSelector
+            boards={pinterestBoards}
+            value={boardId}
+            onChange={setSelectedBoardId}
+          />
+        </div>
+      )}
 
       <StatusFeed results={publishResults} />
 

@@ -55,6 +55,26 @@ const MOCK_PROFILES: Record<
     accountName: "MockDiscordBot",
     profileImageUrl: "https://cdn.discordapp.com/embed/avatars/0.png",
   },
+  pinterest: {
+    accountName: "mock_pinterest_user",
+    profileImageUrl: "https://i.pinimg.com/default_avatar.png",
+  },
+};
+
+/**
+ * Platform data the real adapters cache on the connected account at connect
+ * time. Keeps the dev flow (board selector, publish payload) exercisable
+ * without real credentials.
+ */
+const MOCK_METADATA: Record<string, () => Record<string, unknown>> = {
+  pinterest: () => ({
+    boards: [
+      { id: "mock_board_recipes", name: "Recipes" },
+      { id: "mock_board_travel", name: "Travel" },
+      { id: "mock_board_launch", name: "Launch Ideas" },
+    ],
+    boards_cached_at: new Date().toISOString(),
+  }),
 };
 
 /** Target engagement rates per platform (percentage) */
@@ -95,6 +115,7 @@ export class MockAdapter implements SocialPlatformAdapter {
       accountName: profile.accountName,
       profileImageUrl: profile.profileImageUrl,
       scopes: ["identity", "read", "submit"],
+      metadata: MOCK_METADATA[this.platform]?.(),
     };
   }
 
@@ -116,7 +137,11 @@ export class MockAdapter implements SocialPlatformAdapter {
   }
 
   async post(_accessToken: string, payload: PostPayload): Promise<PostResult> {
-    console.log(`[MockAdapter:${this.platform}] Mock post:`, payload.title);
+    console.log(
+      `[MockAdapter:${this.platform}] Mock post:`,
+      payload.title,
+      payload.boardId ? `board=${payload.boardId}` : ""
+    );
     return {
       externalPostId: `mock_post_${Date.now()}`,
       externalPostUrl: `https://${this.platform}.com/mock/post/${Date.now()}`,

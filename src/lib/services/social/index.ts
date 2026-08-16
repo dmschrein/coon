@@ -25,6 +25,7 @@ export { TikTokAdapter } from "./tiktok";
 export { YouTubeAdapter } from "./youtube";
 export { ThreadsAdapter } from "./threads";
 export { DiscordAdapter } from "./discord";
+export { PinterestAdapter } from "./pinterest";
 export { MockAdapter } from "./mock";
 
 import type { SocialPlatformAdapter } from "./types";
@@ -37,6 +38,7 @@ import { TikTokAdapter } from "./tiktok";
 import { YouTubeAdapter } from "./youtube";
 import { ThreadsAdapter } from "./threads";
 import { DiscordAdapter } from "./discord";
+import { PinterestAdapter } from "./pinterest";
 import { MockAdapter } from "./mock";
 
 function createAdapters(): Partial<
@@ -48,6 +50,7 @@ function createAdapters(): Partial<
   const hasTwitterCreds = !!process.env.TWITTER_CLIENT_ID;
   const hasLinkedInCreds = !!process.env.LINKEDIN_CLIENT_ID;
   const hasYouTubeCreds = !!process.env.YOUTUBE_CLIENT_ID;
+  const hasPinterestCreds = !!process.env.PINTEREST_APP_ID;
 
   return {
     reddit: hasRedditCreds
@@ -78,6 +81,11 @@ function createAdapters(): Partial<
         : new YouTubeAdapter(),
     threads: isDev ? new MockAdapter("threads") : new ThreadsAdapter(),
     discord: isDev ? new MockAdapter("discord") : new DiscordAdapter(),
+    pinterest: hasPinterestCreds
+      ? new PinterestAdapter()
+      : isDev
+        ? new MockAdapter("pinterest")
+        : new PinterestAdapter(),
   };
 }
 

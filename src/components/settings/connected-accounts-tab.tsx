@@ -57,6 +57,12 @@ const PLATFORMS: PlatformConfig[] = [
     description: "Share updates and engage on Twitter/X",
     available: true,
   },
+  {
+    value: "pinterest",
+    label: "Pinterest",
+    description: "Create pins on your Pinterest boards from campaign content",
+    available: true,
+  },
 ];
 
 export function ConnectedAccountsTab() {

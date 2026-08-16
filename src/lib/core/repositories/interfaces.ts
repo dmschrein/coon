@@ -284,7 +284,6 @@ export interface AgentRunRepository {
 export interface ConnectedAccountWithTokens extends ConnectedAccount {
   accessTokenEncrypted: string;
   refreshTokenEncrypted: string | null;
-  metadata?: Record<string, unknown> | null;
 }
 
 export interface ConnectedAccountRepository {
@@ -318,6 +317,7 @@ export interface ConnectedAccountRepository {
     refreshTokenEncrypted?: string,
     tokenExpiresAt?: Date
   ): Promise<void>;
+  updateMetadata(id: string, metadata: Record<string, unknown>): Promise<void>;
   deactivate(id: string): Promise<void>;
   delete(id: string): Promise<void>;
 }

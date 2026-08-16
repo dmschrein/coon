@@ -25,6 +25,12 @@ type AdapterRegistry = (
   platform: SocialPlatform
 ) => SocialPlatformAdapter | null;
 
+/** Per-publish choices made in the UI rather than stored on the content. */
+export interface PublishOptions {
+  /** Pinterest board selected for this pin. */
+  boardId?: string;
+}
+
 export class PublishService {
   constructor(
     private accountRepo: ConnectedAccountRepository,
@@ -35,7 +41,50 @@ export class PublishService {
   // ─── Connected Accounts ─────────────────────────────────────────────────────
 
   async getConnectedAccounts(userId: string): Promise<ConnectedAccount[]> {
-    return this.accountRepo.findByUserId(userId);
+    const accounts = await this.accountRepo.findByUserId(userId);
+    await Promise.all(
+      accounts.map((account) => this.refreshStaleMetadata(userId, account))
+    );
+    return accounts;
+  }
+
+  /**
+   * Refreshes platform data cached on the account (Pinterest boards) once its
+   * adapter reports the cache expired. Failures keep the stale cache rather
+   * than breaking the account list.
+   */
+  private async refreshStaleMetadata(
+    userId: string,
+    account: ConnectedAccount
+  ): Promise<void> {
+    const adapter = this.getAdapter(account.platform);
+    if (!adapter?.isMetadataStale || !adapter.fetchMetadata) {
+      return;
+    }
+    if (!adapter.isMetadataStale(account.metadata)) {
+      return;
+    }
+
+    try {
+      const withTokens = await this.accountRepo.findByUserAndPlatformWithTokens(
+        userId,
+        account.platform
+      );
+      if (!withTokens) {
+        return;
+      }
+
+      const metadata = await adapter.fetchMetadata(
+        decrypt(withTokens.accessTokenEncrypted)
+      );
+      await this.accountRepo.updateMetadata(account.id, metadata);
+      account.metadata = metadata;
+    } catch (error) {
+      console.error(
+        `Failed to refresh ${account.platform} account metadata:`,
+        error
+      );
+    }
   }
 
   getAuthUrl(
@@ -179,7 +228,8 @@ export class PublishService {
 
   async publishContent(
     userId: string,
-    contentId: string
+    contentId: string,
+    options?: PublishOptions
   ): Promise<PublishResult> {
     const content = await this.contentRepo.findById(contentId);
     if (!content) {
@@ -215,7 +265,7 @@ export class PublishService {
       );
     }
 
-    const payload = this.buildPostPayload(content);
+    const payload = this.buildPostPayload(content, options);
     const accessToken = decrypt(account.accessTokenEncrypted);
 
     try {
@@ -259,12 +309,15 @@ export class PublishService {
     await this.contentRepo.updateApprovalStatus(contentId, "approved");
   }
 
-  private buildPostPayload(content: {
-    platform: CampaignPlatform;
-    title: string | null;
-    body: string | null;
-    contentData: unknown;
-  }): PostPayload {
+  private buildPostPayload(
+    content: {
+      platform: CampaignPlatform;
+      title: string | null;
+      body: string | null;
+      contentData: unknown;
+    },
+    options?: PublishOptions
+  ): PostPayload {
     const data = content.contentData as Record<string, unknown> | null;
 
     return {
@@ -278,6 +331,9 @@ export class PublishService {
       mediaUrls: (data?.mediaUrls as string[]) ?? undefined,
       subreddit: (data?.suggestedSubreddits as string[])?.[0] ?? undefined,
       communityTarget: (data?.targetCommunity as string) ?? undefined,
+      // A board picked in the publish UI wins over one stored on the content.
+      boardId: options?.boardId ?? (data?.boardId as string) ?? undefined,
+      link: (data?.link as string) ?? undefined,
     };
   }
 }

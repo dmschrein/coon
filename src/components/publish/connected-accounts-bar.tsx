@@ -23,6 +23,7 @@ const platformLabels: Record<SocialPlatform, string> = {
   threads: "Threads",
   linkedin: "LinkedIn",
   discord: "Discord",
+  pinterest: "Pinterest",
 };
 
 export function ConnectedAccountsBar({
