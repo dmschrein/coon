@@ -6,10 +6,15 @@
 
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import { z } from "zod";
 import { getContainer } from "@/lib/core/di/container";
 
+const publishOptionsSchema = z.object({
+  boardId: z.string().min(1).optional(),
+});
+
 export async function POST(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string; contentId: string }> }
 ) {
   try {
@@ -25,8 +30,28 @@ export async function POST(
     }
 
     const { contentId } = await params;
+    // Body is optional — only platforms with a publish-time choice send one.
+    const body = await req.json().catch(() => ({}));
+    const parsed = publishOptionsSchema.safeParse(body ?? {});
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            message: "Invalid publish options",
+            code: "VALIDATION_ERROR",
+          },
+        },
+        { status: 400 }
+      );
+    }
+
     const { publishService } = getContainer();
-    const result = await publishService.publishContent(userId, contentId);
+    const result = await publishService.publishContent(
+      userId,
+      contentId,
+      parsed.data
+    );
 
     if (result.status === "failed") {
       return NextResponse.json(

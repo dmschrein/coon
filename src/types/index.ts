@@ -428,7 +428,14 @@ export type SocialPlatform =
   | "youtube"
   | "threads"
   | "linkedin"
-  | "discord";
+  | "discord"
+  | "pinterest";
+
+/** A Pinterest board, cached on the connected account as `metadata.boards`. */
+export interface PinterestBoard {
+  id: string;
+  name: string;
+}
 
 export type PublishStatus = "scheduled" | "publishing" | "published" | "failed";
 
@@ -442,6 +449,8 @@ export interface ConnectedAccount {
   isActive: boolean;
   tokenExpiresAt: Date | null;
   scopes: string[] | null;
+  /** Non-secret platform data cached at connect time (Pinterest boards, YouTube channel id, ...). */
+  metadata: Record<string, unknown> | null;
   createdAt: Date;
 }
 

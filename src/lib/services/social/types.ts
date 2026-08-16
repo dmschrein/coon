@@ -11,6 +11,10 @@ export interface PostPayload {
   mediaUrls?: string[];
   subreddit?: string;
   communityTarget?: string;
+  /** Pinterest board the pin is created on. */
+  boardId?: string;
+  /** Destination URL a post links out to (Pinterest pins). */
+  link?: string;
 }
 
 export interface PostResult {
@@ -33,6 +37,8 @@ export interface PlatformEngagement {
   engagementRate: string | null;
   recordedAt: Date;
   commentAuthors?: CommentAuthor[];
+  /** Outbound clicks, where the platform reports them (Pinterest pin clicks). */
+  clicks?: number;
 }
 
 export class AuthExpiredError extends Error {
@@ -107,4 +113,12 @@ export interface SocialPlatformAdapter {
     postId: string,
     accessToken: string
   ): Promise<PlatformEngagement | null>;
+  /**
+   * Whether the cached account metadata has gone stale and should be refetched.
+   * Adapters that cache platform data on the connected account (Pinterest
+   * boards) implement this together with `fetchMetadata`.
+   */
+  isMetadataStale?(metadata: Record<string, unknown> | null): boolean;
+  /** Fetches fresh platform metadata to cache on the connected account. */
+  fetchMetadata?(accessToken: string): Promise<Record<string, unknown>>;
 }
