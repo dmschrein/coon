@@ -10,6 +10,7 @@ export type {
   PostPayload,
   PostResult,
   PlatformEngagement,
+  LinkedTokenExchange,
 } from "./types";
 export {
   AuthExpiredError,
@@ -51,6 +52,10 @@ function createAdapters(): Partial<
   const hasLinkedInCreds = !!process.env.LINKEDIN_CLIENT_ID;
   const hasYouTubeCreds = !!process.env.YOUTUBE_CLIENT_ID;
   const hasPinterestCreds = !!process.env.PINTEREST_APP_ID;
+  // Threads authorizes against the same Meta app as Instagram unless given its own.
+  const hasThreadsCreds = !!(
+    process.env.THREADS_APP_ID ?? process.env.INSTAGRAM_APP_ID
+  );
 
   return {
     reddit: hasRedditCreds
@@ -79,7 +84,11 @@ function createAdapters(): Partial<
       : isDev
         ? new MockAdapter("youtube")
         : new YouTubeAdapter(),
-    threads: isDev ? new MockAdapter("threads") : new ThreadsAdapter(),
+    threads: hasThreadsCreds
+      ? new ThreadsAdapter()
+      : isDev
+        ? new MockAdapter("threads")
+        : new ThreadsAdapter(),
     discord: isDev ? new MockAdapter("discord") : new DiscordAdapter(),
     pinterest: hasPinterestCreds
       ? new PinterestAdapter()

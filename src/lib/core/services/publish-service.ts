@@ -119,7 +119,59 @@ export class PublishService {
 
     const tokens = await adapter.exchangeCode(code, redirectUri, codeVerifier);
 
-    // Deactivate existing account for this platform if any
+    return this.saveAccount(userId, platform, tokens);
+  }
+
+  /**
+   * Connects a platform by trading the access token of an already-connected
+   * account that authorizes against the same provider app — the Threads
+   * "Connect with Instagram" shortcut. Skips a second OAuth round-trip.
+   */
+  async connectViaLinkedAccount(
+    userId: string,
+    platform: SocialPlatform
+  ): Promise<ConnectedAccount> {
+    const adapter = this.getAdapter(platform);
+    if (!adapter?.linkedPlatform || !adapter.exchangeLinkedToken) {
+      throw new ServiceError(
+        `Platform ${platform} cannot be connected from another account`,
+        "UNSUPPORTED_OPERATION"
+      );
+    }
+
+    const source = await this.accountRepo.findByUserAndPlatformWithTokens(
+      userId,
+      adapter.linkedPlatform
+    );
+    if (!source) {
+      throw new ServiceError(
+        `No connected ${adapter.linkedPlatform} account to connect ${platform} from.`,
+        "NO_ACCOUNT"
+      );
+    }
+
+    const tokens = await adapter.exchangeLinkedToken(
+      decrypt(source.accessTokenEncrypted)
+    );
+
+    return this.saveAccount(userId, platform, tokens);
+  }
+
+  /** Replaces any existing connection for the platform with a freshly issued one. */
+  private async saveAccount(
+    userId: string,
+    platform: SocialPlatform,
+    tokens: {
+      accessToken: string;
+      refreshToken?: string;
+      expiresAt?: Date;
+      accountId: string;
+      accountName: string;
+      profileImageUrl?: string;
+      scopes?: string[];
+      metadata?: Record<string, unknown>;
+    }
+  ): Promise<ConnectedAccount> {
     const existing = await this.accountRepo.findByUserAndPlatform(
       userId,
       platform
@@ -153,23 +205,7 @@ export class PublishService {
     profileImageUrl?: string;
     metadata?: Record<string, unknown>;
   }): Promise<ConnectedAccount> {
-    const existing = await this.accountRepo.findByUserAndPlatform(
-      params.userId,
-      params.platform
-    );
-    if (existing) {
-      await this.accountRepo.deactivate(existing.id);
-    }
-
-    return this.accountRepo.create({
-      userId: params.userId,
-      platform: params.platform,
-      accessTokenEncrypted: encrypt(params.accessToken),
-      accountId: params.accountId,
-      accountName: params.accountName,
-      profileImageUrl: params.profileImageUrl,
-      metadata: params.metadata,
-    });
+    return this.saveAccount(params.userId, params.platform, params);
   }
 
   async disconnectAccount(userId: string, accountId: string): Promise<void> {
