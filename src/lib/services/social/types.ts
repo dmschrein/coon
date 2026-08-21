@@ -39,6 +39,25 @@ export interface PlatformEngagement {
   commentAuthors?: CommentAuthor[];
   /** Outbound clicks, where the platform reports them (Pinterest pin clicks). */
   clicks?: number;
+  /** Threads-native counts, kept alongside the comments/shares/impressions mapping. */
+  replies?: number;
+  reposts?: number;
+  views?: number;
+}
+
+/**
+ * Result of trading a token from an already-connected platform for one on a
+ * platform that shares the same provider app (Instagram -> Threads).
+ */
+export interface LinkedTokenExchange {
+  accessToken: string;
+  refreshToken?: string;
+  expiresAt?: Date;
+  accountId: string;
+  accountName: string;
+  profileImageUrl?: string;
+  scopes?: string[];
+  metadata?: Record<string, unknown>;
 }
 
 export class AuthExpiredError extends Error {
@@ -121,4 +140,11 @@ export interface SocialPlatformAdapter {
   isMetadataStale?(metadata: Record<string, unknown> | null): boolean;
   /** Fetches fresh platform metadata to cache on the connected account. */
   fetchMetadata?(accessToken: string): Promise<Record<string, unknown>>;
+  /**
+   * Platform whose connected account can seed this one because both authorize
+   * against the same provider app (Threads is reachable from Instagram).
+   */
+  linkedPlatform?: SocialPlatform;
+  /** Trades a `linkedPlatform` access token for one on this platform. */
+  exchangeLinkedToken?(accessToken: string): Promise<LinkedTokenExchange>;
 }

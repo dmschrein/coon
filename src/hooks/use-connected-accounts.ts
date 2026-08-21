@@ -36,6 +36,28 @@ export function useConnectPlatform() {
   });
 }
 
+/**
+ * Connects Threads from an existing Instagram connection — the shortcut the
+ * Threads connect endpoint advertises when both share the same Meta app.
+ */
+export function useConnectThreadsViaInstagram() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/accounts/connect/threads/instagram", {
+        method: "POST",
+      });
+      const json = await res.json();
+      if (json.error) throw new Error(json.error.message);
+      return json.data as { connected: boolean; accountId: string };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["connected-accounts"] });
+    },
+  });
+}
+
 export function useDisconnectAccount() {
   const queryClient = useQueryClient();
 

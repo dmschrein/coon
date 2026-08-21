@@ -23,10 +23,18 @@ export interface PlatformConfig {
   available: boolean;
 }
 
+/** An alternate way to connect, offered next to the primary Connect button. */
+export interface ConnectShortcut {
+  label: string;
+  onConnect: () => void;
+  isConnecting: boolean;
+}
+
 interface PlatformAccountCardProps {
   platform: PlatformConfig;
   account: ConnectedAccount | null;
   onConnect: () => void;
+  shortcut?: ConnectShortcut;
   onDisconnect: (accountId: string) => void;
   onRefresh: (accountId: string) => void;
   isConnecting: boolean;
@@ -45,6 +53,7 @@ export function PlatformAccountCard({
   platform,
   account,
   onConnect,
+  shortcut,
   onDisconnect,
   onRefresh,
   isConnecting,
@@ -143,13 +152,25 @@ export function PlatformAccountCard({
               </div>
             </div>
           ) : (
-            <Button
-              onClick={onConnect}
-              disabled={!platform.available || isConnecting}
-              className="w-full"
-            >
-              {isConnecting ? "Connecting..." : "Connect"}
-            </Button>
+            <div className="space-y-2">
+              <Button
+                onClick={onConnect}
+                disabled={!platform.available || isConnecting}
+                className="w-full"
+              >
+                {isConnecting ? "Connecting..." : "Connect"}
+              </Button>
+              {shortcut && platform.available && (
+                <Button
+                  variant="outline"
+                  onClick={shortcut.onConnect}
+                  disabled={shortcut.isConnecting || isConnecting}
+                  className="w-full"
+                >
+                  {shortcut.isConnecting ? "Connecting..." : shortcut.label}
+                </Button>
+              )}
+            </div>
           )}
         </CardContent>
       </Card>

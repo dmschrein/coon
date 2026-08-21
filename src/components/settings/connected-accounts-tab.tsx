@@ -3,6 +3,7 @@
 import {
   useConnectedAccounts,
   useConnectPlatform,
+  useConnectThreadsViaInstagram,
   useDisconnectAccount,
   useRefreshAccount,
 } from "@/hooks/use-connected-accounts";
@@ -43,7 +44,7 @@ const PLATFORMS: PlatformConfig[] = [
     value: "threads",
     label: "Threads",
     description: "Post text-based content to Threads",
-    available: false,
+    available: true,
   },
   {
     value: "youtube",
@@ -68,6 +69,7 @@ const PLATFORMS: PlatformConfig[] = [
 export function ConnectedAccountsTab() {
   const { data: accounts, isLoading } = useConnectedAccounts();
   const connectPlatform = useConnectPlatform();
+  const connectThreadsViaInstagram = useConnectThreadsViaInstagram();
   const disconnectAccount = useDisconnectAccount();
   const refreshAccount = useRefreshAccount();
 
@@ -83,6 +85,19 @@ export function ConnectedAccountsTab() {
     disconnectAccount.mutate(accountId, {
       onSuccess: () => toast.success("Account disconnected"),
       onError: (error) => toast.error(`Failed to disconnect: ${error.message}`),
+    });
+  };
+
+  // Threads shares a Meta app with Instagram, so an existing Instagram
+  // connection can be traded for a Threads one without a second OAuth trip.
+  const instagramConnected = !!accounts?.some(
+    (a) => a.platform === "instagram" && a.isActive
+  );
+
+  const handleConnectThreadsViaInstagram = () => {
+    connectThreadsViaInstagram.mutate(undefined, {
+      onSuccess: () => toast.success("Threads connected from Instagram"),
+      onError: (error) => toast.error(`Failed to connect: ${error.message}`),
     });
   };
 
@@ -105,6 +120,15 @@ export function ConnectedAccountsTab() {
             platform={platform}
             account={account}
             onConnect={() => handleConnect(platform.value)}
+            shortcut={
+              platform.value === "threads" && instagramConnected && !account
+                ? {
+                    label: "Connect with Instagram",
+                    onConnect: handleConnectThreadsViaInstagram,
+                    isConnecting: connectThreadsViaInstagram.isPending,
+                  }
+                : undefined
+            }
             onDisconnect={handleDisconnect}
             onRefresh={handleRefresh}
             isConnecting={
